@@ -135,9 +135,16 @@ export class IntroFrameCache {
       const blob = this.blobs.get(index)!;
       if (typeof createImageBitmap === "function") {
         try {
-          image = await createImageBitmap(blob);
+          image = await createImageBitmap(blob, {
+            resizeQuality: "high",
+            imageOrientation: "from-image",
+          });
         } catch {
-          /* Older Safari falls back to Image.decode. */
+          try {
+            image = await createImageBitmap(blob);
+          } catch {
+            /* Older Safari falls back to Image.decode. */
+          }
         }
       }
       if (!image) {
