@@ -6,11 +6,12 @@ import sharp from "sharp";
 import metadata from "../public/intro/frames.json";
 import {
   drawBounds,
+  cropPosition,
   frameUrl,
   frameSource,
   introMode,
   introProgress,
-  introVerticalFocus,
+  portraitFit,
   scrollFrame,
 } from "../src/components/intro/canvas-utils";
 
@@ -53,46 +54,30 @@ test("welcome reveal holds the first frame and preserves the original video time
 });
 
 test("scrubbing reserves a first-frame hold and a reversible final-logo hold", () => {
+  const last = metadata.frameCount - 1;
   assert.equal(scrollFrame(0, metadata), 0);
   assert.equal(scrollFrame(0.04, metadata), 0);
-  assert.equal(scrollFrame(0.88, metadata), 159);
-  assert.equal(scrollFrame(0.94, metadata), 159);
-  assert.equal(scrollFrame(1, metadata), 159);
+  assert.equal(scrollFrame(0.88, metadata), last);
+  assert.equal(scrollFrame(0.94, metadata), last);
+  assert.equal(scrollFrame(1, metadata), last);
   assert.ok(scrollFrame(0.5, metadata) > scrollFrame(0.4, metadata));
   assert.equal(scrollFrame(-1, metadata), 0);
-  assert.equal(scrollFrame(5, metadata), 159);
+  assert.equal(scrollFrame(5, metadata), last);
   assert.match(
-    frameUrl(metadata, "mobile", 159),
-    /\/mobile\/frame-0160.webp\?v=/,
+    frameUrl(metadata, "mobile", last),
+    /\/mobile\/frame-0240.webp\?v=/,
   );
 });
 
-test("mobile source rectangles exclude only the known export padding", () => {
-  assert.equal(metadata.mobile.contentBounds.length, metadata.frameCount);
-  assert.deepEqual(frameSource(metadata.mobile, 0), {
-    x: 0,
-    y: 437,
-    width: 720,
-    height: 405,
-  });
-  assert.deepEqual(frameSource(metadata.mobile, 159), {
-    x: 0,
-    y: 251,
-    width: 720,
-    height: 778,
-  });
+test("mobile retains the complete source with no export padding or late zoom", () => {
+  assert.ok(!("contentBounds" in metadata.mobile));
   for (let index = 0; index < metadata.frameCount; index++) {
-    const source = frameSource(metadata.mobile, index);
-    assert.equal(source.x, 0);
-    assert.equal(source.width, 720);
-    assert.equal(source.y, Math.floor((1280 - source.height) / 2));
-    assert.ok(source.y >= 0 && source.y + source.height <= 1280);
-    assert.ok(source.height >= 405 && source.height <= 778);
-    if (index <= 124) assert.equal(source.height, 405);
-    if (index > 0)
-      assert.ok(
-        source.height >= frameSource(metadata.mobile, index - 1).height,
-      );
+    assert.deepEqual(frameSource(metadata.mobile, index), {
+      x: 0,
+      y: 0,
+      width: 720,
+      height: 405,
+    });
   }
   assert.deepEqual(frameSource(metadata.desktop, 80), {
     x: 0,
@@ -102,7 +87,7 @@ test("mobile source rectangles exclude only the known export padding", () => {
   });
 });
 
-test("every frame fills viewport width without horizontal inset or distortion", () => {
+test("every frame uses the approved portrait fit or viewport cover without distortion", () => {
   for (const [width, height] of [
     [360, 800],
     [390, 844],
@@ -118,33 +103,42 @@ test("every frame fills viewport width without horizontal inset or distortion", 
     const mode = introMode(width, height);
     for (let index = 0; index < metadata.frameCount; index++) {
       const source = frameSource(metadata[mode], index);
-      const bounds = drawBounds(width, height, source);
+      const bounds = drawBounds(
+        width,
+        height,
+        source,
+        width <= height && !portraitFit(width, height)
+          ? cropPosition(index, metadata.frameCount)
+          : 0.5,
+      );
       assert.ok(
         Math.abs(bounds.width / bounds.height - source.width / source.height) <
           0.00001,
       );
-      assert.equal(bounds.x, 0);
-      assert.equal(bounds.width, width);
+      if (portraitFit(width, height)) {
+        assert.ok(bounds.x <= 0 && bounds.y >= 0);
+        assert.ok(bounds.x + bounds.width >= width - 0.00001);
+        assert.ok(bounds.y + bounds.height <= height + 0.00001);
+      } else {
+        assert.ok(bounds.x <= 0 && bounds.y <= 0);
+        assert.ok(bounds.x + bounds.width >= width - 0.00001);
+        assert.ok(bounds.y + bounds.height >= height - 0.00001);
+      }
+      assert.ok(
+        portraitFit(width, height) ||
+          Math.abs(bounds.width - width) < 0.00001 ||
+          Math.abs(bounds.height - height) < 0.00001,
+      );
       assert.ok(
         Math.abs(bounds.width / source.width - bounds.height / source.height) <
           0.00001,
       );
-      if (bounds.height <= height)
-        assert.equal(bounds.y, (height - bounds.height) / 2);
-      else {
-        assert.ok(bounds.y <= 0 && bounds.y + bounds.height >= height);
-        const focusHeight =
-          (introVerticalFocus.bottom - introVerticalFocus.top) * bounds.height;
-        if (focusHeight <= height) {
-          assert.ok(
-            bounds.y + introVerticalFocus.top * bounds.height >= -0.00001,
-          );
-          assert.ok(
-            bounds.y + introVerticalFocus.bottom * bounds.height <=
-              height + 0.00001,
-          );
-        } else assert.equal(bounds.y, (height - bounds.height) / 2);
-      }
+      assert.equal(
+        bounds.y,
+        (height - bounds.height) * (portraitFit(width, height) ? 0.5 : 0.72),
+      );
+      assert.ok(cropPosition(index, metadata.frameCount) >= 0);
+      assert.ok(cropPosition(index, metadata.frameCount) <= 1);
     }
   }
 });
@@ -175,8 +169,21 @@ test("both extracted sequences are complete, consistent WebP files with accurate
     createHash("sha256").update(source).digest("hex"),
     metadata.source.sha256,
   );
-  assert.equal(metadata.source.frameCount, 240);
+  assert.equal(metadata.source.filename, "achu_master_entrance_corrected.mp4");
+  assert.equal(metadata.source.width, 1920);
+  assert.equal(metadata.source.height, 1080);
+  assert.equal(metadata.source.frameCount, 307);
   assert.equal(metadata.source.fps, "24/1");
+  assert.equal(metadata.source.duration, 307 / 24);
+  assert.equal(metadata.animation.startFrame, 67);
+  assert.equal(metadata.animation.endFrame, 306);
+  assert.equal(
+    metadata.frameCount,
+    metadata.source.frameCount - metadata.animation.startFrame,
+  );
+  assert.equal(metadata.fps, 24);
+  assert.equal(metadata.encoding.losslessFrames, 45);
+  assert.equal(metadata.animation.duration, metadata.frameCount / metadata.fps);
   const welcome = await readFile("public/intro/scroll-to-continue.png");
   assert.equal(
     createHash("sha256").update(welcome).digest("hex"),

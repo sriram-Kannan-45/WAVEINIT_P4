@@ -56,8 +56,7 @@ body:has(.home-experience) {
       var(--intro-video-distance) + 100 * var(--intro-visible-vh)
   );
   pointer-events: none;
-  /* The frame's aspect changes during the existing mobile reframe. Browser
-     scroll anchoring must not feed those size changes back into scroll progress. */
+  /* Media resizing must not feed browser anchoring back into scroll progress. */
   overflow-anchor: none;
 }
 .intro-sticky {
@@ -76,9 +75,6 @@ body:has(.home-experience) {
   height: calc(100 * var(--intro-visible-vh));
   overflow: hidden;
   opacity: var(--intro-video-opacity, 0);
-  display: grid;
-  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
-  place-items: center;
 }
 .intro-front-range,
 .intro-video-range,
@@ -176,26 +172,19 @@ body:has(.home-experience) {
   outline-offset: 8px;
 }
 .intro-media {
-  --intro-media-aspect: var(--intro-desktop-aspect);
-  --intro-media-fallback-shift: clamp(
-    calc(var(--intro-focus-top-offset) - 50 * var(--intro-visible-vh)),
-    0px,
-    calc(50 * var(--intro-visible-vh) + var(--intro-focus-bottom-offset))
-  );
-  position: relative;
+  container-type: size;
+  --intro-crop-x: 50%;
+  background: var(--intro-background, #fffcef);
+  position: absolute;
+  inset: 0;
   width: 100%;
-  aspect-ratio: var(--intro-media-aspect);
-  transform: translateY(
-    var(--intro-media-shift, var(--intro-media-fallback-shift))
-  );
+  height: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
   overflow: hidden;
-}
-/* The fixed desktop focus band cannot fit at wider aspect ratios. Preserve
-   centered overflow until hydration computes the displayed source geometry. */
-@media (aspect-ratio > 800/369) {
-  .intro-media {
-    --intro-media-fallback-shift: 0%;
-  }
 }
 .intro-poster,
 .intro-sticky canvas {
@@ -210,6 +199,9 @@ body:has(.home-experience) {
   left: 0;
   width: 100%;
   height: 100%;
+  max-width: none;
+  object-fit: cover;
+  object-position: var(--intro-crop-x) 72%;
 }
 .intro-sticky canvas {
   opacity: 0;
@@ -243,18 +235,32 @@ body:has(.home-experience) {
   visibility: hidden;
 }
 @media (max-aspect-ratio: 1/1) {
+  .intro-media {
+    --intro-crop-x: 0%;
+  }
   .intro-scroll {
     --intro-video-distance: var(
       --intro-mobile-video-distance,
       calc(350 * var(--intro-stable-vh))
     );
   }
-  .intro-media {
-    --intro-media-aspect: var(--intro-mobile-aspect);
-  }
+}
+/* Approved portrait-phone exception: retain the complete logo and lettering. */
+@media (max-width: 600px) and (max-aspect-ratio: 1/1) {
   .intro-poster img {
-    top: var(--intro-mobile-poster-top);
-    height: var(--intro-mobile-poster-height);
+    width: var(--intro-phone-image-width);
+    height: var(--intro-phone-image-height);
+    max-width: none;
+    top: var(
+      --intro-poster-top,
+      calc((100cqh - var(--intro-phone-image-height)) / 2)
+    );
+    left: var(
+      --intro-poster-left,
+      calc((100cqw - var(--intro-phone-image-width)) * var(--intro-crop-share))
+    );
+    object-fit: fill;
+    object-position: 50% 50%;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -285,13 +291,10 @@ body:has(.home-experience) {
     margin-top: 0;
   }
 }
-@media (prefers-reduced-motion: reduce) and (max-aspect-ratio: 1/1) {
+@media (prefers-reduced-motion: reduce) {
   .intro-media {
-    --intro-media-aspect: var(--intro-mobile-aspect-reduced);
-  }
-  .intro-poster img {
-    top: var(--intro-mobile-poster-top-reduced);
-    height: var(--intro-mobile-poster-height-reduced);
+    --intro-crop-x: 50%;
+    --intro-crop-share: 0.5;
   }
 }
 body {

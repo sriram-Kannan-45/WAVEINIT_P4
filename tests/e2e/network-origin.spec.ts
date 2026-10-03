@@ -183,7 +183,7 @@ async function fullFlow(page: Page) {
   await scrub(page, 0.92);
   await expect(page.locator(".intro-scroll")).toHaveAttribute(
     "data-frame",
-    "159",
+    String(metadata.frameCount - 1),
   );
   await visibleVideo(page);
   await scrub(page, 1.01);
@@ -364,7 +364,7 @@ for (const viewport of [
             await page.locator(".intro-scroll").getAttribute("data-frame"),
           ),
         )
-        .toBeLessThan(125);
+        .toBeLessThan(metadata.frameCount * 0.78);
       await fullFlow(page);
       const target = initial.frontRange + initial.videoRange * 0.6;
       for (
@@ -380,7 +380,7 @@ for (const viewport of [
             await page.locator(".intro-scroll").getAttribute("data-frame"),
           ),
         )
-        .toBeLessThan(125);
+        .toBeLessThan(metadata.frameCount * 0.78);
       await page.evaluate(() => scrollTo({ top: 0, behavior: "instant" }));
       await initialState(page);
       await assertDiagnostics(monitor);

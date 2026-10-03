@@ -1,4 +1,25 @@
-# Verification — 2 October 2026
+# Verification — 3 October 2026
+
+## Intro viewport display — 3 October 2026
+
+The screenshot-driven layout repair gives the sticky stage, poster, media wrapper and canvas the complete visible viewport. Laptop, desktop, landscape phone and tablet use uniform source-proportional cover; the canvas clips overflow. Synthetic stretched edge bands, wrapper gutters, maximum-width limits and card decoration were removed. The native MP4 and 480 generated WebP frames/cache revision were not changed by this layout repair.
+
+The user reviewed the portrait-cover screenshot and explicitly chose the complete final logo and lettering over edge-to-edge artwork on tall phones. Portrait phones up to 600px therefore show a proportionally scaled 360-pixel-wide central source window on the full ivory stage. This keeps the complete logo readable at a larger size; natural ivory remains above and below the artwork, without blurred filler or repeated pixels. The crop follows the native bird through the entrance and flight, then centers on the complete logo. Portrait tablets use full-stage cover and a left-to-center source crop. All crop movement is keyed to source frames, so reverse scrolling follows the same framing.
+
+- The supplied MP4 was independently inspected again with OpenCV: 1920×1080, 24 FPS, 307 frames, 12.7916666667 seconds; source SHA-256 unchanged. SHA-256 values for all intro sequence files are recorded in `output/intro-cover-qa/source-assets.json`.
+- Production build passed on Next.js 16.3.8. Fifteen unit tests, strict TypeScript and ESLint passed. The six focused poster/canvas cases passed across desktop and mobile Playwright projects. The broader 58-case browser run reported 44 passes, 12 platform-specific skips, one stale square-viewport assertion, and one mobile poster navigation over the 30-second limit during parallel build/QA; the adjusted assertion and isolated server-rendered poster checks then passed.
+- Visual captures cover 320×760 and 390×844 portrait phones, 768×1024 tablet, 1366×768 and 1532×730 laptop shapes, 1920×1080 desktop, and 844×390 phone landscape. Chromium and WebKit verify the opening, first frame, entrance, flight, transformation, final logo, release, reverse entrance, reverse first frame, and store. Captures and `report.json` are in `output/intro-cover-qa/`.
+
+The preceding “Corrected peacock entrance” section describes the earlier asset integration verification. Its former contain-only presentation check was replaced by the portrait-fit and proportional-cover rules above.
+
+## Corrected peacock entrance — 3 October 2026
+
+- Integrated `video/achu_master_entrance_corrected.mp4`. FFmpeg and OpenCV measured 1920×1080, 24 FPS, 307 frames and 12.7916666667 seconds. The source SHA-256 remains `4fecf08b1e070d19bf5971bfaa65f064ad32cd40d449403f24e2adfca5eade53`.
+- Removed only the leading duplicate welcome footage: both sets retain source frames 67–306 (240 native frames, 10 seconds). Every corrected entrance frame, 68–111, is retained. Desktop is 1440×810; mobile is 720×405 with no added portrait padding or late zoom. Cache revision: `ddcfb6783423`.
+- Compared all 480 generated frames against independent native MP4 decoding. The first 45 frames in each set match every resized RGB pixel exactly, including all corrected entrance frames. Quality-90 continuation compression has a maximum per-frame mean RGB error of 1.171/255. Reports are in `output/corrected-intro/source-verification.json`.
+- Verified complete, proportional contain geometry at 11 viewport shapes in Chromium and WebKit: portrait phones (320, 375, 390 and 430px), portrait tablets (768 and 1024px), laptop/desktop widths (1366, 1440 and 1920px), phone landscape (844×390), and tablet landscape (1024×768). Eleven stages per size include entrance, final logo, storefront release and reverse scrolling. All 242 snapshots passed source/media geometry, opacity, stage visibility and overflow checks, with no page errors or missing frames. The report records the active revision in `output/responsive-flow-qa/report.json`.
+- All 46 applicable intro, welcome, responsive-flow and storefront browser cases passed; 12 platform-specific cases were intentionally skipped. Two desktop cases reached the 30-second navigation limit during concurrent build/QA and passed isolated reruns with the default timeout. Native slow/fast portrait touch input, momentum, reverse scrolling, resize/orientation, legacy viewport units, no-JavaScript/reduced-motion posters, decode fallback and unavailable frames were exercised. Storefront search, product/cart/checkout, policies and protected admin routes remain covered.
+- All 15 unit tests, strict TypeScript, ESLint and optimized Next.js production build passed. The existing welcome raster hash and pre-existing development type-import changes were preserved. Under 750 kbps / 150 ms latency, the development preview retained its welcome/poster and allowed storefront access while frames loaded. Browser viewport simulations do not constitute physical-device testing.
 
 ## LAN-origin hydration repair
 

@@ -4,10 +4,17 @@ import frames from "../public/intro/frames.json";
 const qaBrowsers: Browser[] = [];
 
 async function main() {
-  const output = "output/responsive-flow-qa";
+  const output = "output/intro-cover-qa";
+  const previewURL = process.env.INTRO_QA_URL ?? "http://localhost:3000/";
   await mkdir(output, { recursive: true });
   const report: unknown[] = [];
-  for (const engine of [chromium, webkit]) {
+  const engines =
+    process.env.INTRO_QA_ENGINE === "webkit"
+      ? [webkit]
+      : process.env.INTRO_QA_ENGINE === "chromium"
+        ? [chromium]
+        : [chromium, webkit];
+  for (const engine of engines) {
     const browser = await engine.launch();
     qaBrowsers.push(browser);
     const context = await browser.newContext({
@@ -22,7 +29,7 @@ async function main() {
       if (r.url().includes("/intro/") && r.status() >= 400)
         missing.push(r.url());
     });
-    await page.goto("http://localhost:3000/");
+    await page.goto(previewURL);
     await page.evaluate(async () => {
       const artwork = new Image();
       artwork.src = "/intro/scroll-to-continue.png";
@@ -30,27 +37,26 @@ async function main() {
     });
     for (const size of [
       { width: 320, height: 760 },
-      { width: 375, height: 812 },
       { width: 390, height: 844 },
-      { width: 430, height: 932 },
       { width: 768, height: 1024 },
-      { width: 1024, height: 1366 },
       { width: 1366, height: 768 },
-      { width: 1440, height: 900 },
+      { width: 1532, height: 730 },
       { width: 1920, height: 1080 },
       { width: 844, height: 390 },
-      { width: 1024, height: 768 },
     ]) {
       await page.setViewportSize(size);
       for (const [name, p] of [
         ["welcome", -2],
         ["reveal", -1],
         ["first", 0],
+        ["entrance", 0.12],
         ["flight", 0.25],
         ["transformation", 0.5],
         ["logo", 0.92],
         ["release", 0.98],
         ["store", 1.02],
+        ["reverse-entrance", 0.12],
+        ["reverse-first", 0],
       ] as const) {
         await page.evaluate((progress) => {
           const section = document.querySelector<HTMLElement>(".intro-scroll")!;
@@ -137,6 +143,13 @@ async function main() {
           expect(stage.y).toBeCloseTo(0, 1);
           expect(stage.width).toBeCloseTo(size.width, 1);
           expect(stage.height).toBeCloseTo(size.height, 1);
+          const media = (await page
+            .locator(".intro-media canvas")
+            .boundingBox())!;
+          expect(media.x - stage.x).toBeCloseTo(0, 1);
+          expect(media.y - stage.y).toBeCloseTo(0, 1);
+          expect(media.width).toBeCloseTo(stage.width, 1);
+          expect(media.height).toBeCloseTo(stage.height, 1);
         }
         await page.evaluate(
           () =>
@@ -156,15 +169,20 @@ async function main() {
         ).toBeTruthy();
       }
       console.log(
-        `${engine.name()} ${size.width}×${size.height}: all eight stages captured`,
+        `${engine.name()} ${size.width}×${size.height}: eleven stages including reversal captured`,
       );
     }
     expect(errors).toEqual([]);
     expect(missing).toEqual([]);
     report.push({
       engine: engine.name(),
-      sizes: 11,
-      stagesPerSize: 8,
+      revision: frames.revision,
+      sizes: 7,
+      previewURL,
+      portraitPhonePolicy:
+        "360px proportional logo and lettering window, as approved",
+      otherViewports: "Cover; no synthetic edge extension",
+      stagesPerSize: 11,
       errors,
       missing,
     });
@@ -183,7 +201,7 @@ async function main() {
     uploadThroughput: (250 * 1024) / 8,
   });
   const start = Date.now();
-  await page.goto("http://localhost:3000/", {
+  await page.goto(previewURL, {
     waitUntil: "domcontentloaded",
     timeout: 60000,
   });

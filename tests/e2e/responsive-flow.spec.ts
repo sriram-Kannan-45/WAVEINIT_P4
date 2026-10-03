@@ -56,7 +56,10 @@ async function assertVisiblePeacock(page: Page, flying = false) {
   expect(video.y).toBeCloseTo(0, 1);
   expect(video.width).toBeCloseTo(viewport.width, 1);
   expect(video.height).toBeCloseTo(viewport.height, 1);
-  expect(canvas.width).toBeCloseTo(viewport.width, 1);
+  expect(canvas.width).toBeCloseTo(video.width, 1);
+  expect(canvas.height).toBeCloseTo(video.height, 1);
+  expect(canvas.x - video.x).toBeCloseTo(0, 1);
+  expect(canvas.y - video.y).toBeCloseTo(0, 1);
   expect(canvas.height).toBeGreaterThan(0);
   if (flying) {
     await expect
@@ -64,7 +67,7 @@ async function assertVisiblePeacock(page: Page, flying = false) {
       .toBeGreaterThan(0);
     await expect
       .poll(async () => Number(await intro.getAttribute("data-frame")))
-      .toBeLessThan(125);
+      .toBeLessThan(metadata.frameCount * 0.78);
   }
   expect(
     await page.evaluate(
@@ -383,7 +386,7 @@ for (const viewport of [
       (sample) =>
         sample.visible &&
         sample.frame > 0 &&
-        sample.frame < 125 &&
+        sample.frame < metadata.frameCount * 0.78 &&
         sample.time < firstStore.time,
     );
     expect(

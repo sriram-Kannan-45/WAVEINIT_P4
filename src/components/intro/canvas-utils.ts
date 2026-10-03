@@ -27,9 +27,6 @@ export interface IntroMetadata {
   mobile: FrameSet;
 }
 export type IntroMode = "mobile" | "desktop";
-// Fixed composition band containing the finished emblem and welcome text.
-// Apply throughout the sequence; do not track the moving bird or add a pan.
-export const introVerticalFocus = { top: 0.13, bottom: 0.95 };
 export const clamp = (value: number, min = 0, max = 1) =>
   Math.min(max, Math.max(min, value));
 export const introMode = (width: number, height: number): IntroMode =>
@@ -66,22 +63,57 @@ export function frameSource(source: FrameSet, index: number): FrameRect {
   return { x, y, width, height };
 }
 
-/** Fill the available width uniformly; never inset the source's side edges. */
-export function drawBounds(width: number, height: number, source: FrameRect) {
-  const scale = width / source.width;
-  const drawHeight = source.height * scale;
-  let y = (height - drawHeight) / 2;
-  if (drawHeight > height) {
-    const upper = height - introVerticalFocus.bottom * drawHeight;
-    const lower = -introVerticalFocus.top * drawHeight;
-    // Trim surrounding background before the final emblem/lettering whenever
-    // that fixed band fits. Otherwise retain centered, unavoidable overflow.
-    if (lower <= upper) y = clamp(y, lower, upper);
+/** Horizontal cover position, sampled from the corrected source's flight path.
+ * Keep its left-edge entrance visible, then settle on the centered logo.
+ * Only the crop moves; the source cadence and cover scale stay unchanged.
+ */
+export function cropPosition(index: number, frameCount: number) {
+  const frame = (index / Math.max(1, frameCount - 1)) * 239;
+  const positions = [
+    [0, 0],
+    [22, 0],
+    [32, 0.3],
+    [40, 0.58],
+    [60, 0.65],
+    [72, 0.55],
+    [82, 0.4],
+    [100, 0.62],
+    [130, 0.5],
+    [239, 0.5],
+  ];
+  for (let i = 1; i < positions.length; i++) {
+    const [end, to] = positions[i];
+    if (frame <= end) {
+      const [start, from] = positions[i - 1];
+      const t = clamp((frame - start) / (end - start));
+      return from + (to - from) * t;
+    }
   }
+  return 0.5;
+}
+
+/** Portrait phone window keeps the full central logo and welcome lettering. */
+export const portraitFit = (width: number, height: number) =>
+  width <= 600 && width <= height;
+export const portraitLogoWidth = 360;
+
+/** Proportionally crop portrait source sides so the entire final logo window fits. */
+export function drawBounds(
+  width: number,
+  height: number,
+  source: FrameRect,
+  position = 0.5,
+) {
+  const scale = portraitFit(width, height)
+    ? Math.min(width / portraitLogoWidth, height / source.height)
+    : Math.max(width / source.width, height / source.height);
+  const drawWidth = source.width * scale;
+  const drawHeight = source.height * scale;
   return {
-    x: 0,
-    y,
-    width,
+    x: (width - drawWidth) * clamp(position),
+    // A lower source focus keeps the native welcome line in short landscapes.
+    y: (height - drawHeight) * (portraitFit(width, height) ? 0.5 : 0.72),
+    width: drawWidth,
     height: drawHeight,
   };
 }

@@ -2,11 +2,15 @@ import { test, expect, type Page } from "@playwright/test";
 import metadata from "../../public/intro/frames.json";
 import {
   drawBounds,
+  cropPosition,
   frameSource,
   introMode,
+  portraitFit,
+  scrollFrame,
+  frameUrl,
 } from "../../src/components/intro/canvas-utils";
 
-test("actual source canvas spans both viewport edges without padding or distortion", async ({
+test("actual source canvas covers the viewport uniformly without synthetic filler", async ({
   page,
 }) => {
   await page.addInitScript(() => {
@@ -38,9 +42,7 @@ test("actual source canvas spans both viewport edges without padding or distorti
   ]) {
     await page.setViewportSize(size);
     for (const progress of [0, 0.5, 0.8, 0.92]) {
-      const index = Math.round(
-        Math.max(0, Math.min(1, (progress - 0.04) / 0.84)) * 159,
-      );
+      const index = Math.round(scrollFrame(progress, metadata));
       const mode = introMode(size.width, size.height);
       await scrub(page, progress);
       await expect(page.locator(".intro-scroll")).toHaveAttribute(
@@ -68,7 +70,14 @@ test("actual source canvas spans both viewport edges without padding or distorti
           .toJSON(),
       }));
       const source = frameSource(metadata[mode], snapshot.index);
-      const bounds = drawBounds(size.width, size.height, source);
+      const bounds = drawBounds(
+        size.width,
+        size.height,
+        source,
+        size.width <= size.height
+          ? cropPosition(snapshot.index, metadata.frameCount)
+          : 0.5,
+      );
       const { call, box, sticky } = snapshot;
       expect(call.slice(0, 4)).toEqual([
         source.x,
@@ -76,15 +85,22 @@ test("actual source canvas spans both viewport edges without padding or distorti
         source.width,
         source.height,
       ]);
-      expect(call.slice(4, 6)).toEqual([0, 0]);
+      expect(call[4]).toBeCloseTo(bounds.x, 1);
+      expect(call[5]).toBeCloseTo(bounds.y, 1);
       expect(call[6]).toBeCloseTo(bounds.width, 1);
       expect(call[7]).toBeCloseTo(bounds.height, 1);
-      expect(box.width).toBeCloseTo(bounds.width, 1);
-      expect(box.height).toBeCloseTo(bounds.height, 1);
-      expect(box.x - sticky.x).toBeCloseTo(bounds.x, 1);
-      expect(box.y - sticky.y).toBeCloseTo(bounds.y, 1);
-      expect(box.x).toBeCloseTo(sticky.x, 1);
-      expect(box.x + box.width).toBeCloseTo(sticky.x + sticky.width, 1);
+      expect(box.width).toBeCloseTo(size.width, 1);
+      expect(box.height).toBeCloseTo(size.height, 1);
+      expect(box.x - sticky.x).toBeCloseTo(0, 1);
+      expect(box.y - sticky.y).toBeCloseTo(0, 1);
+      expect(box.x).toBeGreaterThanOrEqual(sticky.x - 0.1);
+      expect(box.y).toBeGreaterThanOrEqual(sticky.y - 0.1);
+      expect(box.x + box.width).toBeLessThanOrEqual(
+        sticky.x + sticky.width + 0.1,
+      );
+      expect(box.y + box.height).toBeLessThanOrEqual(
+        sticky.y + sticky.height + 0.1,
+      );
     }
   }
 });
@@ -108,27 +124,51 @@ test("server-rendered poster uses the same unpadded geometry before JavaScript",
       });
       const page = await context.newPage();
       await page.goto(baseURL!);
-      const index = reducedMotion === "reduce" ? 159 : 0;
+      const index = reducedMotion === "reduce" ? metadata.frameCount - 1 : 0;
       const mode = introMode(size.width, size.height);
-      const source = frameSource(metadata[mode], index);
-      const bounds = drawBounds(size.width, size.height, source);
       const media = (await page.locator(".intro-media").boundingBox())!;
-      const sticky = (await page.locator(".intro-video-stage").boundingBox())!;
-      const poster = (await page.locator(".intro-poster img").boundingBox())!;
-      expect(media.width).toBeCloseTo(bounds.width, 1);
-      expect(media.height).toBeCloseTo(bounds.height, 1);
-      expect(media.x).toBeCloseTo(sticky.x, 1);
-      expect(media.y - sticky.y).toBeCloseTo(bounds.y, 1);
-      expect(media.x + media.width).toBeCloseTo(sticky.x + sticky.width, 1);
-      expect(poster.width).toBeCloseTo(media.width, 1);
-      expect(poster.height / media.height).toBeCloseTo(
-        metadata[mode].height / source.height,
-        3,
+      const stage = (await page.locator(".intro-video-stage").boundingBox())!;
+      const poster = page.locator(".intro-poster img");
+      expect(media.width).toBeCloseTo(size.width, 1);
+      expect(media.height).toBeCloseTo(size.height, 1);
+      expect(media.x - stage.x).toBeCloseTo(0, 1);
+      expect(media.y - stage.y).toBeCloseTo(0, 1);
+      await expect(poster).toHaveCSS(
+        "object-fit",
+        portraitFit(size.width, size.height) ? "fill" : "cover",
       );
-      expect((media.y - poster.y) / media.height).toBeCloseTo(
-        source.y / source.height,
-        3,
+      await expect(poster).toHaveCSS(
+        "object-position",
+        portraitFit(size.width, size.height)
+          ? "50% 50%"
+          : reducedMotion === "reduce" || size.width > size.height
+            ? "50% 72%"
+            : "0% 72%",
       );
+      const image = (await poster.boundingBox())!;
+      if (portraitFit(size.width, size.height)) {
+        const source = frameSource(metadata.mobile, index);
+        const bounds = drawBounds(
+          size.width,
+          size.height,
+          source,
+          reducedMotion === "reduce" ? 0.5 : 0,
+        );
+        expect(image.width).toBeCloseTo(bounds.width, 1);
+        expect(image.height).toBeCloseTo(bounds.height, 1);
+        expect(image.x - media.x).toBeCloseTo(bounds.x, 1);
+        expect(image.y - media.y).toBeCloseTo(bounds.y, 1);
+      } else {
+        expect(image.width).toBeCloseTo(size.width, 1);
+        expect(image.height).toBeCloseTo(size.height, 1);
+      }
+      await expect(poster).toHaveAttribute(
+        "src",
+        frameUrl(metadata, "desktop", 0),
+      );
+      expect(
+        await poster.evaluate((img: HTMLImageElement) => img.currentSrc),
+      ).toContain(frameUrl(metadata, mode, index));
       await context.close();
     }
   }
@@ -167,19 +207,25 @@ test("intro follows scroll, holds, reverses, and releases into the existing bout
   await scrub(page, 0.5);
   await expect
     .poll(async () => Number(await intro.getAttribute("data-frame")))
-    .toBeGreaterThan(80);
+    .toBeGreaterThan(Math.round(scrollFrame(0.5, metadata)) - 2);
   await expect
     .poll(async () => Number(await intro.getAttribute("data-frame")))
-    .toBeLessThan(92);
+    .toBeLessThan(Math.round(scrollFrame(0.5, metadata)) + 2);
   await page.waitForTimeout(180);
   const stopped = await intro.getAttribute("data-frame");
   await page.waitForTimeout(200);
   expect(await intro.getAttribute("data-frame")).toBe(stopped);
   await scrub(page, 0.9);
-  await expect(intro).toHaveAttribute("data-frame", "159");
+  await expect(intro).toHaveAttribute(
+    "data-frame",
+    String(metadata.frameCount - 1),
+  );
   await expect(page.locator(".intro-sticky")).toHaveCSS("opacity", "1");
   await scrub(page, 0.94);
-  await expect(intro).toHaveAttribute("data-frame", "159");
+  await expect(intro).toHaveAttribute(
+    "data-frame",
+    String(metadata.frameCount - 1),
+  );
   await scrub(page, 0.98);
   await expect
     .poll(async () =>
@@ -202,7 +248,7 @@ test("intro follows scroll, holds, reverses, and releases into the existing bout
   await scrub(page, 0.45);
   await expect
     .poll(async () => Number(await intro.getAttribute("data-frame")))
-    .toBeLessThan(85);
+    .toBeLessThan(Math.round(scrollFrame(0.45, metadata)) + 2);
   await expect(page.locator(".intro-sticky")).toHaveCSS("opacity", "1");
   await scrub(page, 0);
   await expect(intro).toHaveAttribute("data-frame", "0");
@@ -232,17 +278,18 @@ test("all requested sizes resize without resetting progress or clipping the fram
     );
     await expect
       .poll(async () => Number(await intro.getAttribute("data-frame")))
-      .toBeGreaterThan(120);
+      .toBeGreaterThan(Math.round(scrollFrame(0.7, metadata)) - 2);
     await expect
       .poll(async () => Number(await intro.getAttribute("data-frame")))
-      .toBeLessThan(130);
+      .toBeLessThan(Math.round(scrollFrame(0.7, metadata)) + 2);
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBeTruthy();
-    const bounds = await page.locator("canvas").boundingBox();
+    const bounds = await page.locator(".intro-media canvas").boundingBox();
     expect(bounds!.width).toBeCloseTo(size.width, 1);
+    expect(bounds!.height).toBeCloseTo(size.height, 1);
   }
   await scrub(page, 0.5);
   await page.reload();
@@ -250,7 +297,7 @@ test("all requested sizes resize without resetting progress or clipping the fram
     .poll(async () =>
       Number(await page.locator(".intro-scroll").getAttribute("data-frame")),
     )
-    .toBeGreaterThan(80);
+    .toBeGreaterThan(Math.round(scrollFrame(0.5, metadata)) - 2);
 });
 
 test("reduced motion keeps the welcome first and shows the completed logo below it", async ({
@@ -264,7 +311,7 @@ test("reduced motion keeps the welcome first and shows the completed logo below 
   await page.goto("/");
   await expect(page.locator(".intro-scroll")).toHaveAttribute(
     "data-frame",
-    "159",
+    String(metadata.frameCount - 1),
   );
   expect(
     await page.locator(".intro-scroll").evaluate((e) => e.clientHeight),
@@ -272,7 +319,17 @@ test("reduced motion keeps the welcome first and shows the completed logo below 
   await expect(page.locator(".intro-front")).toBeInViewport();
   await expect(page.locator(".intro-video-stage")).not.toBeInViewport();
   await page.waitForTimeout(200);
-  expect(urls.every((url) => url.includes("frame-0160.webp"))).toBeTruthy();
+  expect(
+    urls.every((url) =>
+      url.endsWith(
+        frameUrl(
+          metadata,
+          introMode(page.viewportSize()!.width, page.viewportSize()!.height),
+          metadata.frameCount - 1,
+        ),
+      ),
+    ),
+  ).toBeTruthy();
   await expect(page.locator("#boutique")).not.toHaveAttribute("inert", "");
   await page.locator(".site-header").scrollIntoViewIfNeeded();
   await expect(page.locator(".site-header")).toBeInViewport();
@@ -371,7 +428,7 @@ test("Image.decode fallback works when bitmap decoding is unavailable", async ({
   await scrub(page, 0.9);
   await expect(page.locator(".intro-scroll")).toHaveAttribute(
     "data-frame",
-    "159",
+    String(metadata.frameCount - 1),
   );
   await page.goto("/shop");
   await expect(page.locator(".product-card")).toHaveCount(4);
@@ -382,14 +439,19 @@ test("an unavailable frame does not block the store or create a canvas error", a
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.route("**/intro/**/frame-0088.webp*", (route) => route.abort());
+  const unavailable = String(
+    Math.round(scrollFrame(0.5, metadata)) + 1,
+  ).padStart(4, "0");
+  await page.route(`**/intro/**/frame-${unavailable}.webp*`, (route) =>
+    route.abort(),
+  );
   await page.goto("/");
   await scrub(page, 0.5);
   await expect
     .poll(async () =>
       Number(await page.locator(".intro-scroll").getAttribute("data-frame")),
     )
-    .toBeGreaterThan(80);
+    .toBeGreaterThan(Math.round(scrollFrame(0.5, metadata)) - 5);
   await scrub(page, 1.01);
   await page.getByRole("button", { name: "Search collection" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();

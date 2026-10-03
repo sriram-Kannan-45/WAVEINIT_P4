@@ -6,12 +6,14 @@ import { IntroFrameCache } from "./frame-cache";
 import { WelcomeArtwork } from "./WelcomeArtwork";
 import {
   clamp,
+  cropPosition,
   drawBounds,
   frameUrl,
   frameSource,
   introMode,
   introProgress,
-  introVerticalFocus,
+  portraitFit,
+  portraitLogoWidth,
   scrollFrame,
   type IntroMetadata,
 } from "./canvas-utils";
@@ -173,37 +175,56 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
         const key = `${source.mode}:${frame.index}`;
         if (resized || key !== drawn) {
           const rectangle = frameSource(frames[source.mode], frame.index);
-          const bounds = drawBounds(width, height, rectangle);
-          // The media frame has the footage's aspect ratio, not the padded
-          // export's aspect ratio. Keep the surrounding scroll stage unchanged.
-          media.style.setProperty(
-            "--intro-media-aspect",
-            String(rectangle.width / rectangle.height),
-          );
-          media.style.setProperty(
-            "--intro-media-shift",
-            `${((bounds.y - (height - bounds.height) / 2) / bounds.height) * 100}%`,
-          );
+          const position =
+            width <= height
+              ? cropPosition(frame.index, frames.frameCount)
+              : 0.5;
+          const bounds = drawBounds(width, height, rectangle, position);
+          // Poster and canvas share fit/cover geometry, including resize
+          // and the initial left-edge entrance. No synthetic background layer.
+          media.style.setProperty("--intro-crop-x", `${position * 100}%`);
+          media.style.setProperty("--intro-crop-share", String(position));
+          if (portraitFit(width, height)) {
+            media.style.setProperty(
+              "--intro-poster-width",
+              `${bounds.width}px`,
+            );
+            media.style.setProperty(
+              "--intro-poster-height",
+              `${bounds.height}px`,
+            );
+            media.style.setProperty("--intro-poster-left", `${bounds.x}px`);
+            media.style.setProperty("--intro-poster-top", `${bounds.y}px`);
+          }
           const ratio = Math.min(
             window.devicePixelRatio || 1,
             2,
-            Math.sqrt(3_000_000 / (bounds.width * bounds.height)),
+            Math.sqrt(3_000_000 / (width * height)),
           );
-          const pixelWidth = Math.round(bounds.width * ratio);
-          const pixelHeight = Math.round(bounds.height * ratio);
+          const pixelWidth = Math.round(width * ratio);
+          const pixelHeight = Math.round(height * ratio);
           if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
             canvas.width = pixelWidth;
             canvas.height = pixelHeight;
           }
-          context.setTransform(ratio, 0, 0, ratio, 0, 0);
+          context.setTransform(
+            pixelWidth / width,
+            0,
+            0,
+            pixelHeight / height,
+            0,
+            0,
+          );
+          context.fillStyle = frames.background;
+          context.fillRect(0, 0, width, height);
           context.drawImage(
             frame.image,
             rectangle.x,
             rectangle.y,
             rectangle.width,
             rectangle.height,
-            0,
-            0,
+            bounds.x,
+            bounds.y,
             bounds.width,
             bounds.height,
           );
@@ -267,22 +288,14 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
   }, [frames]);
 
   const last = frames.frameCount - 1;
-  const firstMobile = frameSource(frames.mobile, 0);
-  const lastMobile = frameSource(frames.mobile, last);
   const style = {
     "--intro-background": frames.background,
+    "--intro-phone-image-width": `min(${(frames.mobile.width / portraitLogoWidth) * 100}cqw, ${(frames.mobile.width / frames.mobile.height) * 100}cqh)`,
+    "--intro-phone-image-height": `min(${(frames.mobile.height / portraitLogoWidth) * 100}cqw, 100cqh)`,
+    "--intro-crop-share": "0",
     "--intro-front-distance": "calc(45 * var(--intro-stable-vh))",
     "--intro-desktop-video-distance": `calc(${(frames.scroll.desktopScreens - 1) * 100} * var(--intro-stable-vh))`,
     "--intro-mobile-video-distance": `calc(${(frames.scroll.mobileScreens - 1) * 100} * var(--intro-stable-vh))`,
-    "--intro-desktop-aspect": frames.desktop.width / frames.desktop.height,
-    "--intro-mobile-aspect": firstMobile.width / firstMobile.height,
-    "--intro-mobile-aspect-reduced": lastMobile.width / lastMobile.height,
-    "--intro-focus-top-offset": `${(0.5 - introVerticalFocus.top) * 100}%`,
-    "--intro-focus-bottom-offset": `${(0.5 - introVerticalFocus.bottom) * 100}%`,
-    "--intro-mobile-poster-top": `${(-firstMobile.y / firstMobile.height) * 100}%`,
-    "--intro-mobile-poster-height": `${(frames.mobile.height / firstMobile.height) * 100}%`,
-    "--intro-mobile-poster-top-reduced": `${(-lastMobile.y / lastMobile.height) * 100}%`,
-    "--intro-mobile-poster-height-reduced": `${(frames.mobile.height / lastMobile.height) * 100}%`,
   } as CSSProperties;
   return (
     <section
