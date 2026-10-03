@@ -51,9 +51,9 @@ export function LuxuryHero3DBackground() {
 
     // Petal initialization
     const getPetalCount = (w: number) => {
-      if (w < 768) return 8; // Mobile
-      if (w < 1024) return 14; // Tablet
-      return 26; // Desktop
+      if (w < 768) return 10; // Mobile
+      if (w < 1024) return 18; // Tablet
+      return 30; // Desktop
     };
 
     let petals: Petal[] = [];
@@ -129,7 +129,7 @@ export function LuxuryHero3DBackground() {
     // Petal drawing helper
     const drawPetal = (
       p: Petal,
-      time: number,
+      _time: number,
       pX: number,
       pY: number,
       parallaxScale: number,
@@ -200,240 +200,6 @@ export function LuxuryHero3DBackground() {
       ctx.restore();
     };
 
-    // 3D Ring drawing helper
-    const draw3DRing = (
-      cx: number,
-      cy: number,
-      radiusX: number,
-      radiusY: number,
-      tiltAngle: number,
-      rotAngle: number,
-      pX: number,
-      pY: number,
-      parallaxMult: number,
-      strokeWidth: number,
-      opacity: number,
-    ) => {
-      ctx.save();
-      ctx.translate(cx + pX * parallaxMult, cy + pY * parallaxMult);
-      ctx.rotate(tiltAngle);
-
-      // 3D perspective simulated via scale and rotation
-      const cosRot = Math.cos(rotAngle);
-
-      ctx.beginPath();
-      ctx.ellipse(
-        0,
-        0,
-        radiusX,
-        radiusY * Math.abs(cosRot) + 6,
-        rotAngle * 0.4,
-        0,
-        Math.PI * 2,
-      );
-
-      // Metallic gold gradient stroke with specular shine
-      const grad = ctx.createLinearGradient(
-        -radiusX,
-        -radiusY,
-        radiusX,
-        radiusY,
-      );
-      grad.addColorStop(0, `rgba(180, 142, 60, ${opacity * 0.4})`);
-      grad.addColorStop(0.25, `rgba(255, 248, 220, ${opacity * 0.95})`);
-      grad.addColorStop(0.5, `rgba(218, 175, 70, ${opacity * 0.7})`);
-      grad.addColorStop(0.75, `rgba(255, 242, 195, ${opacity * 0.9})`);
-      grad.addColorStop(1, `rgba(160, 120, 45, ${opacity * 0.5})`);
-
-      ctx.strokeStyle = grad;
-      ctx.lineWidth = strokeWidth;
-      ctx.shadowColor = "rgba(212, 175, 55, 0.35)";
-      ctx.shadowBlur = 12;
-      ctx.stroke();
-
-      ctx.restore();
-    };
-
-    // Silk wave drawing helper (Parametric luxury cloth simulation)
-    const drawSilkWaves = (
-      time: number,
-      pX: number,
-      pY: number,
-      isMobileView: boolean,
-    ) => {
-      ctx.save();
-
-      // Coordinates anchor based on screen size
-      const originX = isMobileView
-        ? width * 0.62 + pX * 12
-        : width * 0.68 + pX * 24;
-      const originY = isMobileView
-        ? height * 0.08 + pY * 8
-        : height * 0.12 + pY * 16;
-      const waveWidth = isMobileView ? width * 0.42 : width * 0.38;
-      const waveHeight = isMobileView ? height * 0.45 : height * 0.65;
-
-      const t = time * 0.00065;
-
-      // Ribbon 1: Sumptuous Emerald Green Silk
-      ctx.beginPath();
-      const pointsTop: [number, number][] = [];
-      const pointsBottom: [number, number][] = [];
-      const segments = 24;
-
-      for (let i = 0; i <= segments; i++) {
-        const u = i / segments;
-        const x = originX + u * waveWidth;
-        // Natural multi-frequency cloth wave
-        const wave1 = Math.sin(t * 1.8 + u * 4.2) * 22;
-        const wave2 = Math.cos(t * 1.2 + u * 6.5) * 14;
-        const archCurve = Math.sin(u * Math.PI) * (waveHeight * 0.32);
-        const yTop =
-          originY + u * (waveHeight * 0.75) + wave1 + wave2 - archCurve;
-        const ribbonThickness =
-          (isMobileView ? 45 : 75) + Math.sin(t * 1.5 + u * 3) * 16;
-        const yBottom = yTop + ribbonThickness;
-
-        pointsTop.push([x, yTop]);
-        pointsBottom.push([x, yBottom]);
-      }
-
-      ctx.moveTo(pointsTop[0][0], pointsTop[0][1]);
-      for (let i = 1; i < pointsTop.length; i++) {
-        const xc = (pointsTop[i - 1][0] + pointsTop[i][0]) / 2;
-        const yc = (pointsTop[i - 1][1] + pointsTop[i][1]) / 2;
-        ctx.quadraticCurveTo(pointsTop[i - 1][0], pointsTop[i - 1][1], xc, yc);
-      }
-      ctx.lineTo(
-        pointsTop[pointsTop.length - 1][0],
-        pointsTop[pointsTop.length - 1][1],
-      );
-
-      ctx.lineTo(
-        pointsBottom[pointsBottom.length - 1][0],
-        pointsBottom[pointsBottom.length - 1][1],
-      );
-      for (let i = pointsBottom.length - 2; i >= 0; i--) {
-        const xc = (pointsBottom[i + 1][0] + pointsBottom[i][0]) / 2;
-        const yc = (pointsBottom[i + 1][1] + pointsBottom[i][1]) / 2;
-        ctx.quadraticCurveTo(
-          pointsBottom[i + 1][0],
-          pointsBottom[i + 1][1],
-          xc,
-          yc,
-        );
-      }
-      ctx.closePath();
-
-      // Emerald silk luxurious sheen gradient
-      const emeraldGrad = ctx.createLinearGradient(
-        originX,
-        originY,
-        originX + waveWidth,
-        originY + waveHeight,
-      );
-      emeraldGrad.addColorStop(0, "rgba(10, 48, 35, 0.88)");
-      emeraldGrad.addColorStop(0.28, "rgba(22, 92, 70, 0.94)");
-      emeraldGrad.addColorStop(0.52, "rgba(38, 138, 105, 0.92)");
-      emeraldGrad.addColorStop(0.74, "rgba(18, 78, 58, 0.86)");
-      emeraldGrad.addColorStop(1, "rgba(8, 35, 26, 0.82)");
-
-      ctx.fillStyle = emeraldGrad;
-      ctx.shadowColor = "rgba(4, 25, 18, 0.4)";
-      ctx.shadowBlur = 24;
-      ctx.fill();
-
-      // Satin highlight rim along the top fold
-      ctx.beginPath();
-      ctx.moveTo(pointsTop[0][0], pointsTop[0][1]);
-      for (let i = 1; i < pointsTop.length; i++) {
-        const xc = (pointsTop[i - 1][0] + pointsTop[i][0]) / 2;
-        const yc = (pointsTop[i - 1][1] + pointsTop[i][1]) / 2;
-        ctx.quadraticCurveTo(pointsTop[i - 1][0], pointsTop[i - 1][1], xc, yc);
-      }
-      ctx.strokeStyle = "rgba(110, 205, 170, 0.45)";
-      ctx.lineWidth = isMobileView ? 1.5 : 2.5;
-      ctx.stroke();
-
-      // Ribbon 2: Flowing Champagne Gold Satin (Gracefully draped alongside emerald)
-      ctx.beginPath();
-      const goldTop: [number, number][] = [];
-      const goldBottom: [number, number][] = [];
-
-      for (let i = 0; i <= segments; i++) {
-        const u = i / segments;
-        const x = originX - (isMobileView ? 20 : 35) + u * (waveWidth * 0.95);
-        const wave =
-          Math.sin(t * 1.6 + u * 4.5 + 1.2) * 18 +
-          Math.cos(t * 1.1 + u * 5.8) * 12;
-        const yTop =
-          originY + (isMobileView ? 35 : 55) + u * (waveHeight * 0.68) + wave;
-        const thickness =
-          (isMobileView ? 32 : 55) + Math.sin(t * 1.4 + u * 3.2) * 12;
-        const yBottom = yTop + thickness;
-
-        goldTop.push([x, yTop]);
-        goldBottom.push([x, yBottom]);
-      }
-
-      ctx.moveTo(goldTop[0][0], goldTop[0][1]);
-      for (let i = 1; i < goldTop.length; i++) {
-        const xc = (goldTop[i - 1][0] + goldTop[i][0]) / 2;
-        const yc = (goldTop[i - 1][1] + goldTop[i][1]) / 2;
-        ctx.quadraticCurveTo(goldTop[i - 1][0], goldTop[i - 1][1], xc, yc);
-      }
-      ctx.lineTo(
-        goldTop[goldTop.length - 1][0],
-        goldTop[goldTop.length - 1][1],
-      );
-
-      ctx.lineTo(
-        goldBottom[goldBottom.length - 1][0],
-        goldBottom[goldBottom.length - 1][1],
-      );
-      for (let i = goldBottom.length - 2; i >= 0; i--) {
-        const xc = (goldBottom[i + 1][0] + goldBottom[i][0]) / 2;
-        const yc = (goldBottom[i + 1][1] + goldBottom[i][1]) / 2;
-        ctx.quadraticCurveTo(
-          goldBottom[i + 1][0],
-          goldBottom[i + 1][1],
-          xc,
-          yc,
-        );
-      }
-      ctx.closePath();
-
-      const champagneGrad = ctx.createLinearGradient(
-        originX - 30,
-        originY + 40,
-        originX + waveWidth,
-        originY + waveHeight + 50,
-      );
-      champagneGrad.addColorStop(0, "rgba(245, 230, 190, 0.82)");
-      champagneGrad.addColorStop(0.3, "rgba(255, 248, 225, 0.92)");
-      champagneGrad.addColorStop(0.65, "rgba(224, 185, 105, 0.88)");
-      champagneGrad.addColorStop(1, "rgba(175, 135, 60, 0.78)");
-
-      ctx.fillStyle = champagneGrad;
-      ctx.shadowColor = "rgba(130, 95, 30, 0.3)";
-      ctx.shadowBlur = 18;
-      ctx.fill();
-
-      // Delicate gold highlight ridge
-      ctx.beginPath();
-      ctx.moveTo(goldTop[0][0], goldTop[0][1]);
-      for (let i = 1; i < goldTop.length; i++) {
-        const xc = (goldTop[i - 1][0] + goldTop[i][0]) / 2;
-        const yc = (goldTop[i - 1][1] + goldTop[i][1]) / 2;
-        ctx.quadraticCurveTo(goldTop[i - 1][0], goldTop[i - 1][1], xc, yc);
-      }
-      ctx.strokeStyle = "rgba(255, 250, 235, 0.65)";
-      ctx.lineWidth = isMobileView ? 1.2 : 2;
-      ctx.stroke();
-
-      ctx.restore();
-    };
-
     // Main animation loop
     const render = (now: number) => {
       if (!isVisible) {
@@ -459,53 +225,7 @@ export function LuxuryHero3DBackground() {
       ctx.scale(dpr, dpr);
       ctx.clearRect(0, 0, width, height);
 
-      const isMobile = width < 768;
-      const isTablet = width >= 768 && width < 1024;
-
-      // 1. Draw 3D Metallic Gold Rings behind the silk
-      const ringCX = isMobile ? width * 0.75 : width * 0.72;
-      const ringCY = isMobile ? height * 0.22 : height * 0.28;
-      const ringR1X = isMobile
-        ? width * 0.16
-        : isTablet
-          ? width * 0.14
-          : width * 0.16;
-      const ringR1Y = ringR1X * 0.48;
-
-      const ringTime = elapsed * 0.00045;
-
-      draw3DRing(
-        ringCX,
-        ringCY,
-        ringR1X,
-        ringR1Y,
-        0.35,
-        ringTime,
-        m.x,
-        m.y,
-        38,
-        isMobile ? 1.2 : 2.0,
-        isMobile ? 0.65 : 0.9,
-      );
-
-      draw3DRing(
-        ringCX + (isMobile ? 18 : 35),
-        ringCY + (isMobile ? 22 : 45),
-        ringR1X * 0.82,
-        ringR1Y * 0.85,
-        -0.42,
-        -ringTime * 0.85 + 1.2,
-        m.x,
-        m.y,
-        28,
-        isMobile ? 1.0 : 1.6,
-        isMobile ? 0.5 : 0.8,
-      );
-
-      // 2. Draw Flowing 3D Silk Ribbons
-      drawSilkWaves(elapsed, m.x, m.y, isMobile);
-
-      // 3. Update & Draw Floating White Flower Petals
+      // Update & Draw Floating White Flower Petals
       for (const p of petals) {
         if (!isReducedMotion) {
           p.y += p.fallSpeed;
@@ -546,7 +266,7 @@ export function LuxuryHero3DBackground() {
 
   return (
     <div ref={containerRef} className="luxury-hero-3d-wrap" aria-hidden="true">
-      {/* Layer 1: High-Resolution Architectural Stone Arches Backdrop */}
+      {/* Layer 1: Clean Architectural Stone Arches Backdrop */}
       <div
         ref={backdropRef}
         className="luxury-hero-backdrop-img"
@@ -570,7 +290,7 @@ export function LuxuryHero3DBackground() {
         <div className="luxury-hero-contrast-overlay" />
       </div>
 
-      {/* Layer 2: Real-time 3D Canvas (Silk + Gold Rings + Floating Petals + Depth-of-Field) */}
+      {/* Layer 2: Real-time 3D Canvas (Floating Mogra Petals with Depth-of-Field) */}
       <canvas ref={canvasRef} className="luxury-hero-canvas" />
     </div>
   );
