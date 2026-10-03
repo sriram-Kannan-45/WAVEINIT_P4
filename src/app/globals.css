@@ -18,8 +18,10 @@
 * {
   box-sizing: border-box;
 }
-html {
-  scroll-behavior: smooth;
+@media (prefers-reduced-motion: no-preference) {
+  html:focus-within {
+    scroll-behavior: smooth;
+  }
 }
 /* Native scrolling drives the homepage canvas. The opaque sticky field covers
    the store until the final hold; one-viewport overlap avoids an empty release. */
@@ -242,6 +244,14 @@ body:has(.home-experience) {
 .home-experience:has(.intro-scroll:not([data-active="false"]))
   .floating-whatsapp {
   visibility: hidden;
+}
+.intro-scroll[data-active="false"],
+.intro-scroll[data-active="false"] * {
+  pointer-events: none !important;
+}
+.intro-scroll[data-active="false"] .intro-sticky {
+  visibility: hidden;
+  pointer-events: none !important;
 }
 @media (max-aspect-ratio: 1/1) {
   .intro-media {
@@ -648,7 +658,7 @@ textarea:focus-visible {
   height: min(690px, calc(100svh - 155px));
   min-height: 560px;
   background: #121b13;
-  overflow: hidden;
+  overflow: clip;
   color: var(--ivory);
 }
 .hero > img {
@@ -775,7 +785,7 @@ textarea:focus-visible {
 }
 .categories-section {
   position: relative;
-  overflow: hidden;
+  overflow: clip;
   padding-top: 54px;
   padding-bottom: 58px;
   background: #f7f4ed;
@@ -1026,7 +1036,7 @@ textarea:focus-visible {
 .featured-image {
   position: relative;
   min-height: 560px;
-  overflow: hidden;
+  overflow: clip;
 }
 .featured-image img {
   object-fit: cover;
@@ -1035,7 +1045,7 @@ textarea:focus-visible {
 .featured-content {
   position: relative;
   padding: 90px 17% 80px 13%;
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -1064,13 +1074,14 @@ textarea:focus-visible {
   right: 36px;
   color: #667849;
   opacity: 0.55;
+  pointer-events: none;
 }
 .promo {
   position: relative;
   min-height: 400px;
   margin-top: 10px;
   margin-bottom: 30px;
-  overflow: hidden;
+  overflow: clip;
   color: var(--ivory);
   padding: 55px;
 }
@@ -2877,10 +2888,12 @@ label.field textarea {
   .featured-image {
     min-height: 0;
     height: 420px;
+    overflow: clip;
   }
   .featured-content {
     padding: 44px 30px 47px;
     min-height: 350px;
+    overflow: visible;
   }
   .featured-content h2 {
     font-size: 52px;

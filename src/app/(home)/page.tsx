@@ -215,8 +215,8 @@ export default async function Home() {
           </div>
         </section>
       )}
-      {h.show_best_sellers && best.products.length > 0 && (
-        <section className="section">
+      {h.show_best_sellers && (
+        <section className="section best-sellers-section">
           <div className="container">
             <div className="section-heading">
               <div>
@@ -229,15 +229,21 @@ export default async function Home() {
                 Explore the edit <ArrowUpRight size={16} />
               </Link>
             </div>
-            <div className="product-grid">
-              {best.products.map((p) => (
-                <ProductCard
-                  key={p.id}
-                  product={p}
-                  threshold={store.low_stock_threshold}
-                />
-              ))}
-            </div>
+            {best.products.length ? (
+              <div className="product-grid">
+                {best.products.map((p) => (
+                  <ProductCard
+                    key={p.id}
+                    product={p}
+                    threshold={store.low_stock_threshold}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state">
+                Pieces will be added to favourites soon.
+              </div>
+            )}
           </div>
         </section>
       )}
