@@ -71,14 +71,13 @@ export function cropPosition(index: number, frameCount: number) {
   const frame = (index / Math.max(1, frameCount - 1)) * 239;
   const positions = [
     [0, 0],
-    [22, 0],
-    [32, 0.3],
-    [40, 0.58],
-    [60, 0.65],
-    [72, 0.55],
-    [82, 0.4],
-    [100, 0.62],
-    [130, 0.5],
+    [20, 0],
+    [35, 0.22],
+    [50, 0.46],
+    [65, 0.52],
+    [80, 0.48],
+    [100, 0.52],
+    [125, 0.5],
     [239, 0.5],
   ];
   for (let i = 1; i < positions.length; i++) {
@@ -86,33 +85,89 @@ export function cropPosition(index: number, frameCount: number) {
     if (frame <= end) {
       const [start, from] = positions[i - 1];
       const t = clamp((frame - start) / (end - start));
-      return from + (to - from) * t;
+      const smoothT = t * t * (3 - 2 * t);
+      return from + (to - from) * smoothT;
     }
   }
   return 0.5;
 }
 
-/** Portrait phone window keeps the full central logo and welcome lettering. */
+/** Portrait window keeps the full central logo and welcome lettering.
+ * Portrait phones and portrait tablets share one composition; only widths up
+ * to the mobile breakpoint qualify, so landscape desktops keep cover framing. */
 export const portraitFit = (width: number, height: number) =>
-  width <= 600 && width <= height;
-export const portraitLogoWidth = 360;
+  width <= 768 && width <= height;
+export const portraitLogoWidth = 380;
+export const portraitFlightWidth = 400;
 
-/** Proportionally crop portrait source sides so the entire final logo window fits. */
+/** Convert hex background to 0-alpha rgba for seamless edge feathering. */
+export function transparentColor(hex: string) {
+  if (hex.startsWith("#") && hex.length === 7) {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgba(${r}, ${g}, ${b}, 0)`;
+  }
+  return "transparent";
+}
+
+/** Computes the smooth scale for mobile portrait animation.
+ * Entrance (frames 0-20) fills the screen edge-to-edge and top-to-bottom.
+ * Flight (frames 20-120) scales proportionally to give the peacock breathing room without clipping wings.
+ * Transition (frames 120-180) smoothly centers and frames the circular wreath logo.
+ */
+export function dynamicScale(
+  width: number,
+  height: number,
+  source: FrameRect,
+  index = 0,
+  frameCount = 240,
+) {
+  const coverScale = Math.max(width / source.width, height / source.height);
+  if (!portraitFit(width, height)) {
+    return coverScale;
+  }
+  const logoScale = Math.min(coverScale, width / portraitLogoWidth);
+  const flightScale = Math.min(coverScale, width / portraitFlightWidth);
+
+  const frame = (index / Math.max(1, frameCount - 1)) * 239;
+  if (frame <= 20) {
+    return coverScale;
+  }
+  if (frame <= 60) {
+    const t = (frame - 20) / 40;
+    const eased = t * t * (3 - 2 * t);
+    return coverScale + (flightScale - coverScale) * eased;
+  }
+  if (frame <= 120) {
+    return flightScale;
+  }
+  if (frame <= 180) {
+    const t = (frame - 120) / 60;
+    const eased = t * t * (3 - 2 * t);
+    return flightScale + (logoScale - flightScale) * eased;
+  }
+  return logoScale;
+}
+
+/** Proportionally crop portrait source sides so the animation fills the viewport smoothly. */
 export function drawBounds(
   width: number,
   height: number,
   source: FrameRect,
   position = 0.5,
+  index = 0,
+  frameCount = 240,
 ) {
-  const scale = portraitFit(width, height)
-    ? Math.min(width / portraitLogoWidth, height / source.height)
-    : Math.max(width / source.width, height / source.height);
+  const scale = dynamicScale(width, height, source, index, frameCount);
   const drawWidth = source.width * scale;
   const drawHeight = source.height * scale;
+  const rawY =
+    (height - drawHeight) * (portraitFit(width, height) ? 0.5 : 0.72);
   return {
     x: (width - drawWidth) * clamp(position),
     // A lower source focus keeps the native welcome line in short landscapes.
-    y: (height - drawHeight) * (portraitFit(width, height) ? 0.5 : 0.72),
+    y: Math.abs(rawY) < 1e-6 ? 0 : rawY,
     width: drawWidth,
     height: drawHeight,
   };

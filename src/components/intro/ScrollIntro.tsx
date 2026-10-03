@@ -15,6 +15,7 @@ import {
   portraitFit,
   portraitLogoWidth,
   scrollFrame,
+  transparentColor,
   type IntroMetadata,
 } from "./canvas-utils";
 
@@ -179,7 +180,14 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
             width <= height
               ? cropPosition(frame.index, frames.frameCount)
               : 0.5;
-          const bounds = drawBounds(width, height, rectangle, position);
+          const bounds = drawBounds(
+            width,
+            height,
+            rectangle,
+            position,
+            frame.index,
+            frames.frameCount,
+          );
           // Poster and canvas share fit/cover geometry, including resize
           // and the initial left-edge entrance. No synthetic background layer.
           media.style.setProperty("--intro-crop-x", `${position * 100}%`);
@@ -228,6 +236,34 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
             bounds.width,
             bounds.height,
           );
+          if (portraitFit(width, height) && bounds.y > 0) {
+            const fadeH = Math.min(40, bounds.height * 0.1);
+            const transparentBg = transparentColor(frames.background);
+            // Top edge blend
+            const topGrad = context.createLinearGradient(
+              0,
+              bounds.y,
+              0,
+              bounds.y + fadeH,
+            );
+            topGrad.addColorStop(0, frames.background);
+            topGrad.addColorStop(1, transparentBg);
+            context.fillStyle = topGrad;
+            context.fillRect(0, bounds.y - 1, width, fadeH + 1);
+
+            // Bottom edge blend
+            const bottomY = bounds.y + bounds.height;
+            const botGrad = context.createLinearGradient(
+              0,
+              bottomY - fadeH,
+              0,
+              bottomY,
+            );
+            botGrad.addColorStop(0, transparentBg);
+            botGrad.addColorStop(1, frames.background);
+            context.fillStyle = botGrad;
+            context.fillRect(0, bottomY - fadeH, width, fadeH + 1);
+          }
           drawn = key;
           resized = false;
           section.dataset.ready = "true";
@@ -290,6 +326,9 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
   const last = frames.frameCount - 1;
   const style = {
     "--intro-background": frames.background,
+    // Portrait logo framing, expressed in container units so the server-rendered
+    // poster matches the canvas before any script runs. Same formula as
+    // drawBounds(): min(viewportWidth, viewportHeight) / portraitLogoWidth.
     "--intro-phone-image-width": `min(${(frames.mobile.width / portraitLogoWidth) * 100}cqw, ${(frames.mobile.width / frames.mobile.height) * 100}cqh)`,
     "--intro-phone-image-height": `min(${(frames.mobile.height / portraitLogoWidth) * 100}cqw, 100cqh)`,
     "--intro-crop-share": "0",

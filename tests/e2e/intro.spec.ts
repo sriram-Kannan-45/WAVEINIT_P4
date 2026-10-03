@@ -77,6 +77,8 @@ test("actual source canvas covers the viewport uniformly without synthetic fille
         size.width <= size.height
           ? cropPosition(snapshot.index, metadata.frameCount)
           : 0.5,
+        snapshot.index,
+        metadata.frameCount,
       );
       const { call, box, sticky } = snapshot;
       expect(call.slice(0, 4)).toEqual([
@@ -133,26 +135,32 @@ test("server-rendered poster uses the same unpadded geometry before JavaScript",
       expect(media.height).toBeCloseTo(size.height, 1);
       expect(media.x - stage.x).toBeCloseTo(0, 1);
       expect(media.y - stage.y).toBeCloseTo(0, 1);
+      const portrait = portraitFit(size.width, size.height);
       await expect(poster).toHaveCSS(
         "object-fit",
-        portraitFit(size.width, size.height) ? "fill" : "cover",
+        reducedMotion === "reduce" && portrait ? "fill" : "cover",
       );
       await expect(poster).toHaveCSS(
         "object-position",
-        portraitFit(size.width, size.height)
+        reducedMotion === "reduce" && portrait
           ? "50% 50%"
-          : reducedMotion === "reduce" || size.width > size.height
-            ? "50% 72%"
-            : "0% 72%",
+          : portrait
+            ? "0% 50%"
+            : reducedMotion === "reduce" || size.width > size.height
+              ? "50% 72%"
+              : "0% 72%",
       );
       const image = (await poster.boundingBox())!;
-      if (portraitFit(size.width, size.height)) {
-        const source = frameSource(metadata.mobile, index);
+      if (reducedMotion === "reduce" && portrait) {
+        // Reduced motion rests on the completed logo, so the pre-script poster
+        // must already use the portrait logo framing the canvas will draw.
         const bounds = drawBounds(
           size.width,
           size.height,
-          source,
-          reducedMotion === "reduce" ? 0.5 : 0,
+          frameSource(metadata[mode], index),
+          0.5,
+          index,
+          metadata.frameCount,
         );
         expect(image.width).toBeCloseTo(bounds.width, 1);
         expect(image.height).toBeCloseTo(bounds.height, 1);

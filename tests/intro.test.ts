@@ -93,6 +93,7 @@ test("every frame uses the approved portrait fit or viewport cover without disto
     [390, 844],
     [430, 932],
     [768, 1024],
+    [768, 1280],
     [1366, 768],
     [1532, 730],
     [1920, 800],
@@ -107,35 +108,51 @@ test("every frame uses the approved portrait fit or viewport cover without disto
         width,
         height,
         source,
-        width <= height && !portraitFit(width, height)
-          ? cropPosition(index, metadata.frameCount)
-          : 0.5,
+        width <= height ? cropPosition(index, metadata.frameCount) : 0.5,
+        index,
+        metadata.frameCount,
       );
       assert.ok(
         Math.abs(bounds.width / bounds.height - source.width / source.height) <
           0.00001,
       );
+      assert.ok(bounds.x <= 0);
+      assert.ok(bounds.x + bounds.width >= width - 0.00001);
       if (portraitFit(width, height)) {
-        assert.ok(bounds.x <= 0 && bounds.y >= 0);
-        assert.ok(bounds.x + bounds.width >= width - 0.00001);
+        assert.ok(bounds.y >= -0.00001);
         assert.ok(bounds.y + bounds.height <= height + 0.00001);
+        if (index <= 20) {
+          assert.equal(bounds.y, 0);
+          assert.ok(Math.abs(bounds.height - height) < 0.00001);
+        }
+        if (index === metadata.frameCount - 1) {
+          const curScale = bounds.width / source.width;
+          const wreathLeft = bounds.x + 215 * curScale;
+          const wreathRight = bounds.x + 498 * curScale;
+          const textLeft = bounds.x + 246 * curScale;
+          const textRight = bounds.x + 474 * curScale;
+          const textBottom = bounds.y + 375 * curScale;
+          assert.ok(wreathLeft >= 0);
+          assert.ok(wreathRight <= width);
+          assert.ok(textLeft >= 0);
+          assert.ok(textRight <= width);
+          assert.ok(textBottom <= height);
+        }
       } else {
         assert.ok(bounds.x <= 0 && bounds.y <= 0);
         assert.ok(bounds.x + bounds.width >= width - 0.00001);
         assert.ok(bounds.y + bounds.height >= height - 0.00001);
       }
       assert.ok(
-        portraitFit(width, height) ||
-          Math.abs(bounds.width - width) < 0.00001 ||
-          Math.abs(bounds.height - height) < 0.00001,
-      );
-      assert.ok(
         Math.abs(bounds.width / source.width - bounds.height / source.height) <
           0.00001,
       );
-      assert.equal(
-        bounds.y,
-        (height - bounds.height) * (portraitFit(width, height) ? 0.5 : 0.72),
+      assert.ok(
+        Math.abs(
+          bounds.y -
+            (height - bounds.height) *
+              (portraitFit(width, height) ? 0.5 : 0.72),
+        ) < 0.00001,
       );
       assert.ok(cropPosition(index, metadata.frameCount) >= 0);
       assert.ok(cropPosition(index, metadata.frameCount) <= 1);

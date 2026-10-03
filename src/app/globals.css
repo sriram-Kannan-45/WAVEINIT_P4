@@ -245,19 +245,63 @@ body:has(.home-experience) {
     );
   }
 }
-/* Approved portrait-phone exception: retain the complete logo and lettering. */
-@media (max-width: 600px) and (max-aspect-ratio: 1/1) {
+/* Mobile portrait: cover edge-to-edge and top-to-bottom without blank bands or distortion. */
+@media (max-width: 768px) and (max-aspect-ratio: 1/1) {
   .intro-poster img {
-    width: var(--intro-phone-image-width);
-    height: var(--intro-phone-image-height);
+    width: 100%;
+    height: 100%;
     max-width: none;
+    top: 0;
+    left: 0;
+    object-fit: cover;
+    object-position: var(--intro-crop-x, 0%) 50%;
+  }
+}
+@media (max-width: 768px) {
+  .intro-front {
+    padding: max(16px, env(safe-area-inset-top, 0px))
+      max(16px, env(safe-area-inset-right, 0px))
+      max(16px, env(safe-area-inset-bottom, 0px))
+      max(16px, env(safe-area-inset-left, 0px));
+  }
+  .intro-front-corner {
+    width: clamp(90px, 26vw, 130px);
+  }
+  .intro-front-top-left {
+    top: max(8px, env(safe-area-inset-top, 0px));
+    left: max(8px, env(safe-area-inset-left, 0px));
+  }
+  .intro-front-top-right {
+    top: max(8px, env(safe-area-inset-top, 0px));
+    right: max(8px, env(safe-area-inset-right, 0px));
+  }
+  .intro-front-bottom-left {
+    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    left: max(8px, env(safe-area-inset-left, 0px));
+  }
+  .intro-front-bottom-right {
+    bottom: max(8px, env(safe-area-inset-bottom, 0px));
+    right: max(8px, env(safe-area-inset-right, 0px));
+  }
+  .intro-front-content {
+    width: min(80vw, 320px);
+    max-width: 320px;
+    margin: 0 auto;
+  }
+}
+/* Reduced motion rests on the completed logo, so the poster repeats the canvas
+   logo framing instead of letterboxing the whole 16:9 frame into a thin band. */
+@media (prefers-reduced-motion: reduce) and (max-width: 768px) and (max-aspect-ratio: 1/1) {
+  .intro-poster img {
+    width: var(--intro-poster-width, var(--intro-phone-image-width));
+    height: var(--intro-poster-height, var(--intro-phone-image-height));
     top: var(
       --intro-poster-top,
       calc((100cqh - var(--intro-phone-image-height)) / 2)
     );
     left: var(
       --intro-poster-left,
-      calc((100cqw - var(--intro-phone-image-width)) * var(--intro-crop-share))
+      calc((100cqw - var(--intro-phone-image-width)) / 2)
     );
     object-fit: fill;
     object-position: 50% 50%;
