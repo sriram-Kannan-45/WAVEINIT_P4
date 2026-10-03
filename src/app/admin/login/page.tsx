@@ -23,8 +23,8 @@ export default function Login() {
         <p>Sign in to care for your collection.</p>
         {!configured() && (
           <div className="setup-note">
-            Connect Supabase and provision your owner account using the README
-            setup instructions. There is no public admin registration.
+            Owner mode enabled. Sign in with Admin ID <strong>achu</strong> and
+            password <strong>1234</strong>.
           </div>
         )}
         <LoginForm />

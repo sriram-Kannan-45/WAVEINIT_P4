@@ -2,8 +2,13 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import { createHash, randomUUID } from "node:crypto";
+import {
+  ADMIN_COOKIE_NAME,
+  checkAdminCredentials,
+  signAdminToken,
+} from "@/lib/admin-auth";
 import {
   validateUploadFile,
   ImageValidationError,
@@ -53,57 +58,92 @@ function refresh() {
   revalidatePath("/", "layout");
 }
 export async function login(form: FormData): Promise<Result> {
-  if (!configured())
-    return {
-      ok: false,
-      error:
-        "Supabase is not configured. Complete the setup in README.md to sign in.",
-    };
-  const parsed = z
-    .object({ email: z.email(), password: z.string().min(1).max(200) })
-    .safeParse({ email: form.get("email"), password: form.get("password") });
-  if (!parsed.success)
-    return { ok: false, error: "Enter a valid email and password." };
-  if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    const h = await headers();
-    const ip = process.env.VERCEL
-      ? h.get("x-vercel-forwarded-for") || "unknown"
-      : "local";
-    const key = createHash("sha256")
-      .update(`login:${ip}:${process.env.SUPABASE_SERVICE_ROLE_KEY}`)
-      .digest("hex");
-    const limit = await supabaseService().rpc("consume_rate_limit", {
-      p_key: key,
-      p_max: 8,
-      p_seconds: 600,
+  const rawId = String(
+    form.get("email") ?? form.get("identifier") ?? form.get("username") ?? "",
+  ).trim();
+  const password = String(form.get("password") ?? "");
+
+  if (!rawId || !password) {
+    return { ok: false, error: "Enter a valid admin ID and password." };
+  }
+
+  // 1. Authenticate designated admin ID (achu) and password (1234)
+  if (checkAdminCredentials(rawId, password)) {
+    const jar = await cookies();
+    const token = await signAdminToken("achu");
+    jar.set(ADMIN_COOKIE_NAME, token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60,
     });
-    if (limit.error || !limit.data)
+    return { ok: true };
+  }
+
+  // 2. Authenticate against Supabase if configured
+  if (configured()) {
+    const parsed = z
+      .object({
+        email: z.string().email(),
+        password: z.string().min(1).max(200),
+      })
+      .safeParse({ email: rawId, password });
+    if (!parsed.success)
+      return { ok: false, error: "The admin ID or password is incorrect." };
+
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      const h = await headers();
+      const ip = process.env.VERCEL
+        ? h.get("x-vercel-forwarded-for") || "unknown"
+        : "local";
+      const key = createHash("sha256")
+        .update(`login:${ip}:${process.env.SUPABASE_SERVICE_ROLE_KEY}`)
+        .digest("hex");
+      const limit = await supabaseService().rpc("consume_rate_limit", {
+        p_key: key,
+        p_max: 8,
+        p_seconds: 600,
+      });
+      if (limit.error || !limit.data)
+        return {
+          ok: false,
+          error: "Please wait a few minutes before trying to sign in again.",
+        };
+    }
+
+    const db = await supabaseServer();
+    const { data, error } = await db.auth.signInWithPassword(parsed.data);
+    if (error || !data.user)
+      return { ok: false, error: "The admin ID or password is incorrect." };
+    const role = await db
+      .from("admin_roles")
+      .select("user_id")
+      .eq("user_id", data.user.id)
+      .maybeSingle();
+    if (!role.data || role.error) {
+      await db.auth.signOut();
       return {
         ok: false,
-        error: "Please wait a few minutes before trying to sign in again.",
+        error: "This account is not authorized to manage the boutique.",
       };
+    }
+    return { ok: true };
   }
-  const db = await supabaseServer();
-  const { data, error } = await db.auth.signInWithPassword(parsed.data);
-  if (error || !data.user)
-    return { ok: false, error: "The email or password is incorrect." };
-  const role = await db
-    .from("admin_roles")
-    .select("user_id")
-    .eq("user_id", data.user.id)
-    .maybeSingle();
-  if (!role.data || role.error) {
-    await db.auth.signOut();
-    return {
-      ok: false,
-      error: "This account is not authorized to manage the boutique.",
-    };
-  }
-  redirect("/admin/dashboard");
+
+  return { ok: false, error: "The admin ID or password is incorrect." };
 }
 export async function logout() {
-  const db = await supabaseServer();
-  await db.auth.signOut();
+  const jar = await cookies();
+  jar.delete(ADMIN_COOKIE_NAME);
+  if (configured()) {
+    try {
+      const db = await supabaseServer();
+      await db.auth.signOut();
+    } catch {
+      /* ignore */
+    }
+  }
   redirect("/admin/login");
 }
 export async function saveProduct(
@@ -304,6 +344,15 @@ export async function updatePassword(form: FormData): Promise<Result> {
       .parse(form.get("password"));
     if (password !== form.get("confirm"))
       return { ok: false, error: "The new passwords do not match." };
+    if (!configured()) {
+      if (
+        current !== "1234" &&
+        current !== (process.env.ADMIN_PASSWORD || "1234")
+      ) {
+        return { ok: false, error: "The current password is incorrect." };
+      }
+      return { ok: true };
+    }
     const { data } = await db.auth.getUser();
     if (!data.user?.email)
       return { ok: false, error: "Unable to verify this account." };

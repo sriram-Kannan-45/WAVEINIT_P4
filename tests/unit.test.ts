@@ -250,3 +250,22 @@ test("origin validation uses the browser-facing host and rejects foreign protoco
   assert.equal(sameOrigin(null, "localhost:3000", "http:"), false);
   assert.equal(sameOrigin("null", "localhost:3000", "http:"), false);
 });
+test("admin authentication accepts achu/1234 credentials and verifies secure signed session token", async () => {
+  const { checkAdminCredentials, signAdminToken, verifyAdminToken } =
+    await import("../src/lib/admin-auth");
+  assert.equal(checkAdminCredentials("achu", "1234"), true);
+  assert.equal(checkAdminCredentials("ACHU", "1234"), true);
+  assert.equal(checkAdminCredentials("  achu  ", "1234"), true);
+  assert.equal(checkAdminCredentials("achu@achuboutique.com", "1234"), true);
+  assert.equal(checkAdminCredentials("achu", "wrongpass"), false);
+  assert.equal(checkAdminCredentials("unknown", "1234"), false);
+  assert.equal(checkAdminCredentials("", "1234"), false);
+
+  const token = await signAdminToken("achu");
+  assert.ok(typeof token === "string" && token.length > 20);
+  assert.equal(await verifyAdminToken(token), true);
+  assert.equal(await verifyAdminToken(token + "tampered"), false);
+  assert.equal(await verifyAdminToken("invalid.token"), false);
+  assert.equal(await verifyAdminToken(null), false);
+  assert.equal(await verifyAdminToken(""), false);
+});

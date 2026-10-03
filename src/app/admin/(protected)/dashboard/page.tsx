@@ -3,6 +3,14 @@ import { Plus, ArrowUpRight } from "lucide-react";
 import { requireAdmin } from "@/lib/supabase/server";
 import { money } from "@/lib/utils";
 type Low = { id: string; name: string; total: number };
+type OrderPreview = {
+  id: string;
+  order_reference: string;
+  customer_name: string;
+  subtotal: number;
+  status: string;
+};
+type ProductPreview = { id: string; name: string; status: string };
 export default async function Dashboard() {
   const db = await requireAdmin();
   const [stats, orders, recent] = await Promise.all([
@@ -110,7 +118,7 @@ export default async function Dashboard() {
                 </tr>
               </thead>
               <tbody>
-                {orders.data.map((o) => (
+                {orders.data.map((o: OrderPreview) => (
                   <tr key={o.id}>
                     <td>
                       <Link href="/admin/orders">{o.order_reference}</Link>
@@ -135,7 +143,7 @@ export default async function Dashboard() {
           <div className="admin-table-wrap">
             <table className="admin-table">
               <tbody>
-                {recent.data.map((p) => (
+                {recent.data.map((p: ProductPreview) => (
                   <tr key={p.id}>
                     <td>
                       <Link href={`/admin/products/${p.id}/edit`}>

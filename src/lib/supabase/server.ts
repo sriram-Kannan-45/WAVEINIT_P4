@@ -64,7 +64,34 @@ export function supabaseService() {
     { auth: { persistSession: false, autoRefreshToken: false } },
   );
 }
-export async function requireAdmin() {
+import { ADMIN_COOKIE_NAME, verifyAdminToken } from "@/lib/admin-auth";
+import { createDemoAdminDb } from "./demo-db";
+
+export async function requireAdmin(): Promise<
+  Awaited<ReturnType<typeof supabaseServer>>
+> {
+  const jar = await cookies();
+  const adminCookie = jar.get(ADMIN_COOKIE_NAME)?.value;
+  const isAdminSession = await verifyAdminToken(adminCookie);
+
+  if (isAdminSession) {
+    if (configured()) {
+      try {
+        if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+          return supabaseService() as unknown as Awaited<
+            ReturnType<typeof supabaseServer>
+          >;
+        }
+        return await supabaseServer();
+      } catch {
+        /* Fall back to demo database when database is not connected */
+      }
+    }
+    return createDemoAdminDb() as unknown as Awaited<
+      ReturnType<typeof supabaseServer>
+    >;
+  }
+
   if (!configured()) redirect("/admin/login");
   const db = await supabaseServer();
   const { data, error } = await db.auth.getClaims();

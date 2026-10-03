@@ -1,7 +1,9 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { login, updatePassword } from "@/lib/admin-client";
 export function LoginForm() {
+  const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   return (
@@ -12,15 +14,26 @@ export function LoginForm() {
         setError("");
         try {
           const result = await login(new FormData(e.currentTarget));
-          if (!result.ok) setError(result.error || "Unable to sign in.");
+          if (!result.ok) {
+            setError(result.error || "Unable to sign in.");
+          } else {
+            router.push("/admin/dashboard");
+            router.refresh();
+          }
         } finally {
           setPending(false);
         }
       }}
     >
       <label className="field">
-        <span>Email address</span>
-        <input type="email" name="email" required autoComplete="username" />
+        <span>Admin ID or Email</span>
+        <input
+          type="text"
+          name="email"
+          required
+          autoComplete="username"
+          placeholder="e.g. achu"
+        />
       </label>
       <label className="field">
         <span>Password</span>
@@ -29,6 +42,7 @@ export function LoginForm() {
           name="password"
           required
           autoComplete="current-password"
+          placeholder="••••••••"
         />
       </label>
       {error && (
