@@ -1,0 +1,15 @@
+create or replace function public.admin_dashboard() returns jsonb language plpgsql stable security invoker set search_path=public as $$
+declare result jsonb; begin
+ if not public.is_admin() then raise exception 'Admin authorization required';end if;
+ with stock as(select p.id,p.name,p.slug,p.status,coalesce(sum(v.stock_quantity) filter(where v.active),0) total from public.products p left join public.product_variants v on v.product_id=p.id group by p.id),threshold as(select low_stock_threshold value from public.store_settings where id=1)
+ select jsonb_build_object('total_products',(select count(*) from public.products),'active_products',(select count(*) from public.products where status='active'),'out_of_stock',(select count(*) from stock where total=0),'low_stock',(select count(*) from stock,threshold where total between 1 and threshold.value),'categories',(select count(*) from public.categories),'collections',(select count(*) from public.collections),'new_enquiries',(select count(*) from public.order_enquiries where status='new'),'low_stock_products',coalesce((select jsonb_agg(to_jsonb(s)) from(select * from stock where total<=coalesce((select value from threshold),3) order by total,name limit 8)s),'[]'::jsonb)) into result;
+ return result;end; $$;
+revoke all on function public.admin_dashboard from public,anon;
+grant execute on function public.admin_dashboard to authenticated;
+create or replace function public.admin_product_list(p_query text default '',p_category uuid default null,p_status text default '',p_stock text default '',p_page integer default 1) returns jsonb language plpgsql stable security invoker set search_path=public as $$
+declare result jsonb;begin
+ if not public.is_admin() then raise exception 'Admin authorization required';end if;
+ with stocks as(select product_id,sum(stock_quantity) filter(where active) total from public.product_variants group by product_id), filtered as(select p.*,coalesce(s.total,0) total_stock from public.products p left join stocks s on s.product_id=p.id where (p_query='' or p.name ilike '%'||left(p_query,200)||'%') and (p_category is null or p.category_id=p_category) and (p_status='' or p.status=p_status) and (p_stock='' or(p_stock='out' and coalesce(s.total,0)=0) or(p_stock='low' and s.total between 1 and (select low_stock_threshold from public.store_settings where id=1)))),paged as(select * from filtered order by updated_at desc,id limit 30 offset (greatest(p_page,1)-1)*30),hydrated as(select to_jsonb(p)||jsonb_build_object('categories',(select jsonb_build_object('name',c.name,'slug',c.slug) from public.categories c where c.id=p.category_id),'product_images',coalesce((select jsonb_agg(to_jsonb(i) order by i.is_cover desc,i.sort_order) from public.product_images i where i.product_id=p.id),'[]')) item from paged p)
+ select jsonb_build_object('count',(select count(*) from filtered),'products',coalesce((select jsonb_agg(item) from hydrated),'[]')) into result;return result;end; $$;
+revoke all on function public.admin_product_list from public,anon;
+grant execute on function public.admin_product_list to authenticated;
