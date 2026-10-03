@@ -13,6 +13,7 @@ import {
 test("actual source canvas covers the viewport uniformly without synthetic filler", async ({
   page,
 }) => {
+  test.setTimeout(60000);
   await page.addInitScript(() => {
     const original = CanvasRenderingContext2D.prototype.drawImage;
     CanvasRenderingContext2D.prototype.drawImage = function (

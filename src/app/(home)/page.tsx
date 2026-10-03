@@ -14,6 +14,7 @@ import { getHomepage, getProducts, getStore, getTaxonomies } from "@/lib/data";
 import { ProductCard } from "@/components/product/card";
 import { StoreDetails } from "@/components/layout/store-details";
 import { imageUrl } from "@/lib/utils";
+import { LuxuryHero3DBackground } from "@/components/home/LuxuryHero3DBackground";
 export default async function Home() {
   const [h, store, categories, collections, arrivals, best] = await Promise.all(
     [
@@ -37,8 +38,7 @@ export default async function Home() {
                 src={imageUrl(h.hero_image)}
                 alt="Achu boutique Indian fashion editorial"
                 fill
-                loading="lazy"
-                fetchPriority="low"
+                priority
                 sizes={
                   h.hero_mobile_image
                     ? "100vw"
@@ -51,8 +51,7 @@ export default async function Home() {
                   src={imageUrl(h.hero_mobile_image)}
                   alt="Achu boutique Indian fashion editorial"
                   fill
-                  loading="lazy"
-                  fetchPriority="low"
+                  priority
                   sizes="100vw"
                 />
               )}
@@ -112,6 +111,7 @@ export default async function Home() {
       </div>
       {h.show_categories && (
         <section className="section categories-section">
+          <LuxuryHero3DBackground />
           <div className="container">
             <div className="section-heading">
               <div>

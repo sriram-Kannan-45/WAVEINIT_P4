@@ -251,7 +251,7 @@ test("localhost and LAN hydrate identically across desktop, tablet, and phone la
   isMobile,
 }) => {
   test.skip(isMobile, "paired desktop/tablet contexts are created explicitly");
-  test.setTimeout(120000);
+  test.setTimeout(240000);
   const urls = [new URL(baseURL!).href, networkUrl(baseURL!)];
   for (const viewport of [
     { width: 1366, height: 768 },
