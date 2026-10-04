@@ -788,30 +788,43 @@ textarea:focus-visible {
   width: 1px;
   background: #d4d5c6;
 }
-.categories-section {
+.categories-section,
+.arrivals-section,
+.best-sellers-section {
   position: relative;
   overflow: clip;
-  padding-top: 54px;
-  padding-bottom: 58px;
   background: #f7f4ed;
 }
 
-.categories-section .container {
+.categories-section {
+  padding-top: 54px;
+  padding-bottom: 58px;
+}
+
+.arrivals-section {
+  padding-top: 48px;
+  padding-bottom: 58px;
+}
+
+.best-sellers-section {
+  padding-top: 54px;
+  padding-bottom: 58px;
+}
+
+.categories-section .container,
+.arrivals-section .container,
+.best-sellers-section .container,
+.categories-section .section-heading,
+.arrivals-section .section-heading,
+.best-sellers-section .section-heading,
+.category-grid,
+.product-grid {
   position: relative;
   z-index: 10;
 }
 
-.categories-section .section-heading {
-  position: relative;
-  z-index: 10;
-}
-
-.categories-section .category-grid {
-  position: relative;
-  z-index: 10;
-}
-
-.categories-section .category-card {
+.category-card,
+.product-card {
   position: relative;
   z-index: 10;
   pointer-events: auto;
@@ -849,16 +862,22 @@ textarea:focus-visible {
   background:
     linear-gradient(
       90deg,
-      rgba(247, 244, 237, 0.82) 0%,
-      rgba(247, 244, 237, 0.58) 38%,
-      rgba(247, 244, 237, 0.15) 70%,
-      rgba(247, 244, 237, 0.02) 100%
+      rgba(247, 244, 237, 0.42) 0%,
+      rgba(247, 244, 237, 0.2) 34%,
+      rgba(247, 244, 237, 0.05) 66%,
+      transparent 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(247, 244, 237, 0.35) 0%,
+      rgba(247, 244, 237, 0.1) 18%,
+      transparent 45%
     ),
     linear-gradient(
       0deg,
-      rgba(247, 244, 237, 0.76) 0%,
-      rgba(247, 244, 237, 0.25) 32%,
-      transparent 70%
+      rgba(247, 244, 237, 0.38) 0%,
+      rgba(247, 244, 237, 0.14) 28%,
+      transparent 60%
     );
   pointer-events: none;
 }
@@ -873,16 +892,18 @@ textarea:focus-visible {
 }
 
 @media (max-width: 767px) {
-  .categories-section {
+  .categories-section,
+  .arrivals-section,
+  .best-sellers-section {
     padding-top: 36px;
     padding-bottom: 38px;
   }
   .luxury-hero-contrast-overlay {
     background: linear-gradient(
       0deg,
-      rgba(247, 244, 237, 0.85) 0%,
-      rgba(247, 244, 237, 0.52) 55%,
-      rgba(247, 244, 237, 0.22) 100%
+      rgba(247, 244, 237, 0.45) 0%,
+      rgba(247, 244, 237, 0.22) 55%,
+      rgba(247, 244, 237, 0.06) 100%
     );
   }
 }
@@ -925,9 +946,6 @@ textarea:focus-visible {
   color: var(--muted);
   font-size: 10px;
   margin-top: 5px;
-}
-.arrivals-section {
-  padding-top: 36px;
 }
 .product-grid {
   display: grid;

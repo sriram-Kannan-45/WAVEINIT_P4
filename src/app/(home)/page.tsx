@@ -158,6 +158,7 @@ export default async function Home() {
       )}
       {h.show_new_arrivals && (
         <section className="section arrivals-section">
+          <LuxuryHero3DBackground objectPosition="center 50%" />
           <div className="container">
             <div className="section-heading">
               <div>
@@ -217,6 +218,7 @@ export default async function Home() {
       )}
       {h.show_best_sellers && (
         <section className="section best-sellers-section">
+          <LuxuryHero3DBackground objectPosition="center 36%" />
           <div className="container">
             <div className="section-heading">
               <div>

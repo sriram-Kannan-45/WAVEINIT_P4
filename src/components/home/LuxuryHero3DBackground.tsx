@@ -110,7 +110,15 @@ function petalSprite(
   return baked;
 }
 
-export function LuxuryHero3DBackground() {
+interface LuxuryHero3DBackgroundProps {
+  priority?: boolean;
+  objectPosition?: string;
+}
+
+export function LuxuryHero3DBackground({
+  priority = false,
+  objectPosition = "center 36%",
+}: LuxuryHero3DBackgroundProps = {}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
@@ -371,9 +379,10 @@ export function LuxuryHero3DBackground() {
           src="/images/hero-3d-bg.jpg"
           alt=""
           fill
-          priority
+          priority={priority}
           sizes="100vw"
           className="luxury-hero-img-element"
+          style={{ objectPosition }}
         />
         {/* Soft atmospheric gradient to guarantee 100% typography contrast on the left */}
         <div className="luxury-hero-contrast-overlay" />
