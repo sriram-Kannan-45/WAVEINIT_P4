@@ -110,164 +110,25 @@ export default async function Home() {
         </span>
       </div>
       {h.show_categories && (
-        <section className="section categories-section">
-          <LuxuryHero3DBackground />
-          <div className="container">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">FIND YOUR EXPRESSION</p>
-                <h2>
-                  A style for <em>every you.</em>
-                </h2>
-              </div>
-              <Link className="text-link" href="/shop">
-                Shop all pieces <ArrowUpRight size={16} />
-              </Link>
-            </div>
-            {categories.length ? (
-              <div className="category-grid">
-                {categories.map((c) => (
-                  <Link
-                    href={`/category/${c.slug}`}
-                    className="category-card"
-                    key={c.id}
-                  >
-                    <div className="category-image">
-                      <Image
-                        src={imageUrl(c.image)}
-                        alt={c.name}
-                        fill
-                        sizes="(max-width:600px) 48vw,25vw"
-                      />
-                      <span className="round-arrow">
-                        <ArrowUpRight size={19} />
-                      </span>
-                    </div>
-                    <h3>{c.name}</h3>
-                    <p>{c.description}</p>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="empty-state">
-                Our collections are being prepared. Come back soon.
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-      {h.show_new_arrivals && (
-        <section className="section arrivals-section">
-          <LuxuryHero3DBackground objectPosition="center 50%" />
-          <div className="container">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">FRESH FROM OUR EDIT</p>
-                <h2>
-                  New & <em>noteworthy.</em>
-                </h2>
-              </div>
-              <Link className="text-link" href="/shop?new=true">
-                Explore new arrivals <ArrowUpRight size={16} />
-              </Link>
-            </div>
-            {arrivals.products.length ? (
-              <div className="product-grid">
-                {arrivals.products.map((p) => (
-                  <ProductCard
-                    key={p.id}
-                    product={p}
-                    threshold={store.low_stock_threshold}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="empty-state">
-                New pieces will be added here soon.
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-      {h.show_featured && featured && (
-        <section className="featured-section">
-          <div className="featured-image">
-            <Image
-              src={imageUrl(h.featured_image || featured.image)}
-              alt={featured.name}
-              fill
-              sizes="(max-width:700px)100vw,50vw"
-            />
-          </div>
-          <div className="featured-content">
-            <p className="eyebrow light">THE OCCASION EDIT</p>
-            <h2>{h.featured_title}</h2>
-            <div className="gold-line" />
-            <p>{h.featured_description || featured.description}</p>
-            <Link
-              className="button gold-outline"
-              href={`/collections/${featured.slug}`}
-            >
-              Explore the collection <ArrowUpRight size={17} />
-            </Link>
-            <div className="featured-decoration" aria-hidden="true">
-              <Flower2 size={100} strokeWidth={0.5} />
-            </div>
-          </div>
-        </section>
-      )}
-      {h.show_best_sellers && (
-        <section className="section best-sellers-section">
-          <LuxuryHero3DBackground objectPosition="center 36%" />
-          <div className="container">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">THE BOUTIQUE FAVOURITES</p>
-                <h2>
-                  Pieces to <em>fall for.</em>
-                </h2>
-              </div>
-              <Link className="text-link" href="/shop?best=true">
-                Explore the edit <ArrowUpRight size={16} />
-              </Link>
-            </div>
-            {best.products.length ? (
-              <div className="product-grid">
-                {best.products.map((p) => (
-                  <ProductCard
-                    key={p.id}
-                    product={p}
-                    threshold={store.low_stock_threshold}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="empty-state">
-                Pieces will be added to favourites soon.
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-      {h.show_promo && h.promo_image && (
-        <section className="promo container">
-          <Image
-            src={imageUrl(h.promo_image)}
-            alt={h.promo_heading}
-            fill
-            sizes="(max-width: 600px) 700px, 90vw"
-          />
-          <div className="hero-shade" />
-          <div>
-            <p className="eyebrow light">A MOMENT TO MAKE YOUR OWN</p>
-            <h2>{h.promo_heading}</h2>
-            <p>{h.promo_subtitle}</p>
-            <Link className="button gold-outline" href={h.promo_url}>
-              {h.promo_text}
-              <ArrowUpRight size={16} />
-            </Link>
-          </div>
-        </section>
+        <LuxuryHero3DBackground
+          categories={categories}
+          arrivals={arrivals.products}
+          lowStockThreshold={store.low_stock_threshold}
+          showArrivals={h.show_new_arrivals}
+          featured={featured}
+          featuredTitle={h.featured_title}
+          featuredDescription={h.featured_description || featured?.description}
+          featuredImage={h.featured_image || featured?.image}
+          showFeatured={h.show_featured && !!featured}
+          bestSellers={best.products}
+          showBestSellers={h.show_best_sellers}
+          promoImage={h.promo_image}
+          promoHeading={h.promo_heading}
+          promoSubtitle={h.promo_subtitle}
+          promoText={h.promo_text}
+          promoUrl={h.promo_url}
+          showPromo={h.show_promo && !!h.promo_image}
+        />
       )}
       <section className="section why-section">
         <div className="container">

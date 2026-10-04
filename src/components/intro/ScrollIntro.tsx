@@ -58,13 +58,28 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
       lastScroll = 0,
       drawn = "",
       resized = true;
+    let lastFadeStr = "",
+      lastActiveStr = "",
+      lastPhaseStr = "",
+      lastRevealStr = "",
+      lastVideoOpStr = "";
 
     const request = () => {
       if (!disposed && !raf) raf = requestAnimationFrame(render);
     };
     const synchronize = () => {
+      const scrollY = Math.max(0, window.scrollY);
+      const introEnd = start + distance + frontDistance;
+      // Fast bypass: if user has already scrolled past the intro, skip all work
+      if (
+        progress >= 1 &&
+        scrollY > introEnd + 50 &&
+        section.dataset.active === "false"
+      ) {
+        return;
+      }
       const phases = introProgress(
-        window.scrollY - start,
+        scrollY - start,
         frontDistance,
         distance,
       );
@@ -74,19 +89,26 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
         ? frames.frameCount - 1
         : scrollFrame(progress, frames);
       cache?.setTarget(target, motion.matches);
+      const fadeStart = frames.scroll.fadeStart ?? 0.94;
       const fade = motion.matches
         ? 0
-        : clamp(
-            (progress - frames.scroll.fadeStart) /
-              (1 - frames.scroll.fadeStart),
-          );
-      section.style.setProperty("--intro-opacity", String(1 - fade));
-      section.dataset.active = String(
+        : clamp((progress - fadeStart) / (1 - fadeStart));
+      const smoothFade = fade * fade * (3 - 2 * fade);
+      const fadeStr = (1 - smoothFade).toFixed(3);
+      if (lastFadeStr !== fadeStr) {
+        lastFadeStr = fadeStr;
+        section.style.setProperty("--intro-opacity", fadeStr);
+      }
+      const activeStr = String(
         motion.matches
-          ? window.scrollY - start < section.offsetHeight
+          ? scrollY - start < section.offsetHeight
           : progress < 1,
       );
-      section.dataset.phase = motion.matches
+      if (lastActiveStr !== activeStr) {
+        lastActiveStr = activeStr;
+        section.dataset.active = activeStr;
+      }
+      const phaseStr = motion.matches
         ? "static"
         : frontProgress === 0
           ? "welcome"
@@ -95,11 +117,19 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
             : progress >= 1
               ? "store"
               : "video";
-      front.inert = !motion.matches && frontProgress === 1;
-      videoStage.inert = !motion.matches && frontProgress < 1;
+      if (lastPhaseStr !== phaseStr) {
+        lastPhaseStr = phaseStr;
+        section.dataset.phase = phaseStr;
+      }
+      const frontInert = !motion.matches && frontProgress === 1;
+      if (front.inert !== frontInert) front.inert = frontInert;
+      const stageInert = !motion.matches && frontProgress < 1;
+      if (videoStage.inert !== stageInert) videoStage.inert = stageInert;
       // Keep hidden ecommerce controls out of keyboard navigation until revealed.
-      if (store)
-        store.inert = !motion.matches && progress < frames.scroll.fadeStart;
+      if (store) {
+        const storeInert = !motion.matches && progress < frames.scroll.fadeStart;
+        if (store.inert !== storeInert) store.inert = storeInert;
+      }
       request();
     };
     const geometry = () => {
@@ -130,7 +160,7 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
       }
       width = videoStage.clientWidth;
       height = videoStage.clientHeight;
-      start = section.getBoundingClientRect().top + window.scrollY;
+      start = section.getBoundingClientRect().top + Math.max(0, window.scrollY);
       // svh controls physical scroll distance; dvh controls only the visible
       // stage. Address-bar changes must not advance either scroll timeline.
       frontDistance = Math.max(
@@ -152,19 +182,33 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
     };
     function render(now: number) {
       raf = 0;
+      if (progress >= 1 && section.dataset.active === "false") {
+        current = target;
+        return;
+      }
       const dt = Math.min(32, now - (lastTick || now - 16.67));
       lastTick = now;
       const reveal = frontProgress * frontProgress * (3 - 2 * frontProgress);
-      section.style.setProperty("--intro-front-opacity", String(1 - reveal));
-      section.style.setProperty(
-        "--intro-video-opacity",
-        String(motion.matches || frontProgress > 0 ? 1 : 0),
-      );
-      // Brief frame interpolation follows native scroll; settle within 100ms
-      // of the final scroll event, so no independent timeline keeps running.
-      if (motion.matches || now - lastScroll > 100) current = target;
-      else current += (target - current) * (1 - Math.pow(0.8, dt / 16.67));
-      if (Math.abs(target - current) < 0.2) current = target;
+      const revealStr = (1 - reveal).toFixed(3);
+      if (lastRevealStr !== revealStr) {
+        lastRevealStr = revealStr;
+        section.style.setProperty("--intro-front-opacity", revealStr);
+      }
+      const videoOpStr = String(motion.matches || frontProgress > 0 ? 1 : 0);
+      if (lastVideoOpStr !== videoOpStr) {
+        lastVideoOpStr = videoOpStr;
+        section.style.setProperty("--intro-video-opacity", videoOpStr);
+      }
+      // Responsive frame catch-up: prioritize user scroll velocity so fast scrolling stays in cache window
+      const diff = target - current;
+      const absDiff = Math.abs(diff);
+      if (motion.matches || now - lastScroll > 60 || absDiff < 0.4) {
+        current = target;
+      } else {
+        const factor = absDiff > 5 ? 0.75 : absDiff > 2 ? 0.55 : 0.4;
+        current += diff * Math.min(1, factor * (dt / 16.67));
+        if (Math.abs(target - current) < 0.25) current = target;
+      }
       let source = cache;
       let frame = cache.nearest(Math.round(current));
       if (previous && (!frame || frame.index !== Math.round(target))) {
@@ -281,9 +325,18 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
       }
       if (current !== target) request();
     }
+    let isIntroVisible = true;
+    let introScrollRaf = 0;
     const scroll = () => {
       lastScroll = performance.now();
-      synchronize();
+      const introEnd = start + frontDistance + distance;
+      // Skip only when scrolled well beyond intro boundary and intro is already deactivated
+      if (window.scrollY > introEnd + 250 && section.dataset.active === "false") return;
+      if (introScrollRaf) return;
+      introScrollRaf = requestAnimationFrame(() => {
+        introScrollRaf = 0;
+        synchronize();
+      });
     };
     const restore = () => {
       geometry();
@@ -297,6 +350,21 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
     observer.observe(section);
     observer.observe(section.querySelector(".intro-sticky")!);
     observer.observe(videoStage);
+
+    const intersectionObserver = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          isIntroVisible = entry.isIntersecting;
+          if (isIntroVisible) {
+            synchronize();
+            request();
+          }
+        }
+      },
+      { rootMargin: "300px 0px" },
+    );
+    intersectionObserver.observe(section);
+
     geometry();
     current = target;
     window.addEventListener("scroll", scroll, { passive: true });
@@ -310,7 +378,9 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
     return () => {
       disposed = true;
       cancelAnimationFrame(raf);
+      if (introScrollRaf) cancelAnimationFrame(introScrollRaf);
       observer.disconnect();
+      intersectionObserver.disconnect();
       window.removeEventListener("scroll", scroll);
       window.removeEventListener("resize", geometry);
       window.removeEventListener("pageshow", restore);

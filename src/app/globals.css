@@ -18,21 +18,29 @@
 * {
   box-sizing: border-box;
 }
-@media (prefers-reduced-motion: no-preference) {
-  html:focus-within {
-    scroll-behavior: smooth;
-  }
+html {
+  scroll-behavior: auto;
+}
+/* Prevent elastic overscroll bounce from pulling the viewport and revealing white padding above the top fold */
+html,
+body {
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
 }
 /* Native scrolling drives the homepage canvas. The opaque sticky field covers
    the store until the final hold; one-viewport overlap avoids an empty release. */
 html:has(.home-experience),
 body:has(.home-experience) {
   background: #fffcef;
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
 }
 .home-experience {
   --intro-stable-vh: 1vh;
   --intro-visible-vh: 1vh;
   isolation: isolate;
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
 }
 /* Keep fallback units outside the feature queries. The CSS optimizer can
    remove duplicate height declarations, but cannot erase this fallback. */
@@ -60,6 +68,8 @@ body:has(.home-experience) {
   pointer-events: none;
   /* Media resizing must not feed browser anchoring back into scroll progress. */
   overflow-anchor: none;
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
 }
 .intro-sticky {
   position: sticky;
@@ -367,6 +377,8 @@ body:has(.home-experience) {
 }
 body {
   margin: 0;
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
   background: var(--ivory);
   color: var(--ink);
   font-family: var(--font-body), sans-serif;
@@ -836,7 +848,7 @@ textarea:focus-visible {
   inset: 0;
   overflow: hidden;
   pointer-events: none;
-  z-index: 1;
+  z-index: 0;
 }
 
 .luxury-hero-backdrop-img {
@@ -844,9 +856,15 @@ textarea:focus-visible {
   inset: -3% -3% -3% -3%;
   width: 106%;
   height: 106%;
-  transition: transform 0.18s cubic-bezier(0.2, 0, 0.2, 1);
-  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
   pointer-events: none;
+}
+
+.luxury-hero-video-element {
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .luxury-hero-img-element {
@@ -888,10 +906,250 @@ textarea:focus-visible {
   width: 100%;
   height: 100%;
   pointer-events: none;
+  z-index: 1;
+}
+
+/* Master Cinematic Scroll-Driven Experience */
+.cinematic-scroll-section {
+  position: relative;
+  height: 520vh;
+  background: #f7f4ed;
+  overflow-anchor: none;
+}
+
+.cinematic-sticky-stage {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: #f7f4ed;
+}
+
+.cinematic-foreground-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.cinematic-stage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 32px 0;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate3d(0, 36px, 0);
+  contain: layout style;
+  visibility: hidden;
+  will-change: transform, opacity;
+}
+
+.cinematic-stage[data-active="true"] {
+  pointer-events: auto;
+  visibility: visible;
+}
+
+.cinematic-heading {
+  font-size: clamp(44px, 5.2vw, 76px);
+  line-height: 1.05;
+  letter-spacing: -1.2px;
+  margin-top: 8px;
+  margin-bottom: 18px;
+}
+
+.cinematic-heading em {
+  color: var(--green);
+}
+
+.cinematic-subheading {
+  font-size: clamp(12px, 1.2vw, 15px);
+  max-width: 540px;
+  margin: 0 auto;
+  color: #555d52;
+  line-height: 1.85;
+}
+
+/* Featured Occasion Edit Card (Stage 4) */
+.cinematic-featured-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+  max-width: 1080px;
+  min-height: 480px;
+  max-height: 82vh;
+  background: #0f1d15;
+  color: #f2efe4;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
+  transform: translateZ(0);
+  contain: paint;
+}
+
+.cinematic-featured-image {
+  position: relative;
+  min-height: 480px;
+  overflow: clip;
+}
+
+.cinematic-featured-image img {
+  object-fit: cover;
+  object-position: 50% 28%;
+}
+
+.cinematic-featured-content {
+  position: relative;
+  padding: 56px 48px;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.cinematic-featured-content h2 {
+  font-size: clamp(34px, 3.8vw, 56px);
+  max-width: 380px;
+  line-height: 1.05;
+}
+
+.cinematic-featured-content .gold-line {
+  width: 40px;
+  height: 1px;
+  background: var(--gold);
+  margin: 20px 0;
+}
+
+.cinematic-featured-content > p:not(.eyebrow) {
+  font-size: 13px;
+  color: #aebcaf;
+  margin-bottom: 24px;
+  max-width: 320px;
+  line-height: 1.7;
+}
+
+.cinematic-featured-content .featured-decoration {
+  position: absolute;
+  bottom: 30px;
+  right: 32px;
+  color: #667849;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* Promo Edit Card (Stage 6) */
+.cinematic-promo-card {
+  position: relative;
+  width: 100%;
+  min-height: 400px;
+  max-height: 78vh;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.2);
+  transform: translateZ(0);
+  contain: paint;
+}
+
+.cinematic-promo-card img {
+  object-fit: cover;
+  object-position: center;
+}
+
+.cinematic-promo-content {
+  position: relative;
   z-index: 2;
+  padding: 40px 24px;
+  max-width: 640px;
+  color: #fff;
+}
+
+.cinematic-promo-content h2 {
+  font-size: clamp(32px, 3.8vw, 52px);
+  line-height: 1.1;
+  margin: 12px 0 16px;
+  color: #f7f4ed;
+}
+
+.cinematic-promo-content p:not(.eyebrow) {
+  font-size: 14px;
+  color: #e5e0d6;
+  margin-bottom: 24px;
+  line-height: 1.7;
 }
 
 @media (max-width: 767px) {
+  .cinematic-scroll-section {
+    height: 480vh;
+  }
+  .cinematic-heading {
+    font-size: 36px;
+    margin-bottom: 12px;
+  }
+  .cinematic-stage {
+    padding: 16px 0;
+  }
+  .cinematic-stage .container {
+    width: calc(100% - 28px);
+  }
+  .cinematic-stage .section-heading {
+    margin-bottom: 12px;
+  }
+  .cinematic-stage .category-grid {
+    gap: 12px 10px;
+  }
+  .cinematic-stage .product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px 10px;
+  }
+  .cinematic-stage .category-image {
+    aspect-ratio: 4/4.2;
+  }
+  .cinematic-stage .category-card h3 {
+    font-size: 20px;
+    margin-top: 8px;
+  }
+  .cinematic-stage .product-info h3 {
+    font-size: 17px;
+  }
+  .cinematic-featured-card {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    max-height: 84vh;
+    overflow-y: auto;
+  }
+  .cinematic-featured-image {
+    min-height: 220px;
+    height: 220px;
+  }
+  .cinematic-featured-content {
+    padding: 24px 20px;
+  }
+  .cinematic-featured-content h2 {
+    font-size: 28px;
+  }
+  .cinematic-promo-card {
+    min-height: 320px;
+  }
+  .cinematic-promo-content {
+    padding: 24px 16px;
+  }
+  .cinematic-promo-content h2 {
+    font-size: 26px;
+  }
   .categories-section,
   .arrivals-section,
   .best-sellers-section {
@@ -905,6 +1163,31 @@ textarea:focus-visible {
       rgba(247, 244, 237, 0.22) 55%,
       rgba(247, 244, 237, 0.06) 100%
     );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cinematic-scroll-section {
+    height: auto !important;
+  }
+  .cinematic-sticky-stage {
+    position: relative !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .cinematic-foreground-container {
+    position: relative !important;
+    height: auto !important;
+    pointer-events: auto !important;
+  }
+  .cinematic-stage {
+    position: relative !important;
+    height: auto !important;
+    opacity: 1 !important;
+    transform: none !important;
+    pointer-events: auto !important;
+    padding: 48px 0 !important;
+    visibility: visible !important;
   }
 }
 .category-grid {

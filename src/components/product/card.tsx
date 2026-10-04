@@ -43,7 +43,8 @@ export function ProductCard({
             src={imageUrl(images[1].storage_path)}
             alt={images[1].alt_text || p.name}
             fill
-            sizes="25vw"
+            loading="lazy"
+            sizes="(max-width: 600px) 48vw, (max-width: 1000px) 32vw, 25vw"
           />
         )}
         <span className={`product-badge ${!stock ? "sold-out" : ""}`}>
