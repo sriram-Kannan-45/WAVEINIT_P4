@@ -53,13 +53,13 @@ export class IntroFrameCache {
   private priority() {
     const order = [this.target];
     if (!this.reduced) {
-      for (let d = 1; d <= 6; d++)
-        order.push(
-          this.target + d * this.direction,
-          this.target - d * this.direction,
-        );
+      const ahead = this.mode === "mobile" ? 10 : 24;
+      const behind = this.mode === "mobile" ? 4 : 8;
+      for (let d = 1; d <= ahead; d++)
+        order.push(this.target + d * this.direction);
+      for (let d = 1; d <= behind; d++)
+        order.push(this.target - d * this.direction);
       order.push(0, this.metadata.frameCount - 1);
-      for (let i = 0; i < 20; i++) order.push(i);
       for (let i = 0; i < this.metadata.frameCount; i++) order.push(i);
     }
     return [...new Set(order)].filter(
@@ -68,7 +68,7 @@ export class IntroFrameCache {
   }
 
   private trim() {
-    const capacity = this.mode === "mobile" ? 12 : 16;
+    const capacity = this.mode === "mobile" ? 12 : 36;
     const keep = new Set(this.priority().slice(0, capacity));
     for (const [index, image] of this.images) {
       if (!keep.has(index)) {
@@ -82,12 +82,15 @@ export class IntroFrameCache {
   private pump() {
     if (this.stopped) return;
     const order = this.priority();
+    const decodeCapacity = this.mode === "mobile" ? 12 : 36;
+    const decodeLimit = this.mode === "mobile" ? 2 : 4;
+    const fetchLimit = this.mode === "mobile" ? 3 : 6;
     // Decode nearby frames only, and never decode the whole sequence at once.
     for (const index of order.slice(
       0,
-      this.reduced ? 1 : this.mode === "mobile" ? 12 : 16,
+      this.reduced ? 1 : decodeCapacity,
     )) {
-      if (this.decoding.size >= 2) break;
+      if (this.decoding.size >= decodeLimit) break;
       if (
         this.blobs.has(index) &&
         !this.images.has(index) &&
@@ -97,7 +100,7 @@ export class IntroFrameCache {
         void this.decode(index);
     }
     for (const index of order) {
-      if (this.fetching.size >= 3) break;
+      if (this.fetching.size >= fetchLimit) break;
       if (
         !this.blobs.has(index) &&
         !this.fetching.has(index) &&
@@ -135,16 +138,9 @@ export class IntroFrameCache {
       const blob = this.blobs.get(index)!;
       if (typeof createImageBitmap === "function") {
         try {
-          image = await createImageBitmap(blob, {
-            resizeQuality: "high",
-            imageOrientation: "from-image",
-          });
+          image = await createImageBitmap(blob);
         } catch {
-          try {
-            image = await createImageBitmap(blob);
-          } catch {
-            /* Older Safari falls back to Image.decode. */
-          }
+          /* Older Safari falls back to Image.decode. */
         }
       }
       if (!image) {

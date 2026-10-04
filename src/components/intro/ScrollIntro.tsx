@@ -204,11 +204,12 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
             media.style.setProperty("--intro-poster-left", `${bounds.x}px`);
             media.style.setProperty("--intro-poster-top", `${bounds.y}px`);
           }
-          const maxRatio = portraitFit(width, height) ? 3 : 2;
+          const isPortrait = portraitFit(width, height);
+          const maxRatio = isPortrait ? 3 : 1;
           const ratio = Math.min(
             window.devicePixelRatio || 1,
             maxRatio,
-            Math.sqrt(5_000_000 / (width * height)),
+            isPortrait ? Math.sqrt(5_000_000 / (width * height)) : 1,
           );
           const pixelWidth = Math.round(width * ratio);
           const pixelHeight = Math.round(height * ratio);
@@ -225,7 +226,7 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
             0,
           );
           context.imageSmoothingEnabled = true;
-          context.imageSmoothingQuality = "high";
+          context.imageSmoothingQuality = isPortrait ? "high" : "medium";
           context.fillStyle = frames.background;
           context.fillRect(0, 0, width, height);
           context.drawImage(
