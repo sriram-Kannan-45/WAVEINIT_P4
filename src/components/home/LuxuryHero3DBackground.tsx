@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, Flower2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import type { Product, Taxonomy } from "@/types";
-import { imageUrl } from "@/lib/utils";
-import { ProductCard } from "@/components/product/card";
 
 interface Petal {
   x: number;
@@ -27,22 +25,9 @@ interface Petal {
 
 interface PetalSprite {
   image: HTMLCanvasElement;
-  /** Side length in CSS pixels, including blur bleed. */
   box: number;
 }
 
-/** Baked depth-of-field petals, keyed by silhouette size, shading and blur.
- *
- * `ctx.filter = "blur()"` is not a cheap draw hint: every filtered call makes
- * Skia allocate a full offscreen surface sized to the current clip and run a
- * separable Gaussian pass over it, at the backing-store resolution. On a Retina
- * laptop the categories canvas is ~3.7 megapixels, so ~12 blurred petals per
- * frame meant tens of megapixels of blur every frame and the scroll handler
- * starved. Baking each silhouette once turns that into a 1:1 blit while keeping
- * the identical path, gradient and blur radius.
- *
- * The cache is bounded by construction: size = round(petal.size * depthScale)
- * lands in 6..37, and alpha/blur take three fixed combinations. */
 const PETAL_SPRITES = new Map<string, PetalSprite>();
 
 function petalSprite(
@@ -55,7 +40,6 @@ function petalSprite(
   const cached = PETAL_SPRITES.get(key);
   if (cached) return cached;
 
-  // Leave room for the blur kernel so the baked edge is not clipped.
   const pad = blur ? Math.ceil(blur * 3) + 1 : 0;
   const box = Math.ceil(size * 2) + pad * 2;
   const image = document.createElement("canvas");
@@ -67,12 +51,10 @@ function petalSprite(
     PETAL_SPRITES.set(key, fallback);
     return fallback;
   }
-  // Render at device resolution so the blit is 1:1 and stays crisp on Retina.
   sprite.scale(dpr, dpr);
   sprite.translate(box / 2, box / 2);
   if (blur) sprite.filter = `blur(${blur}px)`;
 
-  // Elegant organic petal silhouette (delicate white mogra / jasmine petal)
   sprite.beginPath();
   sprite.moveTo(0, -size);
   sprite.bezierCurveTo(
@@ -93,7 +75,6 @@ function petalSprite(
   );
   sprite.closePath();
 
-  // Shading gradient: pure silky ivory with subtle warm champagne reflection
   const grad = sprite.createLinearGradient(0, -size, 0, size);
   grad.addColorStop(0, `rgba(255, 255, 255, ${alpha})`);
   grad.addColorStop(0.4, `rgba(253, 250, 242, ${alpha * 0.95})`);
@@ -102,7 +83,6 @@ function petalSprite(
   sprite.fillStyle = grad;
   sprite.fill();
 
-  // Delicate subtle petal vein highlight
   sprite.beginPath();
   sprite.moveTo(0, -size * 0.75);
   sprite.quadraticCurveTo(size * 0.08, 0, 0, size * 0.65);
@@ -115,64 +95,125 @@ function petalSprite(
   return baked;
 }
 
+export interface OutfitItem {
+  id: string;
+  number: string;
+  category: string;
+  title: string;
+  image: string;
+  href: string;
+  width: number;
+  height: number;
+}
+
+export const CAMPAIGN_OUTFITS: OutfitItem[] = [
+  {
+    id: "saree",
+    number: "01",
+    category: "Sarees",
+    title: "Emerald Silk Saree",
+    image: "/pic/Elegant Emerald Green Saree Portrait.webp",
+    href: "/shop?category=sarees",
+    width: 1024,
+    height: 1536,
+  },
+  {
+    id: "kurti",
+    number: "02",
+    category: "Kurtis",
+    title: "Ivory Embroidered Kurta Set",
+    image: "/pic/Elegant Ivory Embroidered Anarkali Portrait.webp",
+    href: "/shop?category=kurtis",
+    width: 1024,
+    height: 1536,
+  },
+  {
+    id: "top",
+    number: "03",
+    category: "Tops",
+    title: "Wine Occasion Ensemble",
+    image: "/pic/Maroon Embroidered Anarkali Portrait.webp",
+    href: "/shop?category=tops",
+    width: 1024,
+    height: 1536,
+  },
+  {
+    id: "leggings",
+    number: "04",
+    category: "Leggings",
+    title: "Navy Festive Suit Set",
+    image: "/pic/Elegant Navy Indian Ensemble.webp",
+    href: "/shop?category=leggings",
+    width: 1024,
+    height: 1536,
+  },
+  {
+    id: "ethnic",
+    number: "05",
+    category: "Ethnic Wear",
+    title: "Lavender Lilac Palazzo Set",
+    image: "/pic/Lavender Embroidered Anarkali Portrait.webp",
+    href: "/shop?category=ethnic-wear",
+    width: 1024,
+    height: 1536,
+  },
+];
+
 interface LuxuryHero3DBackgroundProps {
   categories?: Taxonomy[];
   arrivals?: Product[];
   lowStockThreshold?: number;
-  showArrivals?: boolean;
-  featured?: Taxonomy;
-  featuredTitle?: string;
-  featuredDescription?: string;
-  featuredImage?: string;
-  showFeatured?: boolean;
-  bestSellers?: Product[];
-  showBestSellers?: boolean;
-  promoImage?: string;
-  promoHeading?: string;
-  promoSubtitle?: string;
-  promoText?: string;
-  promoUrl?: string;
-  showPromo?: boolean;
-  priority?: boolean;
   objectPosition?: string;
 }
 
 export function LuxuryHero3DBackground({
-  categories = [],
-  arrivals = [],
-  lowStockThreshold = 3,
-  showArrivals = true,
-  featured,
-  featuredTitle = "Made for memorable moments.",
-  featuredDescription = "Explore our occasion edit.",
-  featuredImage,
-  showFeatured = true,
-  bestSellers = [],
-  showBestSellers = true,
-  promoImage,
-  promoHeading = "Your next occasion,\nyour own expression.",
-  promoSubtitle = "Discover the collection and find a piece that feels like you.",
-  promoText = "Discover the edit",
-  promoUrl = "/collections",
-  showPromo = false,
-  priority = false,
   objectPosition = "center 36%",
 }: LuxuryHero3DBackgroundProps = {}) {
   const containerRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const stage1Ref = useRef<HTMLDivElement>(null);
-  const stage2Ref = useRef<HTMLDivElement>(null);
-  const stage3Ref = useRef<HTMLDivElement>(null);
-  const stage4Ref = useRef<HTMLDivElement>(null);
-  const stage5Ref = useRef<HTMLDivElement>(null);
-  const stage6Ref = useRef<HTMLDivElement>(null);
   const prefersReducedMotionRef = useRef(false);
   const mouseRef = useRef({ x: 0, y: 0, targetX: 0, targetY: 0 });
 
+  const cutoutLayersRef = useRef<(HTMLDivElement | null)[]>([]);
+  const cutoutImagesRef = useRef<(HTMLImageElement | null)[]>([]);
+  const preloadedImagesRef = useRef<Set<number>>(new Set());
+  const paginationDotsRef = useRef<(HTMLButtonElement | null)[]>([]);
+  const timelineItemsRef = useRef<(HTMLButtonElement | null)[]>([]);
+  const timelineFillRef = useRef<HTMLDivElement | null>(null);
+
+  // Jump to specific outfit when clicking an indicator
+  const scrollToOutfit = useCallback((index: number) => {
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const scrollY = window.scrollY;
+    const viewportH = window.innerHeight;
+    const scrollDist = Math.max(1, rect.height - viewportH);
+    const targetProgressVal = (index + 0.5) / CAMPAIGN_OUTFITS.length;
+    const targetY = rect.top + scrollY + targetProgressVal * scrollDist;
+    window.scrollTo({ top: targetY, behavior: "smooth" });
+  }, []);
+
+  // Pre-decode all 5 outfit images off-thread to eliminate first-visibility decode lag
   useEffect(() => {
-    // Check reduced motion
+    CAMPAIGN_OUTFITS.forEach((outfit, idx) => {
+      // 1. Offscreen Image decode to prime browser image cache with exact WebP source
+      const offscreen = new window.Image();
+      offscreen.src = outfit.image;
+      if (typeof offscreen.decode === "function") {
+        offscreen.decode().catch(() => {});
+      }
+      // 2. Decode the mounted DOM <img> element directly
+      const domImg = cutoutImagesRef.current[idx];
+      if (domImg && typeof domImg.decode === "function") {
+        domImg.decode().catch(() => {});
+      }
+    });
+  }, []);
+
+  useEffect(() => {
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     prefersReducedMotionRef.current = motionQuery.matches;
     const handleMotionChange = (e: MediaQueryListEvent) => {
@@ -194,16 +235,14 @@ export function LuxuryHero3DBackground({
     let width = 0;
     let height = 0;
     let dpr = 1;
-    // Infinity sentinel so the first parallax write always lands (NaN comparisons
-    // are always false and would suppress it).
     let lastShiftX = Number.POSITIVE_INFINITY;
     let lastShiftY = Number.POSITIVE_INFINITY;
+    let lastTick = 0;
 
-    // Petal initialization
     const getPetalCount = (w: number) => {
-      if (w < 768) return 8; // Mobile: light footprint
-      if (w < 1024) return 14; // Tablet
-      return 16; // Desktop: silky smooth & light
+      if (w < 768) return 6;
+      if (w < 1024) return 12;
+      return 16;
     };
 
     let petals: Petal[] = [];
@@ -213,7 +252,7 @@ export function LuxuryHero3DBackground({
       petals = Array.from({ length: count }, (_, i) => ({
         x: Math.random() * width,
         y: Math.random() * height,
-        z: (Math.random() - 0.3) * 120, // -36 to 84 depth
+        z: (Math.random() - 0.3) * 120,
         size: 9 + Math.random() * 11,
         rotation: Math.random() * Math.PI * 2,
         rotSpeed: (Math.random() - 0.5) * 0.015,
@@ -228,13 +267,25 @@ export function LuxuryHero3DBackground({
       }));
     };
 
-    // Container box in document coordinates cached on resize to eliminate
-    // forced layout recalculations during scrolling.
-    let box = { left: 0, top: 0, width: 1, height: 1 };
+    let sectionTop = 0;
+    let scrollDistance = 1;
+    // Flag: refresh geometry once when user first scrolls into the hero section.
+    // This corrects any stale sectionTop from mount-time measurement (before intro
+    // layout fully settles with fonts/images loaded).
+    let hasRefreshedGeometryOnApproach = false;
+
+    const updateGeometry = () => {
+      if (!container) return;
+      const rect = container.getBoundingClientRect();
+      sectionTop = rect.top + window.scrollY;
+      const vh = window.innerHeight;
+      scrollDistance = Math.max(1, rect.height - vh);
+    };
+
     let updateScrollProgress: () => void = () => {};
 
     const resize = () => {
-      const isMobile = mobileQuery.matches;
+      const isMobileMatch = mobileQuery.matches;
       const stickyStage = container.querySelector<HTMLElement>(
         ".cinematic-sticky-stage",
       );
@@ -243,15 +294,7 @@ export function LuxuryHero3DBackground({
         : container.getBoundingClientRect();
       width = stageRect.width || window.innerWidth;
       height = stageRect.height || window.innerHeight;
-      // Cap DPR to conserve fill-rate on Retina and high-DPI mobile screens
-      dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.25 : 1.5);
-      const rect = container.getBoundingClientRect();
-      box = {
-        left: rect.left + window.scrollX,
-        top: rect.top + window.scrollY,
-        width: rect.width,
-        height: rect.height,
-      };
+      dpr = Math.min(window.devicePixelRatio || 1, isMobileMatch ? 1 : 1.5);
 
       canvas.width = Math.floor(width * dpr);
       canvas.height = Math.floor(height * dpr);
@@ -259,6 +302,7 @@ export function LuxuryHero3DBackground({
       canvas.style.height = `${height}px`;
 
       initPetals();
+      updateGeometry();
       updateScrollProgress();
     };
 
@@ -267,7 +311,7 @@ export function LuxuryHero3DBackground({
 
     // Mouse parallax tracking (desktop only)
     const handleMouseMove = (e: MouseEvent) => {
-      if (mobileQuery.matches) return; // Completely bypass on mobile
+      if (mobileQuery.matches) return;
       const x = (e.clientX / window.innerWidth - 0.5) * 2;
       const y = (e.clientY / window.innerHeight - 0.5) * 2;
       mouseRef.current.targetX = Math.max(-1, Math.min(1, x));
@@ -282,23 +326,15 @@ export function LuxuryHero3DBackground({
     window.addEventListener("mousemove", handleMouseMove, { passive: true });
     container.addEventListener("mouseleave", handleMouseLeave);
 
-    // Dynamic loop control functions declared for observer and unmount
     let startAnimationLoop = () => {};
     let stopAnimationLoop = () => {};
 
-    // Visibility observer to pause canvas loop and seeks when offscreen
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
           isVisible = entry.isIntersecting;
           if (isVisible) {
-            const rect = container.getBoundingClientRect();
-            box = {
-              left: rect.left + window.scrollX,
-              top: rect.top + window.scrollY,
-              width: rect.width,
-              height: rect.height,
-            };
+            updateGeometry();
             updateScrollProgress();
             startAnimationLoop();
           } else {
@@ -311,28 +347,27 @@ export function LuxuryHero3DBackground({
     observer.observe(container);
 
     // -------------------------------------------------------------
-    // Responsive Scroll-Controlled Cinematic Video Controller
+    // Responsive Scroll-Controlled Master Video Controller
     // -------------------------------------------------------------
     const video = videoRef.current;
     let currentSrc = "";
-    let duration = 0;
+    let duration = 10.0;
     let isSeeking = false;
     let pendingTime: number | null = null;
     let lastSoughtFrame = -1;
     let lastSeekTime = 0;
-    const SEEK_THROTTLE_MS = 33; // 30fps seek throttle, perfectly matching video's native 24fps
-    let scheduledSeekRaf = 0;
     let currentProgress = 0;
     let targetProgress = 0;
     let hasInitialProgress = false;
     let isScrolling = false;
     let scrollStopTimer: ReturnType<typeof setTimeout> | null = null;
-    let lastProgressDiff = 0;
-    const frameDuration = 1 / 24;
+    const isMobileDevice = mobileQuery.matches;
+    const targetFps = isMobileDevice ? 18 : 30;
+    const frameDuration = 1 / targetFps;
 
     const getVideoSrc = (matchesMobile: boolean) =>
       matchesMobile
-        ? "/videos/mobile-resolution.mp4"
+        ? "/videos/Mobile.mp4"
         : "/videos/laptop-resolution.mp4";
 
     const executeSeek = (quantizedTime: number) => {
@@ -340,6 +375,13 @@ export function LuxuryHero3DBackground({
       isSeeking = true;
       lastSeekTime = performance.now();
       try {
+        const videoWithFastSeek = video as HTMLVideoElement & {
+          fastSeek?: (time: number) => void;
+        };
+        if (typeof videoWithFastSeek.fastSeek === "function") {
+          videoWithFastSeek.fastSeek(quantizedTime);
+          return;
+        }
         video.currentTime = quantizedTime;
       } catch {
         isSeeking = false;
@@ -347,8 +389,10 @@ export function LuxuryHero3DBackground({
     };
 
     const performSeek = (targetTime: number) => {
-      if (!video || !duration || isNaN(duration)) return;
-      const clamped = Math.max(0, Math.min(duration, targetTime));
+      if (!video) return;
+      const dur = duration > 0 ? duration : 10.0;
+      // Clamp to duration - 0.04 to prevent seeking past EOF which causes freeze or black frames
+      const clamped = Math.max(0, Math.min(dur - 0.04, targetTime));
       const frameIndex = Math.round(clamped / frameDuration);
       if (frameIndex === lastSoughtFrame) return;
 
@@ -357,48 +401,35 @@ export function LuxuryHero3DBackground({
 
       const now = performance.now();
 
-      // Reset isSeeking if a previous seek timed out or browser completed seeking
-      if (isSeeking && (!video.seeking || now - lastSeekTime > 120)) {
+      // Reset isSeeking if browser completed seek or on 300ms watchdog
+      if (isSeeking && (!video.seeking || now - lastSeekTime > 300)) {
         isSeeking = false;
       }
 
-      // If already seeking, hold newest time in pendingTime without flooding decoder
-      if (isSeeking) {
+      const minInterval = mobileQuery.matches ? 70 : 25;
+      if (isSeeking || now - lastSeekTime < minInterval) {
         pendingTime = quantizedTime;
-        return;
-      }
-
-      // 30fps seek throttle
-      if (now - lastSeekTime < SEEK_THROTTLE_MS) {
-        pendingTime = quantizedTime;
-        if (!scheduledSeekRaf) {
-          scheduledSeekRaf = requestAnimationFrame(() => {
-            scheduledSeekRaf = 0;
-            if (pendingTime !== null && !isSeeking) {
-              const next = pendingTime;
-              pendingTime = null;
-              executeSeek(next);
-            }
-          });
-        }
         return;
       }
 
       executeSeek(quantizedTime);
     };
 
+    let seekRafId = 0;
     const handleSeeked = () => {
       isSeeking = false;
       if (pendingTime !== null) {
         const next = pendingTime;
         pendingTime = null;
-        // Schedule next seek on next frame so the compositor has a clear window
-        // to present the frame without decoder lock contention
-        if (!scheduledSeekRaf) {
-          scheduledSeekRaf = requestAnimationFrame(() => {
-            scheduledSeekRaf = 0;
-            performSeek(next);
+        const now = performance.now();
+        const minInterval = mobileQuery.matches ? 70 : 25;
+        if (now - lastSeekTime < minInterval) {
+          if (seekRafId) cancelAnimationFrame(seekRafId);
+          seekRafId = requestAnimationFrame(() => {
+            executeSeek(next);
           });
+        } else {
+          executeSeek(next);
         }
       }
     };
@@ -407,180 +438,279 @@ export function LuxuryHero3DBackground({
       video.muted = true;
       video.playsInline = true;
       video.addEventListener("seeked", handleSeeked);
+      if (video.duration && !isNaN(video.duration) && video.duration > 0) {
+        duration = video.duration;
+      }
     }
 
-    interface StageState {
-      op: string;
-      ty: string;
-      active: string;
-      visible: boolean;
-    }
-    const stageStates = new WeakMap<HTMLElement, StageState>();
+    // Independent Responsive Product Timeline: ENTER -> HOLD -> EXIT for each dress
+    // On mobile, allocates a longer, more stable HOLD viewing phase and slower, more gradual crossfade transitions
+    const computeDressState = (idx: number, p: number, isMobile: boolean) => {
+      // On mobile, hw=0.055 gives a wider, more gradual crossfade (11% total).
+      // On desktop, hw=0.028 keeps crisp, snappy transitions.
+      const hw = isMobile ? 0.055 : 0.028;
+      // Boundaries shifted slightly inward to lengthen each outfit's HOLD window:
+      // 0→0.17 dress-0 hold | 0.17→0.38 dress-1 | 0.38→0.58 dress-2 | 0.58→0.78 dress-3 | 0.78→1 dress-4
+      const b0 = 0.17;
+      const b1 = 0.38;
+      const b2 = 0.58;
+      const b3 = 0.78;
 
-    const applyStageStyle = (
-      el: HTMLElement | null,
-      op: number,
-      ty: number,
-      active: boolean,
-    ) => {
-      if (!el) return;
-      const opStr = op.toFixed(3);
-      const tyStr = ty.toFixed(1);
-      const activeStr = String(active);
-      const isVisibleStage = op > 0.005 || active;
+      // Smootherstep easing function: 6t^5 - 15t^4 + 10t^3 (zero 1st & 2nd derivatives at endpoints)
+      const smootherstep = (t: number) => {
+        const clampedT = Math.max(0, Math.min(1, t));
+        return clampedT * clampedT * clampedT * (clampedT * (clampedT * 6 - 15) + 10);
+      };
 
-      const prev = stageStates.get(el);
-      if (
-        prev &&
-        prev.op === opStr &&
-        prev.ty === tyStr &&
-        prev.active === activeStr &&
-        prev.visible === isVisibleStage
-      ) {
-        return;
+      // Gentle vertical translation cues:
+      // On mobile: subtle 6px entry, -5px exit (avoids visual jumping on narrow phone screens)
+      // On desktop: 16px entry, -12px exit
+      const enterOffset = isMobile ? 6 : 16;
+      const exitOffset = isMobile ? -5 : -12;
+
+      let opacity = 0;
+      let offsetY = 0;
+
+      if (idx === 0) {
+        if (p <= b0 - hw) {
+          // Solid, extended HOLD
+          opacity = 1;
+          offsetY = 0;
+        } else if (p < b0 + hw) {
+          // Slower, gradual EXIT crossfade
+          const t = (p - (b0 - hw)) / (2 * hw);
+          const ease = smootherstep(t);
+          opacity = 1 - ease;
+          offsetY = exitOffset * ease;
+        } else {
+          opacity = 0;
+          offsetY = exitOffset;
+        }
+      } else if (idx === 1) {
+        if (p <= b0 - hw) {
+          opacity = 0;
+          offsetY = enterOffset;
+        } else if (p < b0 + hw) {
+          // Slower, gradual ENTER crossfade
+          const t = (p - (b0 - hw)) / (2 * hw);
+          const ease = smootherstep(t);
+          opacity = ease;
+          offsetY = enterOffset * (1 - ease);
+        } else if (p <= b1 - hw) {
+          // Solid, extended HOLD phase
+          opacity = 1;
+          offsetY = 0;
+        } else if (p < b1 + hw) {
+          // Slower, gradual EXIT crossfade
+          const t = (p - (b1 - hw)) / (2 * hw);
+          const ease = smootherstep(t);
+          opacity = 1 - ease;
+          offsetY = exitOffset * ease;
+        } else {
+          opacity = 0;
+          offsetY = exitOffset;
+        }
+      } else if (idx === 2) {
+        if (p <= b1 - hw) {
+          opacity = 0;
+          offsetY = enterOffset;
+        } else if (p < b1 + hw) {
+          // Slower, gradual ENTER crossfade
+          const t = (p - (b1 - hw)) / (2 * hw);
+          const ease = smootherstep(t);
+          opacity = ease;
+          offsetY = enterOffset * (1 - ease);
+        } else if (p <= b2 - hw) {
+          // Solid, extended HOLD phase
+          opacity = 1;
+          offsetY = 0;
+        } else if (p < b2 + hw) {
+          // Slower, gradual EXIT crossfade
+          const t = (p - (b2 - hw)) / (2 * hw);
+          const ease = smootherstep(t);
+          opacity = 1 - ease;
+          offsetY = exitOffset * ease;
+        } else {
+          opacity = 0;
+          offsetY = exitOffset;
+        }
+      } else if (idx === 3) {
+        if (p <= b2 - hw) {
+          opacity = 0;
+          offsetY = enterOffset;
+        } else if (p < b2 + hw) {
+          // Slower, gradual ENTER crossfade
+          const t = (p - (b2 - hw)) / (2 * hw);
+          const ease = smootherstep(t);
+          opacity = ease;
+          offsetY = enterOffset * (1 - ease);
+        } else if (p <= b3 - hw) {
+          // Solid, extended HOLD phase
+          opacity = 1;
+          offsetY = 0;
+        } else if (p < b3 + hw) {
+          // Slower, gradual EXIT crossfade
+          const t = (p - (b3 - hw)) / (2 * hw);
+          const ease = smootherstep(t);
+          opacity = 1 - ease;
+          offsetY = exitOffset * ease;
+        } else {
+          opacity = 0;
+          offsetY = exitOffset;
+        }
+      } else if (idx === 4) {
+        if (p <= b3 - hw) {
+          opacity = 0;
+          offsetY = enterOffset;
+        } else if (p < b3 + hw) {
+          // Slower, gradual ENTER crossfade
+          const t = (p - (b3 - hw)) / (2 * hw);
+          const ease = smootherstep(t);
+          opacity = ease;
+          offsetY = enterOffset * (1 - ease);
+        } else {
+          // Solid, extended HOLD phase
+          opacity = 1;
+          offsetY = 0;
+        }
       }
 
-      stageStates.set(el, {
-        op: opStr,
-        ty: tyStr,
-        active: activeStr,
-        visible: isVisibleStage,
+      return { opacity, offsetY };
+    };
+
+    // Update active outfit metadata and apply scroll-driven ENTER -> HOLD -> EXIT layers (0 React re-renders)
+    let lastActiveIdx = 0;
+    const updateActiveOutfit = (p: number) => {
+      const outfitCount = CAMPAIGN_OUTFITS.length;
+      const rawIdx = Math.floor(p * outfitCount);
+      const clampedIdx = Math.min(outfitCount - 1, Math.max(0, rawIdx));
+      if (clampedIdx !== lastActiveIdx) {
+        lastActiveIdx = clampedIdx;
+        if (container) {
+          container.setAttribute("data-active-outfit", String(clampedIdx));
+        }
+
+        // Fast batch class toggle on cached node arrays - zero React re-render!
+        const layers = cutoutLayersRef.current;
+        for (let i = 0; i < layers.length; i++) {
+          const layer = layers[i];
+          if (!layer) continue;
+          const isActive = i === clampedIdx;
+          layer.classList.toggle("active", isActive);
+          layer.setAttribute("aria-hidden", String(!isActive));
+        }
+
+        const dots = paginationDotsRef.current;
+        for (let i = 0; i < dots.length; i++) {
+          dots[i]?.classList.toggle("active", i === clampedIdx);
+        }
+
+        const items = timelineItemsRef.current;
+        for (let i = 0; i < items.length; i++) {
+          items[i]?.classList.toggle("active", i === clampedIdx);
+        }
+
+        if (timelineFillRef.current) {
+          const scale = (clampedIdx + 0.5) / outfitCount;
+          timelineFillRef.current.style.transform = `scaleY(${scale})`;
+        }
+      }
+
+      // Proactively pre-decode upcoming and preceding product images well before transition begins
+      const nextIdx = Math.min(outfitCount - 1, clampedIdx + 1);
+      const nextNextIdx = Math.min(outfitCount - 1, clampedIdx + 2);
+      const prevIdx = Math.max(0, clampedIdx - 1);
+      [nextIdx, nextNextIdx, prevIdx].forEach((targetIdx) => {
+        if (cutoutImagesRef.current[targetIdx] && !preloadedImagesRef.current.has(targetIdx)) {
+          cutoutImagesRef.current[targetIdx]?.decode().then(() => {
+            preloadedImagesRef.current.add(targetIdx);
+          }).catch(() => {});
+        }
       });
 
-      if (prev?.op !== opStr) el.style.opacity = opStr;
-      if (prev?.ty !== tyStr)
-        el.style.transform = `translate3d(0, ${tyStr}px, 0)`;
-      if (prev?.active !== activeStr) el.dataset.active = activeStr;
-      if (prev?.visible !== isVisibleStage) {
-        el.style.visibility = isVisibleStage ? "visible" : "hidden";
-      }
-    };
-
-    const calcTransition = (
-      p: number,
-      inStart: number,
-      inEnd: number,
-      outStart: number,
-      outEnd: number,
-      isFirst = false,
-      isLast = false,
-    ) => {
-      if (isFirst) {
-        if (p <= outStart) return { op: 1, ty: 0, active: true };
-        if (p <= outEnd) {
-          const t = (p - outStart) / (outEnd - outStart);
-          const ease = t * t * (3 - 2 * t);
-          return { op: Math.max(0, 1 - ease), ty: -ease * 36, active: 1 - ease > 0.08 };
+      // Smooth scroll-driven ENTER -> HOLD -> EXIT crossfade on cached DOM layers
+      const isMobile = mobileQuery.matches;
+      const layers = cutoutLayersRef.current;
+      for (let i = 0; i < layers.length; i++) {
+        const layer = layers[i];
+        if (!layer) continue;
+        const { opacity, offsetY } = computeDressState(i, p, isMobile);
+        if (opacity <= 0.001) {
+          layer.style.opacity = "0";
+          // Keep immediately adjacent layers in compositor tree at opacity 0 to prevent layer promotion hitch on mobile
+          if (Math.abs(i - clampedIdx) <= 1) {
+            layer.style.visibility = "visible";
+          } else {
+            layer.style.visibility = "hidden";
+          }
+        } else {
+          layer.style.visibility = "visible";
+          layer.style.opacity = opacity >= 0.999 ? "1" : opacity.toFixed(3);
+          const transformStr = isMobile
+            ? `translate3d(0, ${offsetY.toFixed(1)}px, 0)`
+            : `translate3d(-50%, ${offsetY.toFixed(1)}px, 0)`;
+          layer.style.transform = transformStr;
         }
-        return { op: 0, ty: -36, active: false };
-      }
-      if (isLast) {
-        if (p < inStart) return { op: 0, ty: 36, active: false };
-        if (p <= inEnd) {
-          const t = (p - inStart) / (inEnd - inStart);
-          const ease = t * t * (3 - 2 * t);
-          return { op: Math.min(1, ease), ty: (1 - ease) * 36, active: ease > 0.08 };
-        }
-        return { op: 1, ty: 0, active: true };
-      }
-      if (p < inStart) return { op: 0, ty: 36, active: false };
-      if (p <= inEnd) {
-        const t = (p - inStart) / (inEnd - inStart);
-        const ease = t * t * (3 - 2 * t);
-        return { op: Math.min(1, ease), ty: (1 - ease) * 36, active: ease > 0.08 };
-      }
-      if (p <= outStart) return { op: 1, ty: 0, active: true };
-      if (p <= outEnd) {
-        const t = (p - outStart) / (outEnd - outStart);
-        const ease = t * t * (3 - 2 * t);
-        return { op: Math.max(0, 1 - ease), ty: -ease * 36, active: 1 - ease > 0.08 };
-      }
-      return { op: 0, ty: -36, active: false };
-    };
-
-    const hasPromoStage = Boolean(showPromo && promoImage);
-
-    const updateStages = (p: number) => {
-      if (hasPromoStage) {
-        const s1 = calcTransition(p, 0.0, 0.0, 0.09, 0.16, true, false);
-        const s2 = calcTransition(p, 0.14, 0.2, 0.27, 0.33, false, false);
-        const s3 = calcTransition(p, 0.31, 0.37, 0.44, 0.5, false, false);
-        const s4 = calcTransition(p, 0.48, 0.54, 0.61, 0.67, false, false);
-        const s5 = calcTransition(p, 0.65, 0.71, 0.78, 0.84, false, false);
-        const s6 = calcTransition(p, 0.82, 0.89, 1.0, 1.0, false, true);
-
-        applyStageStyle(stage1Ref.current, s1.op, s1.ty, s1.active);
-        applyStageStyle(stage2Ref.current, s2.op, s2.ty, s2.active);
-        applyStageStyle(stage3Ref.current, s3.op, s3.ty, s3.active);
-        applyStageStyle(stage4Ref.current, s4.op, s4.ty, s4.active);
-        applyStageStyle(stage5Ref.current, s5.op, s5.ty, s5.active);
-        applyStageStyle(stage6Ref.current, s6.op, s6.ty, s6.active);
-      } else {
-        const s1 = calcTransition(p, 0.0, 0.0, 0.11, 0.18, true, false);
-        const s2 = calcTransition(p, 0.16, 0.23, 0.31, 0.38, false, false);
-        const s3 = calcTransition(p, 0.36, 0.43, 0.51, 0.58, false, false);
-        const s4 = calcTransition(p, 0.56, 0.63, 0.71, 0.78, false, false);
-        const s5 = calcTransition(p, 0.76, 0.83, 1.0, 1.0, false, true);
-
-        applyStageStyle(stage1Ref.current, s1.op, s1.ty, s1.active);
-        applyStageStyle(stage2Ref.current, s2.op, s2.ty, s2.active);
-        applyStageStyle(stage3Ref.current, s3.op, s3.ty, s3.active);
-        applyStageStyle(stage4Ref.current, s4.op, s4.ty, s4.active);
-        applyStageStyle(stage5Ref.current, s5.op, s5.ty, s5.active);
       }
     };
 
     updateScrollProgress = () => {
-      if (!isVisible) return;
+      if (!isVisible || !container) return;
       const scrollY = window.scrollY;
-      const viewportHeight = window.innerHeight;
-      const scrollDistance = Math.max(1, box.height - viewportHeight);
+      const p = Math.max(0, Math.min(1, (scrollY - sectionTop) / scrollDistance));
+      targetProgress = p;
 
-      // Fast bounds culling: if outside section and progress already at boundary, skip work
-      if (scrollY < box.top - 150 && currentProgress === 0) return;
-      if (scrollY > box.top + scrollDistance + 150 && currentProgress === 1) return;
-
-      const p = Math.max(0, Math.min(1, (scrollY - box.top) / scrollDistance));
-
-      if (
-        mobileQuery.matches ||
-        prefersReducedMotionRef.current ||
-        !hasInitialProgress
-      ) {
+      if (!hasInitialProgress) {
         hasInitialProgress = true;
         currentProgress = p;
-        targetProgress = p;
-        if (duration > 0) {
-          performSeek(p * duration);
-        }
-        updateStages(p);
-      } else {
-        targetProgress = p;
+        performSeek(p * duration);
+        updateActiveOutfit(p);
       }
+
+      startAnimationLoop();
     };
 
     const loadVideoSource = (src: string, preserveProgress = false) => {
-      if (!video || currentSrc === src) return;
+      if (!video) return;
+      if (currentSrc === src && video.getAttribute("src") === src) return;
       currentSrc = src;
       const savedProgress = preserveProgress ? currentProgress : null;
 
       const onLoadedMetadata = () => {
+        if (!video) return;
         video.removeEventListener("loadedmetadata", onLoadedMetadata);
-        duration = video.duration || 0;
+        if (video.duration && !isNaN(video.duration) && video.duration > 0) {
+          duration = video.duration;
+        }
         updateScrollProgress();
         if (savedProgress !== null) {
           currentProgress = savedProgress;
           targetProgress = savedProgress;
         }
-        if (duration > 0) {
-          performSeek(currentProgress * duration);
+
+        const initialTime = Math.max(0, Math.min(duration - 0.04, currentProgress * duration));
+        executeSeek(initialTime);
+
+        // Prime video decoder on mobile so initial seek renders instantly
+        if (mobileQuery.matches) {
+          const playPromise = video.play();
+          if (playPromise !== undefined) {
+            playPromise.then(() => {
+              video.pause();
+              video.currentTime = initialTime;
+            }).catch(() => {
+              // Video auto-play policy: pause/currentTime handled
+            });
+          }
         }
         video.style.opacity = "1";
       };
 
       video.addEventListener("loadedmetadata", onLoadedMetadata);
-      video.src = src;
-      video.load();
+      if (video.getAttribute("src") !== src) {
+        video.src = src;
+        video.load();
+      }
 
       if (video.readyState >= 1) {
         onLoadedMetadata();
@@ -598,34 +728,44 @@ export function LuxuryHero3DBackground({
       }
     };
 
-    let scrollRafId = 0;
     const handleScroll = () => {
       isScrolling = true;
       if (scrollStopTimer) clearTimeout(scrollStopTimer);
       scrollStopTimer = setTimeout(() => {
         isScrolling = false;
-        if (!mobileQuery.matches && currentProgress !== targetProgress) {
-          currentProgress = targetProgress;
-          updateStages(targetProgress);
-          if (duration > 0) performSeek(targetProgress * duration);
+        // Guarantee final resting target frame is sought when scrolling stops
+        if (video) {
+          const dur = duration > 0 ? duration : 10.0;
+          const finalTime = Math.max(0, Math.min(dur - 0.04, targetProgress * dur));
+          isSeeking = false;
+          pendingTime = null;
+          executeSeek(finalTime);
         }
-      }, 60);
+      }, 80);
+
+      const scrollY = window.scrollY;
+
+      // Re-measure geometry the first time scroll approaches the hero section.
+      // This corrects stale sectionTop from the mount-time measurement which
+      // can be wrong when the intro layout settles after fonts/images load.
+      if (!hasRefreshedGeometryOnApproach && scrollY > sectionTop - 2 * window.innerHeight) {
+        hasRefreshedGeometryOnApproach = true;
+        updateGeometry();
+      }
+
+      targetProgress = Math.max(0, Math.min(1, (scrollY - sectionTop) / scrollDistance));
 
       startAnimationLoop();
-
-      if (scrollRafId) return;
-      scrollRafId = requestAnimationFrame(() => {
-        scrollRafId = 0;
-        updateScrollProgress();
-      });
     };
 
     mobileQuery.addEventListener("change", handleMediaChange);
     window.addEventListener("scroll", handleScroll, { passive: true });
+    // On mobile, the visual viewport resizes when the address bar shows/hides.
+    // Re-running resize() here keeps canvas dimensions and geometry fresh.
+    window.visualViewport?.addEventListener("resize", resize, { passive: true });
 
     const startTime = performance.now();
 
-    // Petal drawing helper
     const drawPetal = (
       p: Petal,
       pX: number,
@@ -636,19 +776,18 @@ export function LuxuryHero3DBackground({
       const renderX = p.x + pX * parallaxScale * depthScale;
       const renderY = p.y + pY * parallaxScale * depthScale;
 
-      // Depth of field: foreground and distant petals soften, mid ones stay sharp.
       let alpha = 0.88;
       let blur = 0;
-      if (p.z > 50) {
-        alpha = 0.72;
-        blur = 1.5;
-      } else if (p.z < -20) {
-        alpha = 0.55;
-        blur = 1.8;
+      if (!mobileQuery.matches) {
+        if (p.z > 50) {
+          alpha = 0.72;
+          blur = 1.5;
+        } else if (p.z < -20) {
+          alpha = 0.55;
+          blur = 1.8;
+        }
       }
 
-      // A petal's size and depth never change, so this resolves to a cached
-      // sprite on every frame after the first.
       const sprite = petalSprite(
         Math.round(p.size * depthScale),
         alpha,
@@ -670,7 +809,6 @@ export function LuxuryHero3DBackground({
       ctx.restore();
     };
 
-    // Main animation loop
     const render = (now: number) => {
       if (!isVisible) {
         animationFrameId = 0;
@@ -679,37 +817,30 @@ export function LuxuryHero3DBackground({
 
       const isReducedMotion = prefersReducedMotionRef.current;
       const elapsed = isReducedMotion ? 0 : now - startTime;
+      const dt = Math.min(32, now - (lastTick || now - 16.67));
+      lastTick = now;
 
-      // On desktop, adaptive fast-catchup lerp. Prioritizes user scroll velocity and handles reversals instantaneously.
-      if (!mobileQuery.matches && !isReducedMotion) {
+      if (!isReducedMotion) {
         const diff = targetProgress - currentProgress;
         const absDiff = Math.abs(diff);
-        if (absDiff > 0.0001) {
-          const isReversal =
-            (diff > 0 && lastProgressDiff < 0) ||
-            (diff < 0 && lastProgressDiff > 0);
-          lastProgressDiff = diff;
-          // Reversals and large fast scrolls catch up aggressively (0.9), normal scrolls smooth over 2 frames (0.45)
-          const factor =
-            isReversal || absDiff > 0.04 ? 0.9 : absDiff > 0.015 ? 0.65 : 0.45;
-          currentProgress += diff * factor;
-          if (Math.abs(targetProgress - currentProgress) < 0.0003) {
+        if (absDiff > 0.00005) {
+          const smoothSpeed = mobileQuery.matches ? 18 : 75;
+          const followRate = Math.min(1, 1 - Math.exp(-dt / smoothSpeed));
+          currentProgress += diff * followRate;
+
+          if (Math.abs(targetProgress - currentProgress) < 0.0001) {
             currentProgress = targetProgress;
           }
-          if (duration > 0) {
-            performSeek(currentProgress * duration);
-          }
-          updateStages(currentProgress);
+
+          performSeek(currentProgress * duration);
+          updateActiveOutfit(currentProgress);
         }
       }
 
-      // Smooth mouse lerp
       const m = mouseRef.current;
       m.x += (m.targetX - m.x) * 0.045;
       m.y += (m.targetY - m.y) * 0.045;
 
-      // Direct DOM transform for 60fps GPU acceleration without React re-renders.
-      // Suppressed during active scrolling to prevent compositor texture contention.
       const shiftX = m.x * -12;
       const shiftY = m.y * -8;
       if (
@@ -724,12 +855,10 @@ export function LuxuryHero3DBackground({
         backdropRef.current.style.transform = `translate3d(${shiftX}px, ${shiftY}px, 0) scale(1.05)`;
       }
 
-      // Clear canvas
       ctx.save();
       ctx.scale(dpr, dpr);
       ctx.clearRect(0, 0, width, height);
 
-      // Update & Draw Floating White Flower Petals
       for (const p of petals) {
         if (!isReducedMotion) {
           p.y += p.fallSpeed;
@@ -737,7 +866,6 @@ export function LuxuryHero3DBackground({
           p.rotation += p.rotSpeed;
           p.tilt += p.tiltSpeed;
 
-          // Wrap around seamlessly
           if (p.y > height + 25) {
             p.y = -25;
             p.x = Math.random() * width;
@@ -751,7 +879,7 @@ export function LuxuryHero3DBackground({
 
       ctx.restore();
 
-      if (!isReducedMotion) {
+      if (!isReducedMotion || Math.abs(targetProgress - currentProgress) > 0.0001) {
         animationFrameId = requestAnimationFrame(render);
       } else {
         animationFrameId = 0;
@@ -759,7 +887,7 @@ export function LuxuryHero3DBackground({
     };
 
     startAnimationLoop = () => {
-      if (!animationFrameId && isVisible && !prefersReducedMotionRef.current) {
+      if (!animationFrameId && isVisible) {
         animationFrameId = requestAnimationFrame(render);
       }
     };
@@ -775,8 +903,7 @@ export function LuxuryHero3DBackground({
 
     return () => {
       stopAnimationLoop();
-      if (scrollRafId) cancelAnimationFrame(scrollRafId);
-      if (scheduledSeekRaf) cancelAnimationFrame(scheduledSeekRaf);
+      if (seekRafId) cancelAnimationFrame(seekRafId);
       if (scrollStopTimer) clearTimeout(scrollStopTimer);
       window.removeEventListener("resize", resize);
       window.removeEventListener("mousemove", handleMouseMove);
@@ -785,6 +912,7 @@ export function LuxuryHero3DBackground({
       motionQuery.removeEventListener("change", handleMotionChange);
       mobileQuery.removeEventListener("change", handleMediaChange);
       window.removeEventListener("scroll", handleScroll);
+      window.visualViewport?.removeEventListener("resize", resize);
       if (video) {
         video.removeEventListener("seeked", handleSeeked);
       }
@@ -794,267 +922,164 @@ export function LuxuryHero3DBackground({
   return (
     <section
       ref={containerRef}
-      className="cinematic-scroll-section"
-      aria-label="Cinematic Boutique Showcase"
-    >
-      <div className="cinematic-sticky-stage">
-        {/* Layer 1: Background Video + Atmospheric Gradient */}
-        <div className="luxury-hero-3d-wrap">
-          <div
-            ref={backdropRef}
-            className="luxury-hero-backdrop-img"
-            style={{
-              position: "absolute",
-              inset: "-3%",
-              width: "106%",
-              height: "106%",
-              transform: "scale(1.05)",
-            }}
-          >
-            <video
-              ref={videoRef}
-              className="luxury-hero-video-element"
-              muted
-              playsInline
-              preload="auto"
-              style={{
-                position: "absolute",
-                inset: 0,
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                objectPosition,
-                pointerEvents: "none",
-                opacity: 0,
-                transition: "opacity 0.35s ease",
-                transform: "translateZ(0)",
-                willChange: "transform",
-                backfaceVisibility: "hidden",
-              }}
-            />
-            {/* Soft atmospheric gradient to guarantee 100% typography & card contrast */}
-            <div className="luxury-hero-contrast-overlay" />
-          </div>
-
-          {/* Layer 2: Real-time 3D Canvas (Floating Mogra Petals with Depth-of-Field) */}
-          <canvas ref={canvasRef} className="luxury-hero-canvas" />
-        </div>
-
-        {/* Layer 3: Interactive Foreground Content Stages */}
-        <div className="cinematic-foreground-container">
-          {/* Stage 1: Brand Invitation & Heading */}
-          <div
-            ref={stage1Ref}
-            className="cinematic-stage cinematic-stage-1"
-            data-active="true"
-          >
+        className="cinematic-scroll-section"
+        aria-label="Cinematic Boutique Showcase"
+        data-active-outfit="0"
+      >
+        <div className="cinematic-sticky-stage">
+          {/* Layer 1: Master Continuous Background Video */}
+          <div className="luxury-hero-3d-wrap">
             <div
-              className="container"
-              style={{ maxWidth: "1000px", textAlign: "center" }}
+              ref={backdropRef}
+              className="luxury-hero-backdrop-img"
             >
-              <p className="eyebrow">FIND YOUR EXPRESSION</p>
-              <h2 className="cinematic-heading">
-                A style for <em>every you.</em>
-              </h2>
-              <p className="cinematic-subheading">
-                Discover a thoughtful edit of Indian wear. Designed for the
-                everyday, the extraordinary, and everything in between.
-              </p>
-              <div
-                className="button-row"
-                style={{ justifyContent: "center", marginTop: "24px" }}
-              >
-                <Link className="button" href="/shop">
-                  Explore all pieces <ArrowUpRight size={16} />
-                </Link>
-                <Link className="button outline" href="/shop?new=true">
-                  New arrivals <ArrowRight size={15} />
-                </Link>
-              </div>
+              <video
+                ref={videoRef}
+                className="luxury-hero-video-element"
+                muted
+                playsInline
+                preload="auto"
+                suppressHydrationWarning
+                style={{ objectPosition }}
+              />
+              {/* Soft atmospheric gradient */}
+              <div className="luxury-hero-contrast-overlay" />
             </div>
+
+            {/* Layer 2: Real-time 3D Canvas (Floating Mogra Petals) */}
+            <canvas ref={canvasRef} className="luxury-hero-canvas" />
           </div>
 
-          {/* Stage 2: The Curated Category Cards */}
-          <div
-            ref={stage2Ref}
-            className="cinematic-stage cinematic-stage-2"
-          >
-            <div className="container">
-              <div className="section-heading" style={{ marginBottom: "20px" }}>
-                <div>
-                  <p className="eyebrow">CURATED COLLECTIONS</p>
-                  <h2 style={{ fontSize: "clamp(30px, 4vw, 44px)" }}>
-                    The Boutique <em>Categories.</em>
-                  </h2>
-                </div>
-                <Link className="text-link" href="/shop">
-                  Shop all categories <ArrowUpRight size={16} />
+          {/* Layer 3: Campaign Showcase Content Layer (Editorial Text + Isolated Cutouts + Indicator) */}
+          <div className="hero-campaign-showcase">
+            {/* Desktop & Mobile Left / Bottom Editorial Content */}
+            <div className="hero-campaign-editorial">
+              <p className="hero-campaign-eyebrow">TRADITION MEETS MODERN</p>
+              <span className="hero-campaign-gold-line" aria-hidden="true" />
+              <h1
+                className="hero-campaign-headline"
+                aria-label="Elegance, in every drape."
+              >
+                <span className="desktop-headline">
+                  Elegance<br />
+                  <em>in every drape.</em>
+                </span>
+                <span className="mobile-headline">
+                  Elegant<br />
+                  <em>Ethnic Wear</em>
+                </span>
+              </h1>
+              <p className="hero-campaign-subtitle">
+                Discover timeless ethnic wear crafted for your special moments.
+              </p>
+              <div className="hero-campaign-actions">
+                <Link href="/shop" className="hero-cta-button">
+                  <span>Explore Collection</span>
+                  <ArrowRight size={16} />
                 </Link>
               </div>
-              {categories && categories.length > 0 && (
-                <div className="category-grid">
-                  {categories.map((c) => (
-                    <Link
-                      href={`/category/${c.slug}`}
-                      className="category-card"
-                      key={c.id}
-                    >
-                      <div className="category-image">
-                        <Image
-                          src={imageUrl(c.image)}
-                          alt={c.name}
-                          fill
-                          sizes="(max-width: 600px) 48vw, (max-width: 1200px) 25vw, 280px"
-                        />
-                        <span className="round-arrow">
-                          <ArrowUpRight size={19} />
-                        </span>
-                      </div>
-                      <h3>{c.name}</h3>
-                      <p>{c.description}</p>
-                    </Link>
+
+              {/* Bottom bar container: Left scroll prompt, Right pagination dots */}
+              <div className="hero-campaign-bottom-bar">
+                <div className="hero-scroll-prompt">
+                  <div className="mouse-icon-pill">
+                    <span className="mouse-wheel-dot" />
+                  </div>
+                  <span className="mouse-scroll-text">SCROLL TO EXPLORE</span>
+                </div>
+
+                <div className="hero-pagination-dots" aria-hidden="true">
+                  {CAMPAIGN_OUTFITS.map((_, idx) => (
+                    <button
+                      key={idx}
+                      ref={(el) => {
+                        paginationDotsRef.current[idx] = el;
+                      }}
+                      type="button"
+                      tabIndex={-1}
+                      onClick={() => scrollToOutfit(idx)}
+                      className={`pagination-dot ${idx === 0 ? "active" : ""}`}
+                      aria-label={`Outfit ${idx + 1}`}
+                    />
                   ))}
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* Stage 3: New Arrivals / Spotlight Pieces */}
-          {showArrivals && (
-            <div
-              ref={stage3Ref}
-              className="cinematic-stage cinematic-stage-3"
-            >
-              <div className="container">
-                <div className="section-heading" style={{ marginBottom: "20px" }}>
-                  <div>
-                    <p className="eyebrow">FRESH FROM OUR EDIT</p>
-                    <h2 style={{ fontSize: "clamp(30px, 4vw, 44px)" }}>
-                      New & <em>noteworthy.</em>
-                    </h2>
-                  </div>
-                  <Link className="text-link" href="/shop?new=true">
-                    Explore all new arrivals <ArrowUpRight size={16} />
-                  </Link>
-                </div>
-                {arrivals && arrivals.length > 0 && (
-                  <div className="product-grid">
-                    {arrivals.map((p) => (
-                      <ProductCard
-                        key={p.id}
-                        product={p}
-                        threshold={lowStockThreshold}
-                      />
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
-          )}
 
-          {/* Stage 4: The Occasion Edit ("Made for memorable moments.") */}
-          {showFeatured && featured && (
-            <div
-              ref={stage4Ref}
-              className="cinematic-stage cinematic-stage-4"
-            >
-              <div className="container" style={{ maxWidth: "1080px" }}>
-                <div className="cinematic-featured-card">
-                  <div className="cinematic-featured-image">
+            {/* Center: Isolated Cutout Models Layered Above Video */}
+            <div className="hero-campaign-stage" aria-live="polite">
+              {CAMPAIGN_OUTFITS.map((outfit, idx) => {
+                const isActive = idx === 0;
+                return (
+                  <div
+                    key={outfit.id}
+                    ref={(el) => {
+                      cutoutLayersRef.current[idx] = el;
+                    }}
+                    className={`hero-model-cutout-layer ${isActive ? "active" : ""}`}
+                    data-outfit-id={outfit.id}
+                    data-outfit-number={outfit.number}
+                    aria-hidden={!isActive}
+                  >
                     <Image
-                      src={imageUrl(featuredImage || featured.image)}
-                      alt={featured.name || featuredTitle}
-                      fill
-                      sizes="(max-width: 767px) 100vw, (max-width: 1200px) 50vw, 540px"
+                      ref={(el) => {
+                        cutoutImagesRef.current[idx] = el;
+                      }}
+                      src={outfit.image}
+                      alt={outfit.title}
+                      width={outfit.width}
+                      height={outfit.height}
+                      priority
+                      unoptimized
+                      className="hero-cutout-image"
+                      sizes="(max-width: 767px) 90vw, (max-width: 1200px) 60vw, 800px"
                     />
                   </div>
-                  <div className="cinematic-featured-content">
-                    <p className="eyebrow light">THE OCCASION EDIT</p>
-                    <h2>{featuredTitle}</h2>
-                    <div className="gold-line" />
-                    <p>{featuredDescription || featured.description}</p>
-                    <Link
-                      className="button gold-outline"
-                      href={`/collections/${featured.slug}`}
+                );
+              })}
+            </div>
+
+            {/* Right: Vertical Progress Indicator with Line & Dots */}
+            <div
+              className="hero-timeline-indicator"
+              role="navigation"
+              aria-label="Collection timeline"
+            >
+              <div className="timeline-line-track">
+                <div
+                  ref={timelineFillRef}
+                  className="timeline-progress-fill"
+                  style={{
+                    transform: `scaleY(${(0 + 0.5) / CAMPAIGN_OUTFITS.length})`,
+                  }}
+                />
+              </div>
+
+              <div className="timeline-items-list">
+                {CAMPAIGN_OUTFITS.map((item, idx) => {
+                  const isActive = idx === 0;
+                  return (
+                    <button
+                      key={item.id}
+                      ref={(el) => {
+                        timelineItemsRef.current[idx] = el;
+                      }}
+                      type="button"
+                      className={`timeline-item ${isActive ? "active" : ""}`}
+                      onClick={() => scrollToOutfit(idx)}
+                      aria-label={`Jump to ${item.number} ${item.category}`}
                     >
-                      Explore the collection <ArrowUpRight size={17} />
-                    </Link>
-                    <div className="featured-decoration" aria-hidden="true">
-                      <Flower2 size={90} strokeWidth={0.5} />
-                    </div>
-                  </div>
-                </div>
+                      <span className="timeline-dot" />
+                      <span className="timeline-label">
+                        <strong>{item.number}</strong> {item.category}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
-          )}
-
-          {/* Stage 5: The Boutique Favourites (Best Sellers: "Pieces to fall for.") */}
-          {showBestSellers && (
-            <div
-              ref={stage5Ref}
-              className="cinematic-stage cinematic-stage-5"
-            >
-              <div className="container">
-                <div className="section-heading" style={{ marginBottom: "20px" }}>
-                  <div>
-                    <p className="eyebrow">THE BOUTIQUE FAVOURITES</p>
-                    <h2 style={{ fontSize: "clamp(30px, 4vw, 44px)" }}>
-                      Pieces to <em>fall for.</em>
-                    </h2>
-                  </div>
-                  <Link className="text-link" href="/shop?best=true">
-                    Explore the edit <ArrowUpRight size={16} />
-                  </Link>
-                </div>
-                {bestSellers && bestSellers.length > 0 ? (
-                  <div className="product-grid">
-                    {bestSellers.map((p) => (
-                      <ProductCard
-                        key={p.id}
-                        product={p}
-                        threshold={lowStockThreshold}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="empty-state">
-                    Pieces will be added to favourites soon.
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Stage 6: The Promo Edit ("A MOMENT TO MAKE YOUR OWN") */}
-          {showPromo && promoImage && (
-            <div
-              ref={stage6Ref}
-              className="cinematic-stage cinematic-stage-6"
-            >
-              <div className="container" style={{ maxWidth: "1000px" }}>
-                <div className="cinematic-promo-card">
-                  <Image
-                    src={imageUrl(promoImage)}
-                    alt={promoHeading}
-                    fill
-                    sizes="(max-width: 600px) 100vw, (max-width: 1200px) 90vw, 1000px"
-                  />
-                  <div className="hero-shade" />
-                  <div className="cinematic-promo-content">
-                    <p className="eyebrow light">A MOMENT TO MAKE YOUR OWN</p>
-                    <h2>{promoHeading}</h2>
-                    <p>{promoSubtitle}</p>
-                    <Link className="button gold-outline" href={promoUrl}>
-                      {promoText}
-                      <ArrowUpRight size={16} />
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
   );
 }

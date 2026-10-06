@@ -8,7 +8,11 @@ const lanDevOrigins = [
     Object.values(networkInterfaces()).flatMap((interfaces) =>
       (interfaces ?? [])
         .filter((network) => !network.internal && network.family === "IPv4")
-        .map((network) => network.address),
+        .flatMap((network) => [
+          network.address,
+          `${network.address}:3000`,
+          `${network.address}:3001`,
+        ]),
     ),
   ),
 ];

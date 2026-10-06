@@ -6,3 +6,6 @@ playwright-report/
 test-results/
 *.tsbuildinfo
 output/
+scratch/
+pic/
+public/images/models/

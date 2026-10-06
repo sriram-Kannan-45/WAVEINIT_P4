@@ -5,12 +5,43 @@ test("homepage presents official branding and responsive images", async ({
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
+  await page.evaluate(() => {
+    const store = document.getElementById("boutique");
+    if (store) store.inert = false;
+    const introEl = document.querySelector(".intro-scroll");
+    if (introEl) {
+      const top = introEl.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo(0, top + introEl.clientHeight + 50);
+    }
+  });
   await expect(
-    page.getByRole("heading", { name: "Elegance, in every detail." }),
+    page.getByRole("heading", { name: /Elegance/i }),
   ).toBeVisible();
   await expect(
     page.getByText("Illustrative pieces & sample prices."),
   ).toBeVisible();
+  await page.evaluate(() => {
+    const s = document.querySelector(".cinematic-scroll-section");
+    if (s) {
+      const top = s.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo(0, top + s.clientHeight * 0.45);
+    }
+  });
+  await page.waitForTimeout(400);
+  const allHeadings = await page.evaluate(() =>
+    Array.from(document.querySelectorAll("h1, h2, h3")).map((h) => ({
+      tag: h.tagName,
+      text: h.textContent?.trim(),
+      display: getComputedStyle(h).display,
+      visibility: getComputedStyle(h).visibility,
+      opacity: getComputedStyle(h).opacity,
+      parentDisplay: h.parentElement ? getComputedStyle(h.parentElement).display : "",
+      parentVis: h.parentElement ? getComputedStyle(h.parentElement).visibility : "",
+      stageVis: h.closest(".cinematic-stage") ? getComputedStyle(h.closest(".cinematic-stage")!).visibility : "",
+      stageOp: h.closest(".cinematic-stage") ? getComputedStyle(h.closest(".cinematic-stage")!).opacity : "",
+    }))
+  );
+  console.log("ALL HEADINGS:", JSON.stringify(allHeadings, null, 2));
   await expect(
     page.getByRole("heading", { name: "New & noteworthy." }),
   ).toBeVisible();

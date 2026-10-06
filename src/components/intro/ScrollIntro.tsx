@@ -55,7 +55,6 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
       distance = 1,
       frontDistance = 1;
     let lastTick = 0,
-      lastScroll = 0,
       drawn = "",
       resized = true;
     let lastFadeStr = "",
@@ -63,6 +62,12 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
       lastPhaseStr = "",
       lastRevealStr = "",
       lastVideoOpStr = "";
+    let lastCropXStr = "",
+      lastCropShareStr = "",
+      lastPosterWStr = "",
+      lastPosterHStr = "",
+      lastPosterLStr = "",
+      lastPosterTStr = "";
 
     const request = () => {
       if (!disposed && !raf) raf = requestAnimationFrame(render);
@@ -89,24 +94,19 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
         ? frames.frameCount - 1
         : scrollFrame(progress, frames);
       cache?.setTarget(target, motion.matches);
-      const fadeStart = frames.scroll.fadeStart ?? 0.94;
-      const fade = motion.matches
-        ? 0
-        : clamp((progress - fadeStart) / (1 - fadeStart));
-      const smoothFade = fade * fade * (3 - 2 * fade);
-      const fadeStr = (1 - smoothFade).toFixed(3);
-      if (lastFadeStr !== fadeStr) {
-        lastFadeStr = fadeStr;
-        section.style.setProperty("--intro-opacity", fadeStr);
-      }
+      const isPastIntro = scrollY - start >= frontDistance + distance + (height || 800);
       const activeStr = String(
         motion.matches
           ? scrollY - start < section.offsetHeight
-          : progress < 1,
+          : !isPastIntro,
       );
       if (lastActiveStr !== activeStr) {
         lastActiveStr = activeStr;
         section.dataset.active = activeStr;
+      }
+      if (lastFadeStr !== "1") {
+        lastFadeStr = "1";
+        section.style.setProperty("--intro-opacity", "1");
       }
       const phaseStr = motion.matches
         ? "static"
@@ -127,7 +127,7 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
       if (videoStage.inert !== stageInert) videoStage.inert = stageInert;
       // Keep hidden ecommerce controls out of keyboard navigation until revealed.
       if (store) {
-        const storeInert = !motion.matches && progress < frames.scroll.fadeStart;
+        const storeInert = !motion.matches && progress < 1;
         if (store.inert !== storeInert) store.inert = storeInert;
       }
       request();
@@ -175,7 +175,7 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
       if (!cache || cache.mode !== mode) {
         previous?.dispose();
         previous = cache;
-        cache = new IntroFrameCache(frames, mode, request);
+        cache = new IntroFrameCache(frames, mode, request, motion.matches);
       }
       resized = true;
       synchronize();
@@ -199,15 +199,15 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
         lastVideoOpStr = videoOpStr;
         section.style.setProperty("--intro-video-opacity", videoOpStr);
       }
-      // Responsive frame catch-up: prioritize user scroll velocity so fast scrolling stays in cache window
+      // Responsive continuous follow without abrupt jump or lag
       const diff = target - current;
       const absDiff = Math.abs(diff);
-      if (motion.matches || now - lastScroll > 60 || absDiff < 0.4) {
+      if (motion.matches || absDiff < 0.05) {
         current = target;
       } else {
-        const factor = absDiff > 5 ? 0.75 : absDiff > 2 ? 0.55 : 0.4;
-        current += diff * Math.min(1, factor * (dt / 16.67));
-        if (Math.abs(target - current) < 0.25) current = target;
+        const followRate = Math.min(1, 1 - Math.exp(-dt / 70));
+        current += diff * followRate;
+        if (Math.abs(target - current) < 0.04) current = target;
       }
       let source = cache;
       let frame = cache.nearest(Math.round(current));
@@ -234,27 +234,40 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
           );
           // Poster and canvas share fit/cover geometry, including resize
           // and the initial left-edge entrance. No synthetic background layer.
-          media.style.setProperty("--intro-crop-x", `${position * 100}%`);
-          media.style.setProperty("--intro-crop-share", String(position));
-          if (portraitFit(width, height)) {
-            media.style.setProperty(
-              "--intro-poster-width",
-              `${bounds.width}px`,
-            );
-            media.style.setProperty(
-              "--intro-poster-height",
-              `${bounds.height}px`,
-            );
-            media.style.setProperty("--intro-poster-left", `${bounds.x}px`);
-            media.style.setProperty("--intro-poster-top", `${bounds.y}px`);
+          const cropXStr = `${position * 100}%`;
+          if (lastCropXStr !== cropXStr) {
+            lastCropXStr = cropXStr;
+            media.style.setProperty("--intro-crop-x", cropXStr);
           }
-          const isPortrait = portraitFit(width, height);
-          const maxRatio = isPortrait ? 3 : 1;
-          const ratio = Math.min(
-            window.devicePixelRatio || 1,
-            maxRatio,
-            isPortrait ? Math.sqrt(5_000_000 / (width * height)) : 1,
-          );
+          const cropShareStr = String(position);
+          if (lastCropShareStr !== cropShareStr) {
+            lastCropShareStr = cropShareStr;
+            media.style.setProperty("--intro-crop-share", cropShareStr);
+          }
+          if (portraitFit(width, height)) {
+            const pwStr = `${bounds.width}px`;
+            if (lastPosterWStr !== pwStr) {
+              lastPosterWStr = pwStr;
+              media.style.setProperty("--intro-poster-width", pwStr);
+            }
+            const phStr = `${bounds.height}px`;
+            if (lastPosterHStr !== phStr) {
+              lastPosterHStr = phStr;
+              media.style.setProperty("--intro-poster-height", phStr);
+            }
+            const plStr = `${bounds.x}px`;
+            if (lastPosterLStr !== plStr) {
+              lastPosterLStr = plStr;
+              media.style.setProperty("--intro-poster-left", plStr);
+            }
+            const ptStr = `${bounds.y}px`;
+            if (lastPosterTStr !== ptStr) {
+              lastPosterTStr = ptStr;
+              media.style.setProperty("--intro-poster-top", ptStr);
+            }
+          }
+          const dpr = window.devicePixelRatio || 1;
+          const ratio = Math.min(dpr, 2);
           const pixelWidth = Math.round(width * ratio);
           const pixelHeight = Math.round(height * ratio);
           if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
@@ -270,7 +283,7 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
             0,
           );
           context.imageSmoothingEnabled = true;
-          context.imageSmoothingQuality = isPortrait ? "high" : "medium";
+          context.imageSmoothingQuality = "medium";
           context.fillStyle = frames.background;
           context.fillRect(0, 0, width, height);
           context.drawImage(
@@ -284,20 +297,9 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
             bounds.width,
             bounds.height,
           );
-          if (portraitFit(width, height) && bounds.y > 0) {
+          if (portraitFit(width, height)) {
             const fadeH = Math.min(40, bounds.height * 0.1);
             const transparentBg = transparentColor(frames.background);
-            // Top edge blend
-            const topGrad = context.createLinearGradient(
-              0,
-              bounds.y,
-              0,
-              bounds.y + fadeH,
-            );
-            topGrad.addColorStop(0, frames.background);
-            topGrad.addColorStop(1, transparentBg);
-            context.fillStyle = topGrad;
-            context.fillRect(0, bounds.y - 1, width, fadeH + 1);
 
             // Bottom edge blend
             const bottomY = bounds.y + bounds.height;
@@ -311,6 +313,20 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
             botGrad.addColorStop(1, frames.background);
             context.fillStyle = botGrad;
             context.fillRect(0, bottomY - fadeH, width, fadeH + 1);
+
+            if (bounds.y > 0) {
+              // Top edge blend
+              const topGrad = context.createLinearGradient(
+                0,
+                bounds.y,
+                0,
+                bounds.y + fadeH,
+              );
+              topGrad.addColorStop(0, frames.background);
+              topGrad.addColorStop(1, transparentBg);
+              context.fillStyle = topGrad;
+              context.fillRect(0, bounds.y - 1, width, fadeH + 1);
+            }
           }
           drawn = key;
           resized = false;
@@ -325,18 +341,11 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
       }
       if (current !== target) request();
     }
-    let isIntroVisible = true;
-    let introScrollRaf = 0;
     const scroll = () => {
-      lastScroll = performance.now();
       const introEnd = start + frontDistance + distance;
       // Skip only when scrolled well beyond intro boundary and intro is already deactivated
       if (window.scrollY > introEnd + 250 && section.dataset.active === "false") return;
-      if (introScrollRaf) return;
-      introScrollRaf = requestAnimationFrame(() => {
-        introScrollRaf = 0;
-        synchronize();
-      });
+      synchronize();
     };
     const restore = () => {
       geometry();
@@ -354,8 +363,7 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
     const intersectionObserver = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          isIntroVisible = entry.isIntersecting;
-          if (isIntroVisible) {
+          if (entry.isIntersecting) {
             synchronize();
             request();
           }
@@ -378,7 +386,6 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
     return () => {
       disposed = true;
       cancelAnimationFrame(raf);
-      if (introScrollRaf) cancelAnimationFrame(introScrollRaf);
       observer.disconnect();
       intersectionObserver.disconnect();
       window.removeEventListener("scroll", scroll);

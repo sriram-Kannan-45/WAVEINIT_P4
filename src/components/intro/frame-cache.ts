@@ -2,7 +2,7 @@ import { frameUrl, type IntroMetadata, type IntroMode } from "./canvas-utils";
 
 type Decoded = ImageBitmap | HTMLImageElement;
 
-/** Retain compressed blobs, but only a bounded window of decoded frames. */
+/** Retain compressed blobs, and maintain a generous sliding window of decoded frames for smooth continuous playback. */
 export class IntroFrameCache {
   readonly mode: IntroMode;
   private blobs = new Map<number, Blob>();
@@ -12,6 +12,7 @@ export class IntroFrameCache {
   private failed = new Set<number>();
   private controllers = new Set<AbortController>();
   private objectUrls = new Set<string>();
+  private objectUrlByImage = new Map<number, string>();
   private target = 0;
   private direction = 1;
   private stopped = false;
@@ -21,23 +22,45 @@ export class IntroFrameCache {
     private metadata: IntroMetadata,
     mode: IntroMode,
     private ready: () => void,
+    reduced = false,
   ) {
     this.mode = mode;
+    this.reduced = reduced;
+    if (reduced) {
+      this.target = metadata.frameCount - 1;
+    }
+    // Start background preloading immediately upon initialization
+    this.pump();
   }
 
   setTarget(index: number, reduced = false) {
-    const next = Math.max(
-      0,
-      Math.min(this.metadata.frameCount - 1, Math.round(index)),
-    );
-    if (next !== this.target) this.direction = next > this.target ? 1 : -1;
-    this.target = next;
     this.reduced = reduced;
+    const next = reduced
+      ? this.metadata.frameCount - 1
+      : Math.max(
+          0,
+          Math.min(this.metadata.frameCount - 1, Math.round(index)),
+        );
+    if (next !== this.target) this.direction = next >= this.target ? 1 : -1;
+    this.target = next;
     this.trim();
     this.pump();
   }
 
   nearest(index: number) {
+    // Exact match fast path
+    const direct = this.images.get(index);
+    if (direct) return { image: direct, index };
+
+    // Check immediate neighbor frames within ±8 frames first
+    for (let offset = 1; offset <= 8; offset++) {
+      const forward = this.images.get(index + offset);
+      if (forward) return { image: forward, index: index + offset };
+      const backward = this.images.get(index - offset);
+      if (backward) return { image: backward, index: index - offset };
+    }
+
+    // Fall back to closest available decoded frame
     let distance = Infinity;
     let found: { image: Decoded; index: number } | undefined;
     for (const [key, image] of this.images) {
@@ -51,16 +74,24 @@ export class IntroFrameCache {
   }
 
   private priority() {
-    const order = [this.target];
-    if (!this.reduced) {
-      const ahead = this.mode === "mobile" ? 10 : 24;
-      const behind = this.mode === "mobile" ? 4 : 8;
-      for (let d = 1; d <= ahead; d++)
-        order.push(this.target + d * this.direction);
-      for (let d = 1; d <= behind; d++)
-        order.push(this.target - d * this.direction);
-      order.push(0, this.metadata.frameCount - 1);
-      for (let i = 0; i < this.metadata.frameCount; i++) order.push(i);
+    if (this.reduced) {
+      return [this.metadata.frameCount - 1];
+    }
+    const order: number[] = [this.target];
+    // Decode a wide window ahead in the direction of scrolling
+    const ahead = this.mode === "mobile" ? 40 : 45;
+    const behind = this.mode === "mobile" ? 20 : 25;
+    for (let d = 1; d <= ahead; d++) {
+      order.push(this.target + d * this.direction);
+    }
+    for (let d = 1; d <= behind; d++) {
+      order.push(this.target - d * this.direction);
+    }
+    // Critical anchors: frame 0 (entrance) and final frame (completed logo)
+    order.push(0, this.metadata.frameCount - 1);
+    // All remaining frames in sequence so the entire animation preloads
+    for (let i = 0; i < this.metadata.frameCount; i++) {
+      order.push(i);
     }
     return [...new Set(order)].filter(
       (i) => i >= 0 && i < this.metadata.frameCount,
@@ -68,13 +99,29 @@ export class IntroFrameCache {
   }
 
   private trim() {
-    const capacity = this.mode === "mobile" ? 12 : 36;
-    const keep = new Set(this.priority().slice(0, capacity));
-    for (const [index, image] of this.images) {
-      if (!keep.has(index)) {
+    // Keep a generous window of decoded frames:
+    // Mobile: 80 frames (~90MB RGBA texture memory, fully safe on modern mobile devices).
+    // Desktop: 120 frames.
+    const capacity = this.mode === "mobile" ? 80 : 120;
+    if (this.images.size <= capacity) return;
+
+    // Evict the frames that are furthest from current target
+    const sorted = [...this.images.keys()].sort(
+      (a, b) => Math.abs(b - this.target) - Math.abs(a - this.target),
+    );
+    const toRemove = sorted.slice(0, this.images.size - capacity);
+    for (const index of toRemove) {
+      const image = this.images.get(index);
+      if (image) {
         if ("close" in image) image.close();
         else image.src = "";
         this.images.delete(index);
+      }
+      const url = this.objectUrlByImage.get(index);
+      if (url) {
+        URL.revokeObjectURL(url);
+        this.objectUrls.delete(url);
+        this.objectUrlByImage.delete(index);
       }
     }
   }
@@ -82,31 +129,33 @@ export class IntroFrameCache {
   private pump() {
     if (this.stopped) return;
     const order = this.priority();
-    const decodeCapacity = this.mode === "mobile" ? 12 : 36;
-    const decodeLimit = this.mode === "mobile" ? 2 : 4;
-    const fetchLimit = this.mode === "mobile" ? 3 : 6;
-    // Decode nearby frames only, and never decode the whole sequence at once.
-    for (const index of order.slice(
-      0,
-      this.reduced ? 1 : decodeCapacity,
-    )) {
+    const decodeCapacity = this.mode === "mobile" ? 80 : 120;
+    const decodeLimit = 4;
+    const fetchLimit = this.mode === "mobile" ? 6 : 8;
+
+    // Decode priority frames within decodeCapacity
+    for (const index of order.slice(0, this.reduced ? 1 : decodeCapacity)) {
       if (this.decoding.size >= decodeLimit) break;
       if (
         this.blobs.has(index) &&
         !this.images.has(index) &&
         !this.decoding.has(index) &&
         !this.failed.has(index)
-      )
+      ) {
         void this.decode(index);
+      }
     }
+
+    // Fetch compressed blobs for frames
     for (const index of order) {
       if (this.fetching.size >= fetchLimit) break;
       if (
         !this.blobs.has(index) &&
         !this.fetching.has(index) &&
         !this.failed.has(index)
-      )
+      ) {
         void this.load(index);
+      }
     }
   }
 
@@ -121,7 +170,9 @@ export class IntroFrameCache {
       });
       if (!response.ok) throw new Error("Intro frame unavailable");
       const blob = await response.blob();
-      if (!this.stopped) this.blobs.set(index, blob);
+      if (!this.stopped) {
+        this.blobs.set(index, blob);
+      }
     } catch {
       if (!this.stopped) this.failed.add(index);
     } finally {
@@ -134,38 +185,47 @@ export class IntroFrameCache {
   private async decode(index: number) {
     this.decoding.add(index);
     let image: Decoded | undefined;
+    let createdUrl: string | undefined;
     try {
-      const blob = this.blobs.get(index)!;
+      const blob = this.blobs.get(index);
+      if (!blob) return;
+
       if (typeof createImageBitmap === "function") {
         try {
           image = await createImageBitmap(blob);
         } catch {
-          /* Older Safari falls back to Image.decode. */
+          /* Fall back to Image.decode */
         }
       }
       if (!image) {
-        const url = URL.createObjectURL(blob);
-        this.objectUrls.add(url);
-        try {
-          const element = new Image();
-          element.decoding = "async";
-          element.src = url;
-          await element.decode();
-          image = element;
-        } finally {
-          URL.revokeObjectURL(url);
-          this.objectUrls.delete(url);
-        }
+        createdUrl = URL.createObjectURL(blob);
+        this.objectUrls.add(createdUrl);
+        const element = new Image();
+        element.decoding = "async";
+        element.src = createdUrl;
+        await element.decode();
+        image = element;
       }
       if (this.stopped) {
         if ("close" in image) image.close();
+        if (createdUrl) {
+          URL.revokeObjectURL(createdUrl);
+          this.objectUrls.delete(createdUrl);
+        }
         return;
       }
       this.images.set(index, image);
+      if (createdUrl) {
+        this.objectUrlByImage.set(index, createdUrl);
+      }
       this.trim();
       this.ready();
     } catch {
       if (!this.stopped) this.failed.add(index);
+      if (createdUrl) {
+        URL.revokeObjectURL(createdUrl);
+        this.objectUrls.delete(createdUrl);
+      }
     } finally {
       this.decoding.delete(index);
       this.pump();
@@ -183,5 +243,9 @@ export class IntroFrameCache {
     this.images.clear();
     this.blobs.clear();
     this.objectUrls.clear();
+    this.objectUrlByImage.clear();
+    this.controllers.clear();
+    this.fetching.clear();
+    this.decoding.clear();
   }
 }
