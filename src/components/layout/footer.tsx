@@ -36,7 +36,6 @@ export function Footer({ store }: { store: StoreSettings }) {
         <div>
           <h4>Explore</h4>
           {[
-            ["Shop all", "/shop"],
             ["Collections", "/collections"],
             ["New arrivals", "/shop?new=true"],
             ["Our story", "/about"],

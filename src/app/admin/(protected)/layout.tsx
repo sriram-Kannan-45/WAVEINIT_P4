@@ -1,4 +1,5 @@
 import { requireAdmin } from "@/lib/supabase/server";
+import { adminNotifications } from "@/lib/admin-data";
 import { AdminShell } from "@/components/admin/shell";
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -11,5 +12,6 @@ export default async function ProtectedLayout({
   children: React.ReactNode;
 }) {
   await requireAdmin();
-  return <AdminShell>{children}</AdminShell>;
+  const notifications = await adminNotifications();
+  return <AdminShell initialNotifications={notifications}>{children}</AdminShell>;
 }

@@ -3,7 +3,13 @@ import { createHash } from "node:crypto";
 import { sameOrigin } from "@/lib/request-origin";
 import { supabaseService } from "@/lib/supabase/server";
 import { enquirySchema } from "@/lib/validations";
-import { orderMessage, whatsappUrl, type OrderSnapshot } from "@/lib/whatsapp";
+import {
+  orderMessage,
+  whatsappUrl,
+  createVendorOrderGroups,
+  type OrderSnapshot,
+  type OrderItem,
+} from "@/lib/whatsapp";
 export async function POST(request: NextRequest) {
   // Next may use its internal listening hostname in nextUrl (e.g. 0.0.0.0).
   // Compare with the incoming Host, which browsers cannot replace on a cross-origin request.
@@ -82,16 +88,45 @@ export async function POST(request: NextRequest) {
       );
     }
     const order = result.data as OrderSnapshot;
-    const url = whatsappUrl(
+    const enrichedItems: OrderItem[] = order.items.map((it, idx) => {
+      const match = items[idx];
+      return {
+        ...it,
+        vendor_name: match?.vendor_name,
+        vendor_whatsapp_number: match?.vendor_whatsapp_number,
+      };
+    });
+
+    const defaultVendor = {
+      name: "Achu Designer Boutique",
+      whatsapp_number: order.whatsapp_number,
+    };
+
+    const vendorGroups = createVendorOrderGroups(
+      enrichedItems,
+      defaultVendor,
+      customer,
+      order.reference,
+    );
+
+    const fallbackUrl = whatsappUrl(
       order.whatsapp_number,
       orderMessage(order, customer),
     );
-    if (!url) throw new Error("WhatsApp ordering is not configured.");
+
+    const primaryUrl =
+      vendorGroups.length > 0 && vendorGroups[0].whatsapp_url
+        ? vendorGroups[0].whatsapp_url
+        : fallbackUrl;
+
+    if (!primaryUrl) throw new Error("WhatsApp ordering is not configured.");
+
     return NextResponse.json(
       {
         reference: order.reference,
         subtotal: order.subtotal,
-        whatsapp_url: url,
+        whatsapp_url: primaryUrl,
+        vendor_orders: vendorGroups,
       },
       { headers: { "Cache-Control": "no-store" } },
     );

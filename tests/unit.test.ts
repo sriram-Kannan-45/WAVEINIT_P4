@@ -4,10 +4,19 @@ import {
   customerSchema,
   enquirySchema,
   productSchema,
+  subcategorySchema,
   settingsSchema,
 } from "../src/lib/validations/index";
-import { money, paise, stockTotal, safeJson } from "../src/lib/utils";
-import { orderMessage, whatsappUrl } from "../src/lib/whatsapp/index";
+import { money, paise, stockTotal, safeJson, imageUrl } from "../src/lib/utils";
+import { buildImageKitUrl, isImageKitUrl } from "../src/lib/imagekit";
+import {
+  orderMessage,
+  whatsappUrl,
+  validateWhatsAppNumber,
+  productEnquiryMessage,
+  productDirectOrderMessage,
+  createVendorOrderGroups,
+} from "../src/lib/whatsapp/index";
 import { defaultStore } from "../src/lib/defaults";
 import { demoProducts } from "../src/lib/demo";
 import { validateUploadFile } from "../src/lib/validations/image";
@@ -269,3 +278,209 @@ test("admin authentication accepts achu/1234 credentials and verifies secure sig
   assert.equal(await verifyAdminToken(null), false);
   assert.equal(await verifyAdminToken(""), false);
 });
+test("subcategory validation requires parent category UUID, valid slug and positive order", () => {
+  const valid = {
+    category_id: "f7454e17-02a2-4073-81c5-f72366da3d21",
+    name: "Stone work",
+    slug: "stone-work",
+    description: "Detailed embellishments",
+    image: "/images/saree.png",
+    active: true,
+    display_order: 1,
+  };
+  assert.ok(subcategorySchema.safeParse(valid).success);
+  assert.equal(
+    subcategorySchema.safeParse({ ...valid, slug: "Invalid Slug With Spaces" })
+      .success,
+    false,
+  );
+  assert.equal(
+    subcategorySchema.safeParse({ ...valid, category_id: "not-a-uuid" })
+      .success,
+    false,
+  );
+  assert.equal(
+    subcategorySchema.safeParse({ ...valid, display_order: -1 }).success,
+    false,
+  );
+  assert.equal(
+    subcategorySchema.safeParse({ ...valid, name: "" }).success,
+    false,
+  );
+});
+
+test("WhatsApp number validation strictly enforces ITU-T E.164 without leading plus or zeroes", () => {
+  assert.equal(validateWhatsAppNumber("919876543210").valid, true);
+  assert.equal(validateWhatsAppNumber("+91 98765 43210").valid, true);
+  assert.equal(
+    validateWhatsAppNumber("+91 98765 43210").normalized,
+    "919876543210",
+  );
+  assert.equal(validateWhatsAppNumber("0987654321").valid, false);
+  assert.equal(validateWhatsAppNumber("12345").valid, false);
+  assert.equal(validateWhatsAppNumber("").valid, false);
+  assert.equal(validateWhatsAppNumber(null).valid, false);
+});
+
+test("productEnquiryMessage personalizes greeting for vendor, product, and stock status", () => {
+  const product = {
+    name: "Banarasi Silk Saree",
+    slug: "banarasi-silk-saree",
+    vendor_name: "Varanasi Weaves",
+  };
+  const inStockMsg = productEnquiryMessage(product, {
+    variant: { size: "Free Size" },
+    currentPrice: 8500,
+    inStock: true,
+  });
+  assert.ok(inStockMsg.includes("Hi Varanasi Weaves"));
+  assert.ok(inStockMsg.includes("Banarasi Silk Saree"));
+  assert.ok(inStockMsg.includes("Size: Free Size"));
+  assert.ok(inStockMsg.includes("Price: ₹8,500"));
+
+  const restockMsg = productEnquiryMessage(product, {
+    inStock: false,
+    vendorName: "Specialty Vendor",
+  });
+  assert.ok(restockMsg.includes("Hi Specialty Vendor"));
+  assert.ok(restockMsg.includes("restocking"));
+});
+
+test("multi-vendor cart creates separate orders with individual WhatsApp URLs and item lists", () => {
+  const items = [
+    {
+      name: "Chanderi Kurti",
+      size: "M",
+      quantity: 1,
+      price: 2499,
+      vendor_name: "Vendor Alpha",
+      vendor_whatsapp_number: "919800011111",
+    },
+    {
+      name: "Chanderi Dupatta",
+      size: "Free Size",
+      quantity: 2,
+      price: 1200,
+      vendor_name: "Vendor Alpha",
+      vendor_whatsapp_number: "919800011111",
+    },
+    {
+      name: "Kanjivaram Saree",
+      size: "Free Size",
+      quantity: 1,
+      price: 9999,
+      vendor_name: "Vendor Beta",
+      vendor_whatsapp_number: "919800022222",
+    },
+  ];
+
+  const defaultVendor = {
+    name: "Achu Designer Boutique",
+    whatsapp_number: "919876543210",
+  };
+
+  const groups = createVendorOrderGroups(
+    items,
+    defaultVendor,
+    null,
+    "TEST-REF-123",
+  );
+  assert.equal(groups.length, 2);
+
+  const groupA = groups.find((g) => g.vendor_name === "Vendor Alpha");
+  assert.ok(groupA);
+  assert.equal(groupA.whatsapp_number, "919800011111");
+  assert.equal(groupA.items.length, 2);
+  assert.equal(groupA.subtotal, 4899);
+  assert.ok(groupA.whatsapp_url?.startsWith("https://wa.me/919800011111"));
+  assert.ok(groupA.whatsapp_url?.includes("Chanderi%20Kurti"));
+  assert.ok(groupA.whatsapp_url?.includes("Chanderi%20Dupatta"));
+  assert.ok(!groupA.whatsapp_url?.includes("Kanjivaram%20Saree"));
+
+  const groupB = groups.find((g) => g.vendor_name === "Vendor Beta");
+  assert.ok(groupB);
+  assert.equal(groupB.whatsapp_number, "919800022222");
+  assert.equal(groupB.items.length, 1);
+  assert.equal(groupB.subtotal, 9999);
+  assert.ok(groupB.whatsapp_url?.startsWith("https://wa.me/919800022222"));
+  assert.ok(groupB.whatsapp_url?.includes("Kanjivaram%20Saree"));
+  assert.ok(!groupB.whatsapp_url?.includes("Chanderi%20Kurti"));
+});
+
+test("productDirectOrderMessage generates direct purchase pre-filled message with quantity and total", () => {
+  const msg = productDirectOrderMessage(
+    { name: "Silk Lehenga", slug: "silk-lehenga", vendor_name: "Surat Silks" },
+    { variant: { size: "L" }, price: 4500, quantity: 2, vendorName: "Surat Silks" },
+  );
+  assert.ok(msg.includes("Hi Surat Silks"));
+  assert.ok(msg.includes("Product: Silk Lehenga"));
+  assert.ok(msg.includes("Size: L"));
+  assert.ok(msg.includes("Quantity: 2"));
+  assert.ok(msg.includes("Price: ₹4,500 × 2"));
+  assert.ok(msg.includes("Total Amount: ₹9,000"));
+});
+
+test("ImageKit URL builder formats WebP/AVIF auto delivery, quality compression, and responsive widths", () => {
+  const url1 = buildImageKitUrl("products/saree-1.webp");
+  assert.ok(
+    url1.startsWith(
+      "https://ik.imagekit.io/9nwmg4m7o/products/saree-1.webp",
+    ),
+  );
+  assert.ok(url1.includes("tr=f-auto,q-80"));
+
+  const url2 = buildImageKitUrl(
+    "https://ik.imagekit.io/9nwmg4m7o/products/saree-1.webp",
+    {
+      width: 600,
+      height: 800,
+      quality: 85,
+      format: "webp",
+    },
+  );
+  assert.ok(url2.includes("w-600"));
+  assert.ok(url2.includes("h-800"));
+  assert.ok(url2.includes("q-85"));
+  assert.ok(url2.includes("f-webp"));
+
+  // imageUrl utility delivers via ImageKit with f-auto
+  const resolved = imageUrl(
+    "https://ik.imagekit.io/9nwmg4m7o/products/test.jpg",
+  );
+  assert.ok(resolved.includes("f-auto"));
+
+  // Local assets are preserved without modification
+  assert.equal(imageUrl("/images/saree.png"), "/images/saree.png");
+  assert.equal(isImageKitUrl("https://ik.imagekit.io/9nwmg4m7o/test.png"), true);
+  assert.equal(isImageKitUrl("/images/saree.png"), false);
+});
+
+test("savedCartSchema allows ImageKit URLs and rejects foreign untrusted image origins", () => {
+  const validItem = {
+    product_id: "prod-1",
+    variant_id: "var-1",
+    slug: "emerald-silk-saree",
+    name: "Emerald Silk Saree",
+    size: "Free Size",
+    image:
+      "https://ik.imagekit.io/9nwmg4m7o/products/emerald-saree.webp?tr=f-auto,q-80",
+    price: 3490,
+    quantity: 1,
+    stock: 5,
+  };
+
+  const validCart = savedCartSchema.safeParse({ items: [validItem] });
+  assert.equal(validCart.success, true);
+
+  const invalidCart = savedCartSchema.safeParse({
+    items: [
+      {
+        ...validItem,
+        image: "https://malicious-site.example/photo.jpg",
+      },
+    ],
+  });
+  assert.equal(invalidCart.success, false);
+});
+
+

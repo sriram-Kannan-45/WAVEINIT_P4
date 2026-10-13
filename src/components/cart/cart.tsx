@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
@@ -8,10 +8,14 @@ import {
   ShoppingBag,
   ArrowUpRight,
   RefreshCw,
+  MessageCircle,
 } from "lucide-react";
 import { useCart } from "@/store/cart-store";
 import { money, paise } from "@/lib/utils";
-export function Cart() {
+import { defaultStore } from "@/lib/defaults";
+import { createVendorOrderGroups } from "@/lib/whatsapp";
+import type { StoreSettings } from "@/types";
+export function Cart({ store }: { store?: StoreSettings } = {}) {
   const items = useCart((s) => s.items);
   const remove = useCart((s) => s.remove);
   const setQuantity = useCart((s) => s.setQuantity);
@@ -83,13 +87,20 @@ export function Cart() {
   const subtotal =
     items.reduce((sum, i) => sum + paise(i.price) * i.quantity, 0) / 100;
   const unavailable = items.some((i) => !i.stock || i.quantity > i.stock);
+  const defaultVendor = {
+    name: store?.business_name || defaultStore.business_name,
+    whatsapp_number: store?.whatsapp_number || defaultStore.whatsapp_number,
+  };
+  const vendorGroups = createVendorOrderGroups(items, defaultVendor);
+  const isMultiVendor = vendorGroups.length > 1;
+
   return (
     <div className="cart-layout">
       <div>
         {items.map((i) => (
           <article className="cart-item" key={i.variant_id}>
             <Link href={`/product/${i.slug}`} className="cart-item-image">
-              <Image src={i.image} alt={i.name} fill sizes="100px" />
+              <OptimizedImage src={i.image} alt={i.name} fill sizes="100px" />
             </Link>
             <div>
               <Link href={`/product/${i.slug}`}>
@@ -97,6 +108,7 @@ export function Cart() {
               </Link>
               <p>
                 Size: {i.size}
+                {i.vendor_name ? ` · Vendor: ${i.vendor_name}` : ""}
                 {i.sample ? " · Preview piece" : ""}
               </p>
               <div className="quantity-control">
@@ -161,18 +173,161 @@ export function Cart() {
           <span>Subtotal</span>
           <strong>{money(subtotal)}</strong>
         </div>
+        <div className="summary-line">
+          <span>Delivery charge</span>
+          <span style={{ color: "var(--primary, #1e3a2f)", fontWeight: 500 }}>
+            Complimentary across India
+          </span>
+        </div>
+        <div
+          className="summary-line summary-total"
+          style={{
+            borderTop: "1px solid var(--line, #e2dcd2)",
+            paddingTop: 14,
+            marginTop: 14,
+          }}
+        >
+          <span>Estimated total</span>
+          <strong style={{ fontSize: 20 }}>{money(subtotal)}</strong>
+        </div>
         <p className="summary-note">
-          Shipping and availability are confirmed by the boutique. No payment is
-          collected on this website.
+          Shipping and piece availability are confirmed by our boutique
+          stylists. No payment is collected on this website.
         </p>
+        {isMultiVendor && (
+          <div
+            style={{
+              padding: "10px 14px",
+              margin: "12px 0",
+              backgroundColor: "var(--background-card, #fcfbf9)",
+              border: "1px solid var(--line, #e2dcd2)",
+              borderRadius: 6,
+              fontSize: 13,
+              lineHeight: 1.4,
+            }}
+          >
+            <strong>Multi-vendor Bag:</strong> Your pieces come from{" "}
+            {vendorGroups.length} vendors. In accordance with boutique policy,
+            each vendor order is confirmed separately on WhatsApp.
+          </div>
+        )}
         {unavailable ? (
           <p className="field-error">
             Please update unavailable items before continuing.
           </p>
         ) : (
-          <Link className="button" href="/checkout">
-            Continue to checkout <ArrowUpRight size={15} />
-          </Link>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
+              marginTop: 14,
+            }}
+          >
+            <Link className="button" href="/checkout">
+              Continue to checkout <ArrowUpRight size={15} />
+            </Link>
+            {!isMultiVendor && vendorGroups[0]?.whatsapp_url && (
+              <a
+                className="button"
+                href={vendorGroups[0].whatsapp_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Order bag via WhatsApp"
+                style={{
+                  backgroundColor: "#25D366",
+                  color: "#ffffff",
+                  border: "none",
+                  fontWeight: 500,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                }}
+              >
+                <MessageCircle size={16} /> Order bag via WhatsApp
+              </a>
+            )}
+            {isMultiVendor && (
+              <div
+                style={{
+                  marginTop: 10,
+                  paddingTop: 12,
+                  borderTop: "1px solid var(--line, #e2dcd2)",
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                    marginBottom: 8,
+                  }}
+                >
+                  Order directly per vendor:
+                </p>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 8,
+                  }}
+                >
+                  {vendorGroups.map((vg, idx) =>
+                    vg.whatsapp_url ? (
+                      <a
+                        key={vg.whatsapp_number + idx}
+                        className="button outline"
+                        href={vg.whatsapp_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          fontSize: 13,
+                          padding: "9px 12px",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                          <MessageCircle
+                            size={15}
+                            color="#25D366"
+                          />
+                          {vg.vendor_name} ({vg.items.length} {vg.items.length === 1 ? "item" : "items"})
+                        </span>
+                        <span>
+                          {money(vg.subtotal)}{" "}
+                          <ArrowUpRight
+                            size={13}
+                            style={{
+                              display: "inline",
+                              verticalAlign: "middle",
+                            }}
+                          />
+                        </span>
+                      </a>
+                    ) : (
+                      <div
+                        key={vg.whatsapp_number + idx}
+                        style={{
+                          fontSize: 12,
+                          padding: "8px 12px",
+                          border: "1px dashed var(--line, #e2dcd2)",
+                          borderRadius: 6,
+                          color: "var(--muted)",
+                          display: "flex",
+                          justifyContent: "space-between",
+                        }}
+                      >
+                        <span>{vg.vendor_name} ({vg.items.length} items)</span>
+                        <span className="field-error" style={{ fontSize: 11 }}>WhatsApp not configured</span>
+                      </div>
+                    ),
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         )}
         <p className="summary-note">
           Your final order is confirmed through WhatsApp.

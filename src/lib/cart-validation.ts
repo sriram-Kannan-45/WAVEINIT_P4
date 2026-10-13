@@ -18,8 +18,16 @@ export const savedCartSchema = z.object({
             if (/^\/(?!\/)/.test(s)) return true;
             try {
               const u = new URL(s);
+              if (u.protocol !== "https:") return false;
+              if (
+                u.hostname === "ik.imagekit.io" &&
+                (u.pathname.startsWith("/9nwmg4m7o/") ||
+                  u.pathname === "/9nwmg4m7o")
+              ) {
+                return true;
+              }
               return (
-                u.protocol === "https:" &&
+                Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) &&
                 u.origin === process.env.NEXT_PUBLIC_SUPABASE_URL &&
                 u.pathname.startsWith("/storage/v1/object/public/boutique/")
               );
@@ -31,6 +39,8 @@ export const savedCartSchema = z.object({
         quantity: z.number().int().min(1).max(99),
         stock: z.number().int().min(0).max(999999),
         sample: z.boolean().optional(),
+        vendor_name: z.string().max(200).optional(),
+        vendor_whatsapp_number: z.string().max(50).optional(),
       }),
     )
     .max(30)

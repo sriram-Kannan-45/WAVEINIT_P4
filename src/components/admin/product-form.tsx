@@ -11,7 +11,7 @@ import { saveProduct } from "@/lib/admin-client";
 import { productSchema } from "@/lib/validations";
 import { slugify } from "@/lib/utils";
 import { ImageUploader } from "./image-uploader";
-import type { Product, Taxonomy } from "@/types";
+import type { Product, Subcategory, Taxonomy } from "@/types";
 type Input = z.input<typeof productSchema>;
 type Output = z.output<typeof productSchema>;
 const details: [keyof Input, string, boolean?][] = [
@@ -28,10 +28,12 @@ const details: [keyof Input, string, boolean?][] = [
 export function ProductForm({
   product,
   categories,
+  subcategories = [],
   collections,
 }: {
   product?: Product;
   categories: Taxonomy[];
+  subcategories?: Subcategory[];
   collections: Taxonomy[];
 }) {
   const router = useRouter();
@@ -49,14 +51,26 @@ export function ProductForm({
     defaultValues: product
       ? {
           ...product,
+          subcategory_id: product.subcategory_id || "",
           selling_price: Number(product.selling_price),
           original_price:
             product.original_price === null
               ? null
               : Number(product.original_price),
+          meta_title: product.meta_title || "",
+          meta_description: product.meta_description || "",
+          vendor_name: product.vendor_name || product.vendor?.name || "",
+          vendor_whatsapp_number:
+            product.vendor_whatsapp_number ||
+            product.vendor?.whatsapp_number ||
+            "",
           variants: product.product_variants.map((v) => ({
             ...v,
             sku: v.sku || "",
+            price:
+              v.price === null || v.price === undefined
+                ? null
+                : Number(v.price),
           })),
           images: product.product_images,
           collection_ids: product.product_collections.map(
@@ -67,6 +81,7 @@ export function ProductForm({
           name: "",
           slug: "",
           category_id: "",
+          subcategory_id: "",
           selling_price: 0,
           original_price: null,
           status: "draft",
@@ -82,8 +97,15 @@ export function ProductForm({
           keywords: "",
           meta_title: "",
           meta_description: "",
+          vendor_name: "",
+          vendor_whatsapp_number: "",
           variants: [
-            { size: "FREE SIZE", stock_quantity: 0, active: true, sku: "" },
+            { size: "S", stock_quantity: 5, active: true, sku: "", price: null },
+            { size: "M", stock_quantity: 10, active: true, sku: "", price: null },
+            { size: "L", stock_quantity: 8, active: true, sku: "", price: null },
+            { size: "XL", stock_quantity: 3, active: true, sku: "", price: null },
+            { size: "2XL", stock_quantity: 4, active: true, sku: "", price: null },
+            { size: "3XL", stock_quantity: 0, active: true, sku: "", price: null },
           ],
           images: [],
           collection_ids: [],
@@ -92,6 +114,10 @@ export function ProductForm({
   const variants = useWatch({ control, name: "variants" });
   const images = useWatch({ control, name: "images" });
   const chosen = useWatch({ control, name: "collection_ids" });
+  const selectedCategoryId = useWatch({ control, name: "category_id" });
+  const availableSubcategories = (subcategories || []).filter(
+    (s) => s.category_id === selectedCategoryId,
+  );
   async function submit(values: Output) {
     setBusy(true);
     setServerError("");
@@ -147,7 +173,13 @@ export function ProductForm({
         </label>
         <label className="field">
           <span>Category *</span>
-          <select {...register("category_id")}>
+          <select
+            {...register("category_id", {
+              onChange: () => {
+                setValue("subcategory_id", "");
+              },
+            })}
+          >
             <option value="">Select category</option>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
@@ -159,6 +191,18 @@ export function ProductForm({
           {errors.category_id && (
             <small className="field-error">Select a category.</small>
           )}
+        </label>
+        <label className="field">
+          <span>Subcategory (optional)</span>
+          <select {...register("subcategory_id")}>
+            <option value="">No subcategory</option>
+            {availableSubcategories.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+                {!s.active ? " (inactive)" : ""}
+              </option>
+            ))}
+          </select>
         </label>
         <label className="field">
           <span>Status</span>
@@ -208,6 +252,26 @@ export function ProductForm({
             )}
           </label>
         ))}
+      </div>
+      <h3>Vendor &amp; WhatsApp Routing</h3>
+      <p className="summary-note">
+        Configure vendor details for direct WhatsApp enquiries and multi-vendor checkout. Leave empty to use the main boutique WhatsApp number.
+      </p>
+      <div className="form-grid">
+        <label className="field">
+          <span>Vendor / Artisan name</span>
+          <input
+            {...register("vendor_name")}
+            placeholder="e.g. Varanasi Weaves"
+          />
+        </label>
+        <label className="field">
+          <span>Vendor WhatsApp number</span>
+          <input
+            {...register("vendor_whatsapp_number")}
+            placeholder="e.g. 919876543210"
+          />
+        </label>
       </div>
       <h3>Merchandising</h3>
       <div className="switch-grid">
@@ -262,89 +326,212 @@ export function ProductForm({
             "Check your photos and choose one cover image."}
         </p>
       )}
-      <h3>Sizes & stock</h3>
+      <h3>Sizes & stock management</h3>
       <p className="summary-note">
-        Each size has its own availability. Zero stock disables that size on the
-        storefront.
+        Configure size-specific inventory and optional variant pricing. Zero stock marks that size as Out of Stock automatically.
       </p>
-      <div className="variant-editor">
-        {variants.map((v, i) => (
-          <div className="variant-row" key={i}>
-            <input
-              aria-label={`Size ${i + 1}`}
-              placeholder="Size"
-              value={v.size}
-              onChange={(e) =>
-                setValue(
-                  "variants",
-                  variants.map((a, j) =>
-                    j === i ? { ...a, size: e.target.value } : a,
-                  ),
-                )
-              }
-            />
-            <input
-              aria-label={`Stock for ${v.size}`}
-              type="number"
-              min="0"
-              value={v.stock_quantity}
-              onChange={(e) =>
-                setValue(
-                  "variants",
-                  variants.map((a, j) =>
-                    j === i
-                      ? { ...a, stock_quantity: Number(e.target.value) }
-                      : a,
-                  ),
-                )
-              }
-            />
-            <label className="checkbox-field">
-              <input
-                type="checkbox"
-                checked={v.active}
-                onChange={(e) =>
-                  setValue(
-                    "variants",
-                    variants.map((a, j) =>
-                      j === i ? { ...a, active: e.target.checked } : a,
-                    ),
-                  )
-                }
-              />
-              Active
-            </label>
+
+      <div style={{ margin: "14px 0 16px", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "8px" }}>
+        <span style={{ fontSize: "11px", fontWeight: 600, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          Quick add size:
+        </span>
+        {["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "FREE SIZE"].map((sz) => {
+          const exists = variants.some((v) => v.size.trim().toUpperCase() === sz);
+          return (
             <button
-              className="icon-button"
+              key={sz}
               type="button"
-              aria-label={`Remove ${v.size}`}
-              disabled={variants.length === 1}
-              onClick={() =>
-                setValue(
-                  "variants",
-                  variants.filter((_, j) => j !== i),
-                )
-              }
+              className={`button outline ${exists ? "active" : ""}`}
+              style={{
+                padding: "4px 10px",
+                fontSize: "11px",
+                minHeight: "28px",
+                borderRadius: "6px",
+                opacity: exists ? 0.5 : 1,
+              }}
+              disabled={exists}
+              onClick={() => {
+                setValue("variants", [
+                  ...variants,
+                  { size: sz, stock_quantity: 5, active: true, sku: "", price: null },
+                ]);
+                toast.success(`Size ${sz} added`);
+              }}
             >
-              <Trash2 size={16} />
+              + {sz}
             </button>
-          </div>
-        ))}
+          );
+        })}
       </div>
-      <button
-        className="button outline"
-        type="button"
-        style={{ marginTop: 15 }}
-        onClick={() =>
-          setValue("variants", [
-            ...variants,
-            { size: "", stock_quantity: 0, active: true, sku: "" },
-          ])
-        }
-      >
-        <Plus size={15} />
-        Add size
-      </button>
+
+      <div className="admin-table-wrap" style={{ background: "#fcfaf4", border: "1px solid var(--line)", borderRadius: "8px", padding: "12px" }}>
+        <table className="admin-table" style={{ margin: 0 }}>
+          <thead>
+            <tr>
+              <th style={{ minWidth: "90px" }}>Size *</th>
+              <th style={{ minWidth: "100px" }}>Stock *</th>
+              <th style={{ minWidth: "140px" }}>Price (₹, optional)</th>
+              <th style={{ minWidth: "120px" }}>SKU</th>
+              <th style={{ minWidth: "80px" }}>Active</th>
+              <th style={{ width: "50px" }}>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {variants.map((v, i) => (
+              <tr key={i}>
+                <td>
+                  <input
+                    aria-label={`Size ${i + 1}`}
+                    placeholder="e.g. M, 4XL"
+                    value={v.size}
+                    style={{ minHeight: "36px", padding: "6px 10px" }}
+                    onChange={(e) =>
+                      setValue(
+                        "variants",
+                        variants.map((a, j) =>
+                          j === i ? { ...a, size: e.target.value } : a,
+                        ),
+                      )
+                    }
+                  />
+                </td>
+                <td>
+                  <input
+                    aria-label={`Stock for ${v.size || `row ${i + 1}`}`}
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    value={v.stock_quantity}
+                    style={{ minHeight: "36px", padding: "6px 10px" }}
+                    onChange={(e) =>
+                      setValue(
+                        "variants",
+                        variants.map((a, j) =>
+                          j === i
+                            ? { ...a, stock_quantity: Math.max(0, Number(e.target.value) || 0) }
+                            : a,
+                        ),
+                      )
+                    }
+                  />
+                </td>
+                <td>
+                  <input
+                    aria-label={`Price for ${v.size || `row ${i + 1}`}`}
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="Default base price"
+                    value={v.price === null || v.price === undefined ? "" : v.price}
+                    style={{ minHeight: "36px", padding: "6px 10px" }}
+                    onChange={(e) =>
+                      setValue(
+                        "variants",
+                        variants.map((a, j) =>
+                          j === i
+                            ? {
+                                ...a,
+                                price: e.target.value === "" ? null : Math.max(0, Number(e.target.value)),
+                              }
+                            : a,
+                        ),
+                      )
+                    }
+                  />
+                </td>
+                <td>
+                  <input
+                    aria-label={`SKU for ${v.size || `row ${i + 1}`}`}
+                    placeholder="Variant SKU"
+                    value={v.sku || ""}
+                    style={{ minHeight: "36px", padding: "6px 10px" }}
+                    onChange={(e) =>
+                      setValue(
+                        "variants",
+                        variants.map((a, j) =>
+                          j === i ? { ...a, sku: e.target.value } : a,
+                        ),
+                      )
+                    }
+                  />
+                </td>
+                <td>
+                  <label className="checkbox-field" style={{ margin: 0, justifyContent: "center" }}>
+                    <input
+                      type="checkbox"
+                      checked={v.active}
+                      onChange={(e) =>
+                        setValue(
+                          "variants",
+                          variants.map((a, j) =>
+                            j === i ? { ...a, active: e.target.checked } : a,
+                          ),
+                        )
+                      }
+                    />
+                  </label>
+                </td>
+                <td>
+                  <button
+                    className="icon-button"
+                    type="button"
+                    aria-label={`Remove ${v.size || `size ${i + 1}`}`}
+                    disabled={variants.length === 1}
+                    style={{ opacity: variants.length === 1 ? 0.3 : 1 }}
+                    onClick={() =>
+                      setValue(
+                        "variants",
+                        variants.filter((_, j) => j !== i),
+                      )
+                    }
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div style={{ display: "flex", gap: "12px", alignItems: "center", marginTop: "12px", flexWrap: "wrap" }}>
+        <button
+          className="button outline"
+          type="button"
+          onClick={() =>
+            setValue("variants", [
+              ...variants,
+              { size: "", stock_quantity: 0, active: true, sku: "", price: null },
+            ])
+          }
+        >
+          <Plus size={15} />
+          Add size
+        </button>
+
+        <button
+          className="button outline"
+          type="button"
+          onClick={() => {
+            const defaults = [
+              { size: "S", stock_quantity: 5, active: true, sku: "", price: null },
+              { size: "M", stock_quantity: 10, active: true, sku: "", price: null },
+              { size: "L", stock_quantity: 8, active: true, sku: "", price: null },
+              { size: "XL", stock_quantity: 3, active: true, sku: "", price: null },
+              { size: "2XL", stock_quantity: 4, active: true, sku: "", price: null },
+              { size: "3XL", stock_quantity: 0, active: true, sku: "", price: null },
+            ];
+            setValue("variants", defaults);
+            toast.success("Standard sizes (S to 3XL) applied");
+          }}
+        >
+          Reset to default sizes (S–3XL)
+        </button>
+
+        <span style={{ marginLeft: "auto", fontSize: "12px", color: "var(--muted)" }}>
+          Total stock: <strong>{variants.reduce((sum, v) => sum + (v.active ? v.stock_quantity : 0), 0)} units</strong>
+        </span>
+      </div>
       {errors.variants && (
         <p className="field-error">
           {errors.variants.message ||

@@ -13,6 +13,8 @@ export type CartItem = {
   quantity: number;
   stock: number;
   sample?: boolean;
+  vendor_name?: string;
+  vendor_whatsapp_number?: string;
 };
 type CartState = {
   items: CartItem[];

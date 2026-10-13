@@ -21,12 +21,14 @@ const price = z
   );
 const image = z
   .string()
-  .max(500)
+  .max(1000)
   .refine(
     (s) =>
       s === "" ||
       /^\/(?!\/)[a-zA-Z0-9/_.-]+$/.test(s) ||
-      /^(products|categories|collections|banners)\/[a-zA-Z0-9_.-]+$/.test(s),
+      /^(products|categories|collections|banners)\/[a-zA-Z0-9_.-]+$/.test(s) ||
+      (s.startsWith("https://ik.imagekit.io/") &&
+        (s.includes("/9nwmg4m7o/") || s.includes("/9nwmg4m7o"))),
     "Upload an image using the image picker.",
   )
   .default("");
@@ -74,11 +76,21 @@ export const taxonomySchema = z.object({
   display_order: z.number().int().min(0),
   featured: z.boolean().optional(),
 });
+export const subcategorySchema = z.object({
+  category_id: z.uuid("Select a valid category."),
+  name,
+  slug,
+  description: text,
+  image,
+  active: z.boolean(),
+  display_order: z.number().int().min(0),
+});
 export const productSchema = z
   .object({
     name,
     slug,
     category_id: z.uuid(),
+    subcategory_id: z.string().trim().max(100).nullable().optional(),
     short_description: text,
     description: text,
     fabric: short,
@@ -94,6 +106,8 @@ export const productSchema = z
     is_best_seller: z.boolean(),
     meta_title: short,
     meta_description: short,
+    vendor_name: z.string().trim().max(200).nullable().optional(),
+    vendor_whatsapp_number: z.string().trim().max(50).nullable().optional(),
     variants: z
       .array(
         z.object({
@@ -101,12 +115,13 @@ export const productSchema = z
           stock_quantity: z.number().int().min(0).max(999999),
           active: z.boolean(),
           sku: short,
+          price: price.nullable().optional(),
         }),
       )
       .min(1)
       .max(30)
       .refine(
-        (v) => new Set(v.map((v) => v.size)).size === v.length,
+        (v) => new Set(v.map((v) => v.size.toUpperCase())).size === v.length,
         "Sizes must be unique.",
       ),
     images: z
@@ -223,6 +238,8 @@ export const enquirySchema = z.object({
         variant_id: z.uuid(),
         quantity: z.number().int().min(1).max(99),
         expected_price: price,
+        vendor_name: z.string().trim().max(200).optional(),
+        vendor_whatsapp_number: z.string().trim().max(50).optional(),
       }),
     )
     .min(1)
@@ -235,3 +252,13 @@ export const enquirySchema = z.object({
 });
 export type CustomerInput = z.input<typeof customerSchema>;
 export type Customer = z.output<typeof customerSchema>;
+
+export const newArrivalSchema = z.object({
+  product_id: z.uuid("Select a valid product."),
+  display_order: z.number().int().min(0).default(0),
+  badge_text: z.string().trim().min(1).max(50).default("NEW"),
+  start_date: z.string().nullable().optional(),
+  end_date: z.string().nullable().optional(),
+  active: z.boolean().default(true),
+});
+

@@ -19,6 +19,16 @@ import {
   type IntroMetadata,
 } from "./canvas-utils";
 
+function triggerStoreAnimation() {
+  if (typeof document === "undefined") return;
+  const state = document.documentElement.getAttribute("data-store-animate");
+  if (state === "in" || state === "done") return;
+  document.documentElement.setAttribute("data-store-animate", "in");
+  window.setTimeout(() => {
+    document.documentElement.setAttribute("data-store-animate", "done");
+  }, 1800);
+}
+
 export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
   const sectionRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -69,6 +79,7 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
       lastPosterLStr = "",
       lastPosterTStr = "";
 
+
     const request = () => {
       if (!disposed && !raf) raf = requestAnimationFrame(render);
     };
@@ -104,9 +115,26 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
         lastActiveStr = activeStr;
         section.dataset.active = activeStr;
       }
-      if (lastFadeStr !== "1") {
-        lastFadeStr = "1";
-        section.style.setProperty("--intro-opacity", "1");
+      const fadeStart = frames.scroll.fadeStart;
+      const fade = motion.matches
+        ? 0
+        : clamp((progress - fadeStart) / (1 - fadeStart));
+      const fadeStr = (1 - fade).toFixed(3);
+      if (lastFadeStr !== fadeStr) {
+        lastFadeStr = fadeStr;
+        section.style.setProperty("--intro-opacity", fadeStr);
+        const scale = (1 + fade * 0.08).toFixed(3);
+        const blur = (fade * 3).toFixed(2);
+        const brightness = (1 + fade * 0.15).toFixed(3);
+        section.style.setProperty("--intro-logo-scale", scale);
+        section.style.setProperty(
+          "--intro-logo-filter",
+          fade > 0 ? `brightness(${brightness}) blur(${blur}px)` : "none",
+        );
+        section.style.setProperty(
+          "--intro-pointer-events",
+          fade >= 1 ? "none" : "auto",
+        );
       }
       const phaseStr = motion.matches
         ? "static"
@@ -120,6 +148,16 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
       if (lastPhaseStr !== phaseStr) {
         lastPhaseStr = phaseStr;
         section.dataset.phase = phaseStr;
+        if (phaseStr === "store") {
+          triggerStoreAnimation();
+        }
+      }
+      if (progress >= 0.98) {
+        triggerStoreAnimation();
+      } else if (progress < 0.94) {
+        if (typeof document !== "undefined") {
+          document.documentElement.removeAttribute("data-store-animate");
+        }
       }
       const frontInert = !motion.matches && frontProgress === 1;
       if (front.inert !== frontInert) front.inert = frontInert;
@@ -127,7 +165,7 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
       if (videoStage.inert !== stageInert) videoStage.inert = stageInert;
       // Keep hidden ecommerce controls out of keyboard navigation until revealed.
       if (store) {
-        const storeInert = !motion.matches && progress < 1;
+        const storeInert = !motion.matches && progress < frames.scroll.fadeStart;
         if (store.inert !== storeInert) store.inert = storeInert;
       }
       request();
@@ -373,6 +411,21 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
     );
     intersectionObserver.observe(section);
 
+    let storeObserver: IntersectionObserver | undefined;
+    if (store && typeof IntersectionObserver !== "undefined") {
+      storeObserver = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting) {
+              triggerStoreAnimation();
+            }
+          }
+        },
+        { threshold: 0.05 },
+      );
+      storeObserver.observe(store);
+    }
+
     geometry();
     current = target;
     window.addEventListener("scroll", scroll, { passive: true });
@@ -388,6 +441,7 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
       cancelAnimationFrame(raf);
       observer.disconnect();
       intersectionObserver.disconnect();
+      storeObserver?.disconnect();
       window.removeEventListener("scroll", scroll);
       window.removeEventListener("resize", geometry);
       window.removeEventListener("pageshow", restore);
@@ -464,6 +518,7 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
             onClick={() => {
               const store = document.getElementById("boutique");
               if (store) store.inert = false;
+              triggerStoreAnimation();
             }}
           >
             Skip animation — enter the boutique

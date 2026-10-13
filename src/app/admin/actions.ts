@@ -6,13 +6,24 @@ import { headers, cookies } from "next/headers";
 import { createHash, randomUUID } from "node:crypto";
 import {
   ADMIN_COOKIE_NAME,
+  ADMIN_REFRESH_COOKIE_NAME,
+  ACCESS_TOKEN_TTL_SEC,
+  REFRESH_TOKEN_TTL_SEC,
   checkAdminCredentials,
-  signAdminToken,
+  authenticateAdmin,
+  createAdminAccessToken,
+  generateRefreshToken,
+  registerAdminSession,
+  hashRefreshToken,
+  revokeAdminSession,
+  revokeMemorySession,
 } from "@/lib/admin-auth";
+import { checkRateLimit } from "@/lib/rate-limiter";
 import {
   validateUploadFile,
   ImageValidationError,
 } from "@/lib/validations/image";
+import { uploadToImageKit } from "@/lib/imagekit";
 import {
   requireAdmin,
   supabaseServer,
@@ -21,10 +32,14 @@ import {
 } from "@/lib/supabase/server";
 import {
   taxonomySchema,
+  subcategorySchema,
   productSchema,
   settingsSchema,
   homepageSchema,
+  newArrivalSchema,
 } from "@/lib/validations";
+import { adminNotifications } from "@/lib/admin-data";
+import type { AdminNotification } from "@/types";
 type Result = { ok: boolean; error?: string; id?: string; path?: string };
 function failure(error: unknown): Result {
   if (error instanceof ImageValidationError)
@@ -67,18 +82,66 @@ export async function login(form: FormData): Promise<Result> {
     return { ok: false, error: "Enter a valid admin ID and password." };
   }
 
-  // 1. Authenticate designated admin ID (achu) and password (1234)
-  if (checkAdminCredentials(rawId, password)) {
+  // Rate limiting per IP
+  const h = await headers();
+  const ip =
+    h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    h.get("x-real-ip") ||
+    "local";
+  const rateLimit = checkRateLimit(`login:${ip}`, 8, 600);
+  if (!rateLimit.allowed) {
+    return {
+      ok: false,
+      error: `Too many login attempts. Please wait ${rateLimit.resetSeconds} seconds before trying again.`,
+    };
+  }
+
+  // 1. Authenticate designated admin ID via unified authenticateAdmin
+  const auth = await authenticateAdmin(rawId, password);
+  if (auth.ok && auth.admin) {
     const jar = await cookies();
-    const token = await signAdminToken("achu");
-    jar.set(ADMIN_COOKIE_NAME, token, {
+    const adminId = auth.admin.id;
+    const email = auth.admin.email;
+    const accessToken = createAdminAccessToken({
+      id: adminId,
+      email,
+      role: auth.admin.role,
+    });
+
+    const { rawToken, tokenHash, expiresAt } = generateRefreshToken();
+    await registerAdminSession({
+      adminId,
+      tokenHash,
+      expiresAt: expiresAt.getTime(),
+      userAgent: h.get("user-agent") || "",
+      ipAddress: ip,
+    });
+
+    const isProduction = process.env.NODE_ENV === "production";
+
+    // Set short-lived access token cookie (15m)
+    jar.set(ADMIN_COOKIE_NAME, accessToken, {
       httpOnly: true,
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      secure: isProduction,
       path: "/",
-      maxAge: 7 * 24 * 60 * 60,
+      maxAge: ACCESS_TOKEN_TTL_SEC,
     });
+
+    // Set rotating refresh token cookie (7d)
+    jar.set(ADMIN_REFRESH_COOKIE_NAME, rawToken, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: isProduction,
+      path: "/",
+      maxAge: REFRESH_TOKEN_TTL_SEC,
+    });
+
     return { ok: true };
+  }
+
+  if (auth.error === "account_disabled") {
+    return { ok: false, error: "This administrator account is disabled." };
   }
 
   // 2. Authenticate against Supabase if configured
@@ -93,10 +156,6 @@ export async function login(form: FormData): Promise<Result> {
       return { ok: false, error: "The admin ID or password is incorrect." };
 
     if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      const h = await headers();
-      const ip = process.env.VERCEL
-        ? h.get("x-vercel-forwarded-for") || "unknown"
-        : "local";
       const key = createHash("sha256")
         .update(`login:${ip}:${process.env.SUPABASE_SERVICE_ROLE_KEY}`)
         .digest("hex");
@@ -128,6 +187,38 @@ export async function login(form: FormData): Promise<Result> {
         error: "This account is not authorized to manage the boutique.",
       };
     }
+
+    const jar = await cookies();
+    const accessToken = createAdminAccessToken({
+      id: data.user.id,
+      email: data.user.email,
+      role: "admin",
+    });
+    const { rawToken, tokenHash, expiresAt } = generateRefreshToken();
+    await registerAdminSession({
+      adminId: data.user.id,
+      tokenHash,
+      expiresAt: expiresAt.getTime(),
+      userAgent: h.get("user-agent") || "",
+      ipAddress: ip,
+    });
+
+    const isProduction = process.env.NODE_ENV === "production";
+    jar.set(ADMIN_COOKIE_NAME, accessToken, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: isProduction,
+      path: "/",
+      maxAge: ACCESS_TOKEN_TTL_SEC,
+    });
+    jar.set(ADMIN_REFRESH_COOKIE_NAME, rawToken, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: isProduction,
+      path: "/",
+      maxAge: REFRESH_TOKEN_TTL_SEC,
+    });
+
     return { ok: true };
   }
 
@@ -135,7 +226,15 @@ export async function login(form: FormData): Promise<Result> {
 }
 export async function logout() {
   const jar = await cookies();
+  const refreshCookie = jar.get(ADMIN_REFRESH_COOKIE_NAME)?.value;
+  if (refreshCookie) {
+    const tokenHash = hashRefreshToken(refreshCookie);
+    await revokeAdminSession(tokenHash);
+  }
+
   jar.delete(ADMIN_COOKIE_NAME);
+  jar.delete(ADMIN_REFRESH_COOKIE_NAME);
+
   if (configured()) {
     try {
       const db = await supabaseServer();
@@ -190,13 +289,38 @@ export async function saveTaxonomy(
     return failure(e);
   }
 }
+export async function saveSubcategory(
+  id: string | null,
+  input: unknown,
+): Promise<Result> {
+  const db = await requireAdmin();
+  try {
+    if (id) z.uuid().parse(id);
+    const parsed = subcategorySchema.parse(input);
+    const result = id
+      ? await db
+          .from("subcategories")
+          .update(parsed)
+          .eq("id", id)
+          .select("id")
+          .single()
+      : await db.from("subcategories").insert(parsed).select("id").single();
+    if (result.error) throw result.error;
+    refresh();
+    return { ok: true, id: result.data.id };
+  } catch (e) {
+    return failure(e);
+  }
+}
 export async function deleteRecord(
-  table: "products" | "categories" | "collections",
+  table: "products" | "categories" | "collections" | "subcategories" | "new_arrivals",
   id: string,
 ): Promise<Result> {
   const db = await requireAdmin();
   try {
-    z.enum(["products", "categories", "collections"]).parse(table);
+    z.enum(["products", "categories", "collections", "subcategories", "new_arrivals"]).parse(
+      table,
+    );
     z.uuid().parse(id);
     const { error } = await db.from(table).delete().eq("id", id);
     if (error) throw error;
@@ -263,13 +387,117 @@ export async function setEnquiryStatus(
     z.enum(["new", "contacted", "confirmed", "cancelled", "completed"]).parse(
       status,
     );
+    // Use atomic inventory deduction/restoration RPC
+    const rpcRes = await db.rpc("admin_set_enquiry_status", {
+      p_enquiry_id: id,
+      p_status: status,
+    });
+    if (rpcRes.error) {
+      // Fallback in case of mock/demo db
+      const { error } = await db
+        .from("order_enquiries")
+        .update({ status })
+        .eq("id", id);
+      if (error) throw error;
+    }
+    refresh();
+    return { ok: true };
+  } catch (e) {
+    return failure(e);
+  }
+}
+export async function saveNewArrival(
+  id: string | null,
+  input: unknown,
+): Promise<Result> {
+  const db = await requireAdmin();
+  try {
+    if (id) z.uuid().parse(id);
+    const data = newArrivalSchema.parse(input);
+    const payload = {
+      product_id: data.product_id,
+      display_order: data.display_order,
+      badge_text: data.badge_text,
+      start_date: data.start_date || null,
+      end_date: data.end_date || null,
+      active: data.active,
+    };
+    if (id) {
+      const { error } = await db
+        .from("new_arrivals")
+        .update(payload)
+        .eq("id", id);
+      if (error) throw error;
+    } else {
+      const { error } = await db
+        .from("new_arrivals")
+        .insert(payload);
+      if (error) throw error;
+    }
+    refresh();
+    return { ok: true };
+  } catch (e) {
+    return failure(e);
+  }
+}
+export async function toggleNewArrival(
+  id: string,
+  active: boolean,
+): Promise<Result> {
+  const db = await requireAdmin();
+  try {
+    z.uuid().parse(id);
     const { error } = await db
-      .from("order_enquiries")
-      .update({ status })
+      .from("new_arrivals")
+      .update({ active })
       .eq("id", id);
     if (error) throw error;
     refresh();
     return { ok: true };
+  } catch (e) {
+    return failure(e);
+  }
+}
+export async function markNotificationRead(
+  id: string,
+): Promise<Result> {
+  const db = await requireAdmin();
+  try {
+    z.uuid().parse(id);
+    const { error } = await db
+      .from("admin_notifications")
+      .update({ read: true })
+      .eq("id", id);
+    if (error) throw error;
+    refresh();
+    return { ok: true };
+  } catch (e) {
+    return failure(e);
+  }
+}
+export async function markAllNotificationsRead(): Promise<Result> {
+  const db = await requireAdmin();
+  try {
+    const { error } = await db
+      .from("admin_notifications")
+      .update({ read: true })
+      .eq("read", false);
+    if (error) throw error;
+    refresh();
+    return { ok: true };
+  } catch (e) {
+    return failure(e);
+  }
+}
+export async function getNotifications(): Promise<{
+  ok: boolean;
+  data?: AdminNotification[];
+  error?: string;
+}> {
+  try {
+    await requireAdmin();
+    const data = await adminNotifications();
+    return { ok: true, data };
   } catch (e) {
     return failure(e);
   }
@@ -345,11 +573,14 @@ export async function updatePassword(form: FormData): Promise<Result> {
     if (password !== form.get("confirm"))
       return { ok: false, error: "The new passwords do not match." };
     if (!configured()) {
-      if (
-        current !== "1234" &&
-        current !== (process.env.ADMIN_PASSWORD || "1234")
-      ) {
+      if (!checkAdminCredentials("achu", current)) {
         return { ok: false, error: "The current password is incorrect." };
+      }
+      // Revoke any previous refresh sessions
+      const jar = await cookies();
+      const refreshCookie = jar.get(ADMIN_REFRESH_COOKIE_NAME)?.value;
+      if (refreshCookie) {
+        revokeMemorySession(hashRefreshToken(refreshCookie));
       }
       return { ok: true };
     }
@@ -377,7 +608,21 @@ export async function uploadImage(form: FormData): Promise<Result> {
       .parse(form.get("folder"));
     const file = form.get("file");
     const { bytes, extension, contentType } = await validateUploadFile(file);
-    const path = `${folder}/${randomUUID()}.${extension}`;
+    const fileName = `${randomUUID()}.${extension}`;
+
+    // If ImageKit private key is configured, securely upload to ImageKit on the backend
+    if (process.env.IMAGEKIT_PRIVATE_KEY) {
+      const uploadRes = await uploadToImageKit({
+        fileBytes: bytes,
+        fileName,
+        folder,
+        tags: ["boutique", folder],
+      });
+      return { ok: true, path: uploadRes.url };
+    }
+
+    // Fallback to Supabase storage when ImageKit private key is not configured
+    const path = `${folder}/${fileName}`;
     const { error } = await db.storage.from("boutique").upload(path, bytes, {
       contentType,
       cacheControl: "31536000",

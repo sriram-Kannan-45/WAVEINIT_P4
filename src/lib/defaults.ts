@@ -2,8 +2,8 @@ import type { Homepage, StoreSettings } from "@/types";
 export const defaultStore: StoreSettings = {
   id: 1,
   business_name: "Achu Designer Boutique",
-  whatsapp_number: "",
-  phone_number: "",
+  whatsapp_number: "916381102874",
+  phone_number: "916381102874",
   instagram_url: "",
   email: "",
   address: "",

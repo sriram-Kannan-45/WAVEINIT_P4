@@ -58,8 +58,16 @@ export default async function ProductPage({
         <Link href="/">Home</Link>
         <span>/</span>
         <Link href={`/category/${p.categories?.slug || ""}`}>
-          {p.categories?.name || "Shop"}
+          {p.categories?.name || "Collections"}
         </Link>
+        {p.subcategories && p.categories?.slug && (
+          <>
+            <span>/</span>
+            <Link href={`/category/${p.categories.slug}/${p.subcategories.slug}`}>
+              {p.subcategories.name}
+            </Link>
+          </>
+        )}
         <span>/</span>
         <span>{p.name}</span>
       </nav>

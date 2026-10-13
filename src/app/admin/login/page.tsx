@@ -21,10 +21,9 @@ export default function Login() {
         <p className="eyebrow">THE OWNER’S SPACE</p>
         <h1>Welcome to Achu.</h1>
         <p>Sign in to care for your collection.</p>
-        {!configured() && (
+        {!configured() && process.env.NODE_ENV !== "production" && (
           <div className="setup-note">
-            Owner mode enabled. Sign in with Admin ID <strong>achu</strong> and
-            password <strong>1234</strong>.
+            Owner mode enabled. Sign in with Admin ID <strong>achu</strong> and authorized credentials.
           </div>
         )}
         <LoginForm />

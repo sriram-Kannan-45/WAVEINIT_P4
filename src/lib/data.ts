@@ -7,16 +7,18 @@ import {
   demoCollections,
   demoHomepage,
   demoProducts,
+  demoSubcategories,
 } from "./demo";
 import type {
   Product,
   Taxonomy,
+  Subcategory,
   Policy,
   Homepage,
   StoreSettings,
 } from "@/types";
 export const productSelect =
-  "*, product_images(*), product_variants(*), product_collections(collection_id), categories(name,slug)";
+  "*, product_images(*), product_variants(*), product_collections(collection_id), categories(name,slug), subcategories(name,slug)";
 export const getStore = cache(async (): Promise<StoreSettings> => {
   if (!configured()) return defaultStore;
   const db = supabasePublic();
@@ -57,9 +59,47 @@ export const getTaxonomies = cache(
     return data || [];
   },
 );
+export const getSubcategories = cache(
+  async (categorySlug?: string): Promise<Subcategory[]> => {
+    if (!configured()) {
+      if (!previewMode()) return [];
+      if (categorySlug) {
+        const cat = demoCategories.find((c) => c.slug === categorySlug);
+        return cat
+          ? demoSubcategories.filter(
+              (s) => s.category_id === cat.id && s.active,
+            )
+          : [];
+      }
+      return demoSubcategories.filter((s) => s.active);
+    }
+    const db = supabasePublic();
+    let query = db
+      .from("subcategories")
+      .select("*, categories!inner(name,slug)")
+      .eq("active", true)
+      .order("display_order");
+    if (categorySlug) {
+      query = query.eq("categories.slug", categorySlug);
+    }
+    const { data, error } = await query;
+    if (error) throw new Error("Subcategories could not be loaded.");
+    return data || [];
+  },
+);
+export const getSubcategory = cache(
+  async (
+    categorySlug: string,
+    subcategorySlug: string,
+  ): Promise<Subcategory | null> => {
+    const list = await getSubcategories(categorySlug);
+    return list.find((s) => s.slug === subcategorySlug) || null;
+  },
+);
 export type CatalogFilter = {
   q?: string;
   category?: string;
+  subcategory?: string;
   collection?: string;
   size?: string;
   min?: string;
@@ -84,11 +124,22 @@ export async function getProducts(
       );
     if (filter.category)
       p = p.filter((p) => p.categories?.slug === filter.category);
+    if (filter.subcategory)
+      p = p.filter((p) => p.subcategories?.slug === filter.subcategory);
     if (filter.collection) {
       const c = demoCollections.find((c) => c.slug === filter.collection);
-      p = p.filter((p) =>
-        p.product_collections.some((pc) => pc.collection_id === c?.id),
-      );
+      if (c) {
+        p = p.filter((p) =>
+          p.product_collections.some((pc) => pc.collection_id === c.id),
+        );
+      } else {
+        const cat = demoCategories.find((cat) => cat.slug === filter.collection);
+        if (cat) {
+          p = p.filter((p) => p.categories?.slug === cat.slug);
+        } else {
+          p = [];
+        }
+      }
     }
     if (filter.size)
       p = p.filter((p) =>
@@ -125,6 +176,7 @@ export async function getProducts(
   const { data, error } = await db.rpc("catalog_search", {
     p_query: filter.q || null,
     p_category: filter.category || null,
+    p_subcategory: filter.subcategory || null,
     p_collection: filter.collection || null,
     p_size: filter.size || null,
     p_min: filter.min ? Number(filter.min) : null,
@@ -166,3 +218,44 @@ export async function getPolicy(slug: string): Promise<Policy | null> {
   if (error) throw new Error("Policy could not be loaded.");
   return data;
 }
+
+export async function getNewArrivals(limit = 4): Promise<Product[]> {
+  if (!configured()) {
+    return demoProducts.slice(0, limit);
+  }
+  const db = supabasePublic();
+  try {
+    const { data, error } = await db
+      .from("new_arrivals")
+      .select(`
+        id,
+        display_order,
+        badge_text,
+        products (
+          ${productSelect}
+        )
+      `)
+      .eq("active", true)
+      .order("display_order", { ascending: true })
+      .limit(limit);
+
+    if (error || !data || data.length === 0) {
+      const fallback = await getProducts({ new: "true" }, limit);
+      return fallback.products;
+    }
+
+    return data
+      .map((item: { products: unknown; badge_text?: string }) => {
+        const p = item.products as Product;
+        if (p && item.badge_text) {
+          return { ...p, is_new_arrival: true, badge_text: item.badge_text };
+        }
+        return p;
+      })
+      .filter(Boolean);
+  } catch {
+    const fallback = await getProducts({ new: "true" }, limit);
+    return fallback.products;
+  }
+}
+

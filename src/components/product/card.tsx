@@ -1,8 +1,9 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import type { Product } from "@/types";
-import { imageUrl, money, stockTotal } from "@/lib/utils";
+import { money, stockTotal } from "@/lib/utils";
+import { OptimizedImage } from "@/components/ui/optimized-image";
+
 export function ProductCard({
   product: p,
   threshold = 3,
@@ -30,17 +31,18 @@ export function ProductCard({
         href={`/product/${p.slug}`}
         aria-label={`View ${p.name}`}
       >
-        <Image
-          src={imageUrl(images[0]?.storage_path || "")}
+        <OptimizedImage
+          src={images[0]?.storage_path || ""}
           alt={images[0]?.alt_text || p.name}
           fill
+          priority={eager}
           loading={eager ? "eager" : "lazy"}
           sizes="(max-width: 600px) 48vw, (max-width: 1000px) 32vw, 25vw"
         />
         {images[1] && (
-          <Image
+          <OptimizedImage
             className="second-image"
-            src={imageUrl(images[1].storage_path)}
+            src={images[1].storage_path}
             alt={images[1].alt_text || p.name}
             fill
             loading="lazy"
@@ -54,13 +56,15 @@ export function ProductCard({
               ? "OUT OF STOCK"
               : stock <= threshold
                 ? `ONLY ${stock} LEFT`
-                : p.is_new_arrival
-                  ? "NEW"
-                  : p.is_best_seller
-                    ? "BEST SELLER"
-                    : discount
-                      ? "SALE"
-                      : ""}
+                : (p as unknown as { badge_text?: string }).badge_text
+                  ? (p as unknown as { badge_text?: string }).badge_text
+                  : p.is_new_arrival
+                    ? "NEW"
+                    : p.is_best_seller
+                      ? "BEST SELLER"
+                      : discount
+                        ? "SALE"
+                        : ""}
         </span>
         <span className="product-hover">
           Discover the piece <ArrowUpRight size={16} />

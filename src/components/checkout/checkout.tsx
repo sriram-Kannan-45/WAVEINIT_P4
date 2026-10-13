@@ -11,6 +11,8 @@ import {
   type Customer,
 } from "@/lib/validations";
 import { money, paise } from "@/lib/utils";
+import { createVendorOrderGroups, type OrderItem } from "@/lib/whatsapp";
+import { defaultStore } from "@/lib/defaults";
 const fields: [keyof CustomerInput, string, boolean, string?][] = [
   ["full_name", "Full name", true, "name"],
   ["phone", "Mobile number", true, "tel"],
@@ -22,6 +24,15 @@ const fields: [keyof CustomerInput, string, boolean, string?][] = [
   ["pincode", "Pincode", true, "postal-code"],
   ["landmark", "Landmark", false],
 ];
+type VendorOrder = {
+  vendor_name: string;
+  whatsapp_number: string;
+  items: { name: string; size?: string; quantity: number; price: number }[];
+  subtotal: number;
+  whatsapp_url: string | null;
+  reference?: string;
+};
+
 export function Checkout({ enabled }: { enabled: boolean }) {
   const items = useCart((s) => s.items);
   const reconcile = useCart((s) => s.reconcile);
@@ -32,9 +43,11 @@ export function Checkout({ enabled }: { enabled: boolean }) {
     reference: string;
     whatsapp_url: string;
     subtotal: number;
+    vendor_orders?: VendorOrder[];
   } | null>(null);
   useEffect(() => {
     if (!ready || !redirecting) return;
+    if (ready.vendor_orders && ready.vendor_orders.length > 1) return;
     const timer = window.setTimeout(
       () => window.location.assign(ready.whatsapp_url),
       1000,
@@ -63,10 +76,49 @@ export function Checkout({ enabled }: { enabled: boolean }) {
     },
   });
   async function submit(customer: Customer) {
-    if (!enabled || !items.length) return;
+    if (!items.length) return;
+    if (!enabled && !demo) return;
     setPending(true);
     setError("");
     try {
+      if (demo) {
+        const demoRef =
+          "ACHU-PREVIEW-" +
+          new Date().toISOString().slice(0, 10).replace(/-/g, "") +
+          "-" +
+          Math.random().toString(36).substring(2, 8).toUpperCase();
+        const demoItems: OrderItem[] = items.map((i) => ({
+          name: i.name,
+          size: i.size,
+          quantity: i.quantity,
+          price: i.price,
+          vendor_name: i.vendor_name,
+          vendor_whatsapp_number: i.vendor_whatsapp_number,
+        }));
+        const defaultVendor = {
+          name: defaultStore.business_name,
+          whatsapp_number: defaultStore.whatsapp_number,
+        };
+        const vendorGroups = createVendorOrderGroups(
+          demoItems,
+          defaultVendor,
+          customer,
+          demoRef,
+        );
+        const subtotal =
+          items.reduce((sum, i) => sum + paise(i.price) * i.quantity, 0) / 100;
+        const primaryUrl =
+          vendorGroups.length > 0 && vendorGroups[0].whatsapp_url
+            ? vendorGroups[0].whatsapp_url
+            : "";
+        setReady({
+          reference: demoRef,
+          subtotal,
+          whatsapp_url: primaryUrl,
+          vendor_orders: vendorGroups,
+        });
+        return;
+      }
       const refresh = await fetch("/api/cart", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -94,6 +146,8 @@ export function Checkout({ enabled }: { enabled: boolean }) {
         variant_id: i.variant_id,
         quantity: i.quantity,
         expected_price: i.price,
+        vendor_name: i.vendor_name,
+        vendor_whatsapp_number: i.vendor_whatsapp_number,
       }));
       const payload = JSON.stringify({ customer, items: lineItems });
       if (payload !== lastPayload.current) {
@@ -122,38 +176,114 @@ export function Checkout({ enabled }: { enabled: boolean }) {
       setPending(false);
     }
   }
-  if (ready)
+  if (ready) {
+    const isMultiVendor =
+      ready.vendor_orders && ready.vendor_orders.length > 1;
     return (
       <div className="section">
-        <div className="success-panel">
+        <div
+          className="success-panel"
+          style={{ maxWidth: isMultiVendor ? 680 : undefined }}
+        >
           <Check size={30} color="#007653" />
           <p className="eyebrow" style={{ marginTop: 18 }}>
             ENQUIRY CREATED · {ready.reference}
           </p>
           <h2>Your order details are ready.</h2>
           <p>
-            We’ll now open WhatsApp. Send the prefilled message to confirm
-            availability with the boutique. Your order has not been confirmed
-            and no payment has been collected.
+            {isMultiVendor
+              ? "Your cart contains items from multiple vendors. Send the prefilled WhatsApp message to each vendor below to confirm piece availability. Your order has not been confirmed and no payment has been collected."
+              : "We’ll now open WhatsApp. Send the prefilled message to confirm availability with the boutique. Your order has not been confirmed and no payment has been collected."}
           </p>
-          <p className="summary-note">Subtotal: {money(ready.subtotal)}</p>
-          <a
-            className="button"
-            href={ready.whatsapp_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => setRedirecting(false)}
-          >
-            <MessageCircle size={17} />
-            Continue on WhatsApp <ArrowUpRight size={15} />
-          </a>
-          <p className="summary-note">
+          <p className="summary-note">Total Subtotal: {money(ready.subtotal)}</p>
+
+          {isMultiVendor ? (
+            <div
+              className="multi-vendor-orders"
+              style={{
+                marginTop: 24,
+                textAlign: "left",
+                width: "100%",
+              }}
+            >
+              {ready.vendor_orders!.map((vo, idx) => (
+                <div
+                  key={vo.whatsapp_number + idx}
+                  style={{
+                    border: "1px solid var(--line, #e2dcd2)",
+                    borderRadius: 8,
+                    padding: "16px 20px",
+                    marginBottom: 16,
+                    backgroundColor: "var(--background-card, #fcfbf9)",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "baseline",
+                      marginBottom: 8,
+                    }}
+                  >
+                    <strong style={{ fontSize: 16 }}>{vo.vendor_name}</strong>
+                    <span style={{ fontWeight: 600 }}>{money(vo.subtotal)}</span>
+                  </div>
+                  <ul
+                    style={{
+                      margin: "8px 0 14px",
+                      paddingLeft: 18,
+                      fontSize: 14,
+                      color: "var(--muted, #666)",
+                    }}
+                  >
+                    {vo.items.map((it, i) => (
+                      <li key={i}>
+                        {it.name} ({it.size || "Standard"}) × {it.quantity} —{" "}
+                        {money(it.price * it.quantity)}
+                      </li>
+                    ))}
+                  </ul>
+                  {vo.whatsapp_url ? (
+                    <a
+                      className="button"
+                      href={vo.whatsapp_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ width: "100%", justifyContent: "center" }}
+                    >
+                      <MessageCircle size={16} />
+                      Send Order to {vo.vendor_name} on WhatsApp{" "}
+                      <ArrowUpRight size={14} />
+                    </a>
+                  ) : (
+                    <p className="field-error">
+                      WhatsApp contact number not configured for this vendor.
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <a
+              className="button"
+              href={ready.whatsapp_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setRedirecting(false)}
+            >
+              <MessageCircle size={17} />
+              Continue on WhatsApp <ArrowUpRight size={15} />
+            </a>
+          )}
+
+          <p className="summary-note" style={{ marginTop: 16 }}>
             Please send the prefilled message in WhatsApp. You can return here
             and reopen it if needed.
           </p>
         </div>
       </div>
     );
+  }
   if (!items.length)
     return (
       <div className="section">
@@ -280,16 +410,27 @@ export function Checkout({ enabled }: { enabled: boolean }) {
             </div>
             <small>
               Size {i.size} · Quantity {i.quantity}
+              {i.vendor_name ? ` · Vendor: ${i.vendor_name}` : ""}
             </small>
           </div>
         ))}
-        <div className="summary-line summary-total">
+        <div className="summary-line" style={{ marginTop: 14 }}>
           <span>Subtotal</span>
           <span>{money(subtotal)}</span>
         </div>
+        <div className="summary-line">
+          <span>Delivery</span>
+          <span style={{ color: "var(--primary, #1e3a2f)", fontWeight: 500 }}>
+            Complimentary
+          </span>
+        </div>
+        <div className="summary-line summary-total">
+          <span>Total</span>
+          <strong>{money(subtotal)}</strong>
+        </div>
         <p className="summary-note">
-          Shipping is confirmed by the boutique. Prices and stock are checked
-          again before your enquiry is created.
+          Insured delivery across India. Piece details and availability are
+          confirmed directly with our boutique stylists via WhatsApp.
         </p>
         <Link className="text-link" href="/cart">
           Edit your bag

@@ -1,9 +1,11 @@
 import { Cart } from "@/components/cart/cart";
+import { getStore } from "@/lib/data";
 export const metadata = {
   title: "Your shopping bag",
   robots: { index: false, follow: false },
 };
-export default function CartPage() {
+export default async function CartPage() {
+  const store = await getStore();
   return (
     <>
       <div className="page-heading">
@@ -13,7 +15,7 @@ export default function CartPage() {
         </div>
       </div>
       <div className="container">
-        <Cart />
+        <Cart store={store} />
       </div>
     </>
   );

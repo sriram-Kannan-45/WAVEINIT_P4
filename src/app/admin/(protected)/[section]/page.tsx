@@ -1,18 +1,27 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
-import { requireAdmin } from "@/lib/supabase/server";
-import { adminTaxonomies } from "@/lib/admin-data";
-import { getStore, getHomepage } from "@/lib/data";
+import { Boxes, Package, AlertTriangle, AlertOctagon, Layers } from "lucide-react";
+import { requireAdmin, configured } from "@/lib/supabase/server";
+import {
+  adminTaxonomies,
+  adminSubcategories,
+  adminInventorySummary,
+  adminNewArrivals,
+} from "@/lib/admin-data";
+import { getStore, getHomepage, productSelect } from "@/lib/data";
+import { demoProducts } from "@/lib/demo";
 import { TaxonomyManager } from "@/components/admin/taxonomy-manager";
+import { SubcategoryManager } from "@/components/admin/subcategory-manager";
 import { ContentForm, PolicyForm } from "@/components/admin/content-forms";
+import { NewArrivalsManager } from "@/components/admin/new-arrivals-manager";
 import {
   InventoryTable,
   type InventoryRow,
 } from "@/components/admin/inventory-table";
 import { OrdersTable } from "@/components/admin/orders-table";
 import { PasswordForm } from "@/components/admin/login-form";
-import type { Enquiry } from "@/types";
+import type { Enquiry, Product } from "@/types";
 export default async function Section({
   params,
   searchParams,
@@ -28,6 +37,18 @@ export default async function Section({
       <TaxonomyManager
         table={section}
         records={await adminTaxonomies(section)}
+      />
+    );
+  }
+  if (section === "subcategories") {
+    const [categories, subcategories] = await Promise.all([
+      adminTaxonomies("categories"),
+      adminSubcategories(),
+    ]);
+    return (
+      <SubcategoryManager
+        categories={categories}
+        subcategories={subcategories}
       />
     );
   }
@@ -85,6 +106,25 @@ export default async function Section({
         <PasswordForm />
       </>
     );
+  if (section === "new-arrivals") {
+    const items = await adminNewArrivals();
+    let products: Product[] = [];
+    if (!configured()) {
+      products = demoProducts;
+    } else {
+      const { data, error } = await db
+        .from("products")
+        .select(productSelect)
+        .eq("status", "active")
+        .order("name", { ascending: true });
+      if (!error && data) {
+        products = data as unknown as Product[];
+      } else {
+        products = demoProducts;
+      }
+    }
+    return <NewArrivalsManager items={items} products={products} />;
+  }
   const page = Math.max(1, Number(filters.page) || 1);
   const from = (page - 1) * 30;
   function pages(count: number | null) {
@@ -117,10 +157,15 @@ export default async function Section({
   }
   if (section === "inventory") {
     const store = await getStore();
+    const [summary, categories, subcategories] = await Promise.all([
+      adminInventorySummary(store.low_stock_threshold),
+      adminTaxonomies("categories"),
+      adminSubcategories(),
+    ]);
     let q = db
       .from("product_variants")
       .select(
-        "id,size,stock_quantity,active,products!inner(id,name,status,product_images(storage_path,is_cover))",
+        "id,size,stock_quantity,active,price,products!inner(id,name,status,category_id,subcategory_id,selling_price,categories(name,slug),subcategories(name,slug),product_images(storage_path,is_cover))",
         { count: "exact" },
       )
       .order("updated_at", { ascending: false })
@@ -128,24 +173,110 @@ export default async function Section({
     if (filters.q) q = q.ilike("products.name", `%${filters.q.slice(0, 200)}%`);
     if (filters.product && z.uuid().safeParse(filters.product).success)
       q = q.eq("product_id", filters.product);
+    if (filters.category) q = q.eq("products.category_id", filters.category);
+    if (filters.subcategory)
+      q = q.eq("products.subcategory_id", filters.subcategory);
+    if (filters.size) q = q.ilike("size", `%${filters.size.slice(0, 20)}%`);
     if (filters.stock === "low")
       q = q
         .lte("stock_quantity", store.low_stock_threshold)
         .gt("stock_quantity", 0);
     if (filters.stock === "out") q = q.eq("stock_quantity", 0);
+    if (filters.stock === "in")
+      q = q.gt("stock_quantity", store.low_stock_threshold);
     const { data, error, count } = await q;
     if (error) throw new Error("Unable to load inventory.");
     return (
       <>
         <div className="admin-page-title">
           <div>
-            <h1>Care for your stock</h1>
+            <h1>Inventory & Stock Control</h1>
             <p>
-              Update availability by size. Changes appear on the storefront
-              after saving.
+              Monitor real-time stock levels, resolve out-of-stock sizes, and adjust
+              quantities across your boutique collection.
             </p>
           </div>
         </div>
+
+        <div className="inventory-stats-grid">
+          <Link href="/admin/inventory" className="inventory-stat-card">
+            <div className="inventory-stat-top">
+              <span className="inventory-stat-label">Active Products</span>
+              <Boxes size={18} style={{ color: "var(--muted)" }} />
+            </div>
+            <span className="inventory-stat-value">
+              {summary.total_active_products}
+            </span>
+            <span className="inventory-stat-sub">Across all boutique collections</span>
+          </Link>
+
+          <Link
+            href="/admin/inventory?stock=in"
+            className={`inventory-stat-card success-card ${filters.stock === "in" ? "active-filter" : ""}`}
+          >
+            <div className="inventory-stat-top">
+              <span className="inventory-stat-label">In Stock</span>
+              <Package size={18} style={{ color: "var(--green)" }} />
+            </div>
+            <span
+              className="inventory-stat-value"
+              style={{ color: "var(--green)" }}
+            >
+              {summary.in_stock_products}
+            </span>
+            <span className="inventory-stat-sub">Ready for customer ordering</span>
+          </Link>
+
+          <Link
+            href="/admin/inventory?stock=out"
+            className={`inventory-stat-card alert-card ${filters.stock === "out" ? "active-filter" : ""}`}
+          >
+            <div className="inventory-stat-top">
+              <span className="inventory-stat-label">Out of Stock</span>
+              <AlertOctagon size={18} style={{ color: "#c53030" }} />
+            </div>
+            <span
+              className="inventory-stat-value"
+              style={{ color: "#c53030" }}
+            >
+              {summary.out_of_stock_products}
+            </span>
+            <span className="inventory-stat-sub">Zero units remaining in catalog</span>
+          </Link>
+
+          <Link
+            href="/admin/inventory?stock=low"
+            className={`inventory-stat-card warning-card ${filters.stock === "low" ? "active-filter" : ""}`}
+          >
+            <div className="inventory-stat-top">
+              <span className="inventory-stat-label">Low Stock Variants</span>
+              <AlertTriangle size={18} style={{ color: "#d97706" }} />
+            </div>
+            <span
+              className="inventory-stat-value"
+              style={{ color: "#d97706" }}
+            >
+              {summary.low_stock_variants}
+            </span>
+            <span className="inventory-stat-sub">
+              At or under threshold ({store.low_stock_threshold})
+            </span>
+          </Link>
+
+          <div className="inventory-stat-card">
+            <div className="inventory-stat-top">
+              <span className="inventory-stat-label">Total Units</span>
+              <Layers size={18} style={{ color: "var(--muted)" }} />
+            </div>
+            <span className="inventory-stat-value">
+              {summary.total_inventory_units.toLocaleString()}
+            </span>
+            <span className="inventory-stat-sub">
+              Units across all active variants
+            </span>
+          </div>
+        </div>
+
         <form className="admin-filters">
           <input
             name="q"
@@ -157,11 +288,47 @@ export default async function Section({
             <input type="hidden" name="product" value={filters.product} />
           )}
           <select
+            key={`cat-${filters.category || "all"}`}
+            name="category"
+            aria-label="Filter by category"
+            defaultValue={filters.category || ""}
+          >
+            <option value="">All categories</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          <select
+            key={`sub-${filters.subcategory || "all"}`}
+            name="subcategory"
+            aria-label="Filter by subcategory"
+            defaultValue={filters.subcategory || ""}
+          >
+            <option value="">All subcategories</option>
+            {subcategories.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+          <input
+            key={`size-${filters.size || ""}`}
+            name="size"
+            aria-label="Filter by size"
+            placeholder="Size (e.g. S, XL)"
+            defaultValue={filters.size || ""}
+            style={{ maxWidth: 110 }}
+          />
+          <select
+            key={`stock-${filters.stock || "all"}`}
             name="stock"
-            aria-label="Filter inventory"
+            aria-label="Filter inventory status"
             defaultValue={filters.stock || ""}
           >
-            <option value="">All stock</option>
+            <option value="">All stock status</option>
+            <option value="in">In stock</option>
             <option value="low">Low stock</option>
             <option value="out">Out of stock</option>
           </select>

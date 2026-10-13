@@ -1,5 +1,5 @@
 "use client";
-import Image from "next/image";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import Link from "next/link";
 import { useState, useRef } from "react";
 import {
@@ -14,8 +14,12 @@ import { toast } from "sonner";
 import { Modal } from "@/components/ui/dialog";
 import { useCart } from "@/store/cart-store";
 import type { Product, StoreSettings } from "@/types";
-import { imageUrl, money, stockTotal, siteUrl } from "@/lib/utils";
-import { whatsappUrl } from "@/lib/whatsapp";
+import { imageUrl, money, paise, stockTotal } from "@/lib/utils";
+import {
+  whatsappUrl,
+  productEnquiryMessage,
+  productDirectOrderMessage,
+} from "@/lib/whatsapp";
 export function ProductDetail({
   product: p,
   store,
@@ -34,22 +38,54 @@ export function ProductDetail({
   const add = useCart((s) => s.add);
   const variant = p.product_variants.find((v) => v.id === selected);
   const stock = stockTotal(p.product_variants);
+  const currentPrice = variant?.price ?? p.selling_price;
   const discount =
-    p.original_price && p.original_price > p.selling_price
+    p.original_price && p.original_price > currentPrice
       ? Math.round(
-          ((p.original_price - p.selling_price) / p.original_price) * 100,
+          ((p.original_price - currentPrice) / p.original_price) * 100,
         )
       : 0;
+  const vendorWhatsApp =
+    p.vendor_whatsapp_number ||
+    p.vendor?.whatsapp_number ||
+    store.whatsapp_number;
+  const vendorName =
+    p.vendor_name ||
+    p.vendor?.name ||
+    store.business_name;
+
   const enquiry = whatsappUrl(
-    store.whatsapp_number,
-    `Hi Achu Designer Boutique,\n\nI would like to know more about:\n\nProduct: ${p.name}${variant ? `\nSize: ${variant.size}` : ""}\nPrice: ${money(p.selling_price)}\nProduct Link: ${siteUrl}/product/${p.slug}`,
+    vendorWhatsApp,
+    productEnquiryMessage(p, {
+      variant,
+      currentPrice,
+      inStock: Boolean(stock),
+      vendorName,
+      quantity,
+    }),
   );
+
+  const directOrderUrl =
+    variant && stock && variant.stock_quantity >= quantity
+      ? whatsappUrl(
+          vendorWhatsApp,
+          productDirectOrderMessage(p, {
+            variant,
+            price: Number(currentPrice),
+            quantity,
+            vendorName,
+          }),
+        )
+      : null;
   function addToCart() {
     if (!variant) {
       toast.error("Please choose your size.");
       return;
     }
-    if (quantity > variant.stock_quantity) return;
+    if (quantity > variant.stock_quantity || variant.stock_quantity === 0) {
+      toast.error("This size is currently out of stock.");
+      return;
+    }
     const ok = add({
       product_id: p.id,
       variant_id: variant.id,
@@ -57,10 +93,12 @@ export function ProductDetail({
       name: p.name,
       size: variant.size,
       image: imageUrl(images[0]?.storage_path || ""),
-      price: Number(p.selling_price),
+      price: Number(currentPrice),
       quantity,
       stock: variant.stock_quantity,
       sample: p.sample,
+      vendor_name: vendorName,
+      vendor_whatsapp_number: vendorWhatsApp,
     });
     if (ok) toast.success("Added to your bag");
     else
@@ -86,11 +124,11 @@ export function ProductDetail({
               );
           }}
         >
-          <Image
-            src={imageUrl(images[index]?.storage_path || "")}
+          <OptimizedImage
+            src={images[index]?.storage_path || ""}
             alt={images[index]?.alt_text || p.name}
             fill
-            loading="eager"
+            priority
             fetchPriority="high"
             sizes="(max-width:600px)100vw,50vw"
           />
@@ -125,8 +163,8 @@ export function ProductDetail({
                 aria-label={`View product image ${i + 1}`}
                 aria-pressed={index === i}
               >
-                <Image
-                  src={imageUrl(img.storage_path)}
+                <OptimizedImage
+                  src={img.storage_path}
                   alt={img.alt_text || p.name}
                   fill
                   sizes="65px"
@@ -139,8 +177,22 @@ export function ProductDetail({
       <div className="product-detail-content">
         <p className="eyebrow">{p.categories?.name || "THE ACHU EDIT"}</p>
         <h1>{p.name}</h1>
+        {vendorName && vendorName !== store.business_name && (
+          <p
+            style={{
+              fontSize: "12px",
+              color: "var(--muted)",
+              letterSpacing: "0.03em",
+              textTransform: "uppercase",
+              marginTop: -6,
+              marginBottom: 10,
+            }}
+          >
+            Curated by <strong style={{ color: "var(--ink)" }}>{vendorName}</strong>
+          </p>
+        )}
         <div className="detail-price">
-          <span>{money(p.selling_price)}</span>
+          <span>{money(currentPrice)}</span>
           {discount > 0 && (
             <>
               <del>{money(p.original_price!)}</del>
@@ -206,13 +258,14 @@ export function ProductDetail({
                 disabled={!v.stock_quantity}
                 aria-pressed={v.id === selected}
                 aria-label={`${v.size}${!v.stock_quantity ? ", unavailable" : ""}`}
-                className={v.id === selected ? "selected" : ""}
+                className={`${v.id === selected ? "selected" : ""} ${!v.stock_quantity ? "sold-out-size" : ""}`}
                 onClick={() => {
                   setSelected(v.id);
                   setQuantity(1);
                 }}
               >
                 {v.size}
+                {!v.stock_quantity && <small className="size-sold-out-tag">Sold out</small>}
               </button>
             ))}
         </div>
@@ -220,7 +273,7 @@ export function ProductDetail({
           <div className="quantity-control">
             <button
               aria-label="Decrease quantity"
-              disabled={quantity <= 1}
+              disabled={quantity <= 1 || !stock || (variant && !variant.stock_quantity)}
               onClick={() => setQuantity((q) => q - 1)}
             >
               <Minus size={15} />
@@ -229,33 +282,78 @@ export function ProductDetail({
             <button
               aria-label="Increase quantity"
               disabled={
-                !variant || quantity >= Math.min(variant.stock_quantity, 99)
+                !variant || !variant.stock_quantity || quantity >= Math.min(variant.stock_quantity, 99)
               }
               onClick={() => setQuantity((q) => q + 1)}
             >
               <Plus size={15} />
             </button>
           </div>
-          <button className="button" disabled={!stock} onClick={addToCart}>
+          <button
+            className="button"
+            disabled={!stock || (variant && !variant.stock_quantity)}
+            onClick={addToCart}
+          >
             <ShoppingBag size={16} />
-            {stock ? "Add to bag" : "Out of stock"}
+            {!stock
+              ? "Out of stock"
+              : variant && !variant.stock_quantity
+                ? "Size out of stock"
+                : "Add to bag"}
           </button>
         </div>
-        {enquiry ? (
-          <a
-            className="button outline enquiry-button"
-            href={enquiry}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <MessageCircle size={16} />
-            Enquire on WhatsApp
-          </a>
-        ) : (
-          <p className="loading-label">
-            WhatsApp contact details will be available soon.
-          </p>
-        )}
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
+          {stock > 0 && (
+            <button
+              className="button"
+              style={{
+                backgroundColor: "#25D366",
+                color: "#ffffff",
+                border: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+              }}
+              onClick={() => {
+                if (!variant) {
+                  toast.error("Please choose your size to order on WhatsApp.");
+                  return;
+                }
+                if (!directOrderUrl) {
+                  toast.error("WhatsApp ordering is currently unavailable for this vendor.");
+                  return;
+                }
+                window.open(directOrderUrl, "_blank", "noopener,noreferrer");
+              }}
+            >
+              <MessageCircle size={16} />
+              Order on WhatsApp {variant ? `(${money((paise(currentPrice) * quantity) / 100)})` : ""}
+            </button>
+          )}
+
+          {enquiry ? (
+            <a
+              className="button outline enquiry-button"
+              href={enquiry}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+              }}
+            >
+              <MessageCircle size={16} />
+              {!stock ? "Enquire about Restock on WhatsApp" : "Chat with Vendor on WhatsApp"}
+            </a>
+          ) : (
+            <p className="loading-label">
+              WhatsApp contact details will be available soon.
+            </p>
+          )}
+        </div>
         {p.sample && (
           <p className="sample-note">
             Design preview · This is an illustrative piece with a sample price.

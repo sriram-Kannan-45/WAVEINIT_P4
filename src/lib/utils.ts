@@ -22,10 +22,30 @@ export const safeJson = (value: unknown) =>
   JSON.stringify(value).replace(/</g, "\\u003c");
 export const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-export function imageUrl(path: string) {
-  if (path.startsWith("/")) return path;
+import {
+  buildImageKitUrl,
+  isImageKitUrl,
+  type ImageKitTransformOptions,
+} from "./imagekit";
+
+export function imageUrl(
+  path: string,
+  options?: ImageKitTransformOptions,
+): string {
+  if (!path) return "/brand/achu-designer-boutique-logo.png";
+  if (isImageKitUrl(path)) {
+    return buildImageKitUrl(path, options);
+  }
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+  if (path.startsWith("/")) {
+    return path;
+  }
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  return base && path
-    ? `${base}/storage/v1/object/public/boutique/${path}`
-    : "/brand/achu-designer-boutique-logo.png";
+  if (base) {
+    return `${base}/storage/v1/object/public/boutique/${path}`;
+  }
+  return buildImageKitUrl(path, options);
 }
+

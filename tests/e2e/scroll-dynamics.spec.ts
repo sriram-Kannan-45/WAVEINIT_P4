@@ -1,105 +1,159 @@
 import { test, expect } from "@playwright/test";
 
-test("cinematic scroll dynamics: master video timeline, campaign outfit progression, reverse scrolling", async ({
+test("homepage section order and continuous automatic video showcase playback", async ({
   page,
 }) => {
   test.setTimeout(60000);
 
   await page.goto("/", { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(1200);
+
+  // Skip intro if present
+  const skipBtn = page.locator(".mobile-intro-skip-btn");
+  if (await skipBtn.isVisible({ timeout: 1500 }).catch(() => false)) {
+    await skipBtn.click();
+    await page.waitForTimeout(700);
+  } else {
+    await page.evaluate(() => {
+      const intro = document.querySelector(".intro-scroll");
+      if (intro) {
+        const top = intro.getBoundingClientRect().top + window.scrollY;
+        window.scrollTo({ top: top + intro.clientHeight + 100, behavior: "instant" });
+      }
+    });
+    await page.waitForTimeout(400);
+  }
+
+  // 1. Verify exact homepage section order:
+  // 1. Intro -> 2. Collections -> 3. Newly Arrived -> 4. Video Animation Section
+  const sectionOrder = await page.evaluate(() => {
+    const categories = document.querySelector(".categories-section");
+    const arrivals = document.querySelector(".arrivals-section");
+    const videoSection = document.querySelector(".cinematic-scroll-section");
+    if (!categories || !arrivals || !videoSection) return null;
+
+    const catTop = categories.getBoundingClientRect().top + window.scrollY;
+    const arrTop = arrivals.getBoundingClientRect().top + window.scrollY;
+    const vidTop = videoSection.getBoundingClientRect().top + window.scrollY;
+
+    return {
+      catTop,
+      arrTop,
+      vidTop,
+      isCorrectOrder: catTop < arrTop && arrTop < vidTop,
+    };
+  });
+
+  expect(sectionOrder).not.toBeNull();
+  expect(sectionOrder!.isCorrectOrder).toBe(true);
+
+  // 2. Verify Video Section is present with standard responsive height (no 550vh/650vh spacer)
+  const videoSection = page.locator(".cinematic-scroll-section");
+  await expect(videoSection).toBeAttached();
+
+  const sectionBox = await videoSection.boundingBox();
+  expect(sectionBox).not.toBeNull();
+  // Height must be standard viewport/section height, not 550vh
+  expect(sectionBox!.height).toBeLessThan(1500);
+
+  // 3. Scroll to video section so it is in view
+  await videoSection.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(600);
+
+  // 4. Verify continuous HTML5 video element is attached with correct native attributes
+  const video = page.locator(".luxury-hero-video-element");
+  await expect(video).toBeAttached();
+  await expect(video).toHaveAttribute("autoplay", "");
+  await expect(video).toHaveAttribute("loop", "");
+  await expect(video).toHaveAttribute("playsinline", "");
+
+  // 5. Verify correct video source for viewport
+  const isMobile = (page.viewportSize()?.width || 1200) < 768;
+  const expectedSrc = isMobile ? "Mobile.mp4" : "laptop-resolution.mp4";
+  const videoSrc = await page.evaluate(() => {
+    const v = document.querySelector(".luxury-hero-video-element") as HTMLVideoElement | null;
+    return v ? (v.currentSrc || v.src || v.getAttribute("data-src") || "") : "";
+  });
+  expect(videoSrc).toContain(expectedSrc);
+
+  // 6. Verify automatic video playback without scrolling
+  const initialTime = await page.evaluate(() => {
+    const v = document.querySelector(".luxury-hero-video-element") as HTMLVideoElement | null;
+    return v ? v.currentTime : 0;
+  });
+
+  // Wait 1.5 seconds for video to naturally advance on its own
   await page.waitForTimeout(1500);
 
-  // Scroll past peacock intro
-  await page.evaluate(() => {
-    const intro = document.querySelector(".intro-scroll");
-    if (intro) {
-      const top = intro.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({ top: top + intro.clientHeight + 100, behavior: "instant" });
-    }
+  const laterTime = await page.evaluate(() => {
+    const v = document.querySelector(".luxury-hero-video-element") as HTMLVideoElement | null;
+    return v ? v.currentTime : 0;
   });
-  await page.waitForTimeout(400);
 
-  const cinematicSection = page.locator(".cinematic-scroll-section");
-  await expect(cinematicSection).toBeAttached();
+  // Video must advance naturally according to its timeline
+  expect(laterTime).toBeGreaterThan(initialTime);
 
-  const box = await cinematicSection.boundingBox();
-  expect(box).not.toBeNull();
-  const startY = box!.y + (await page.evaluate(() => window.scrollY));
-  const viewportH = page.viewportSize()?.height || 800;
-  const totalH = box!.height;
-  const maxScroll = totalH - viewportH;
+  // 7. Verify scrolling page does NOT scrub or hijack video currentTime
+  const beforeScrollTime = await page.evaluate(() => {
+    const v = document.querySelector(".luxury-hero-video-element") as HTMLVideoElement | null;
+    return v ? v.currentTime : 0;
+  });
 
-  // Verify continuous video element is attached
-  const videoLocator = page.locator(".luxury-hero-video-element");
-  await expect(videoLocator).toBeAttached();
+  // Perform normal page scroll down and up
+  await page.evaluate(() => window.scrollBy({ top: 150, behavior: "instant" }));
+  await page.waitForTimeout(300);
+  await page.evaluate(() => window.scrollBy({ top: -150, behavior: "instant" }));
+  await page.waitForTimeout(300);
 
-  // Helper to get active outfit index
-  const getActiveOutfit = async () => {
-    return await page.evaluate(() => {
-      const el = document.querySelector(".cinematic-scroll-section");
-      return el ? el.getAttribute("data-active-outfit") : null;
-    });
-  };
+  const afterScrollTime = await page.evaluate(() => {
+    const v = document.querySelector(".luxury-hero-video-element") as HTMLVideoElement | null;
+    return v ? v.currentTime : 0;
+  });
 
-  // Helper to get video currentTime
-  const getVideoTime = async () => {
-    return await page.evaluate(() => {
-      const v = document.querySelector(".luxury-hero-video-element") as HTMLVideoElement | null;
-      return v ? v.currentTime : 0;
-    });
-  };
+  // Video continued to play forward smoothly regardless of page scrolling
+  expect(afterScrollTime).toBeGreaterThanOrEqual(beforeScrollTime);
 
-  // 1. Initial position (p = 0.05) -> Outfit 0 (Sarees)
-  await page.evaluate((y) => window.scrollTo(0, y), startY + 0.05 * maxScroll);
-  await page.waitForTimeout(400);
-  expect(await getActiveOutfit()).toBe("0");
+  // 8. Verify the showcase of 5 pictures from the pic folder above the video
+  const cutouts = page.locator(".hero-model-cutout-layer");
+  await expect(cutouts).toHaveCount(5);
+  const activeCutouts = page.locator(".hero-model-cutout-layer.active");
+  await expect(activeCutouts).toHaveCount(1);
 
-  // 2. Phase 2 (p = 0.28) -> Outfit 1 (Kurtis)
-  const p2ScrollY = startY + 0.28 * maxScroll;
-  await page.evaluate((y) => window.scrollTo({ top: y, behavior: "instant" }), p2ScrollY);
-  await page.waitForTimeout(400);
-  expect(await getActiveOutfit()).toBe("1");
-  const timeP2 = await getVideoTime();
-  expect(timeP2).toBeGreaterThanOrEqual(1.5);
-
-  // 3. Phase 3 (p = 0.48) -> Outfit 2 (Tops)
-  const p3ScrollY = startY + 0.48 * maxScroll;
-  await page.evaluate((y) => window.scrollTo({ top: y, behavior: "instant" }), p3ScrollY);
-  await page.waitForTimeout(400);
-  expect(await getActiveOutfit()).toBe("2");
-  const timeP3 = await getVideoTime();
-  expect(timeP3).toBeGreaterThan(timeP2);
-
-  // 4. Phase 4 (p = 0.68) -> Outfit 3 (Leggings)
-  const p4ScrollY = startY + 0.68 * maxScroll;
-  await page.evaluate((y) => window.scrollTo({ top: y, behavior: "instant" }), p4ScrollY);
-  await page.waitForTimeout(400);
-  expect(await getActiveOutfit()).toBe("3");
-  const timeP4 = await getVideoTime();
-  expect(timeP4).toBeGreaterThan(timeP3);
-
-  // 5. Phase 5 (p = 0.88) -> Outfit 4 (Ethnic Wear)
-  const p5ScrollY = startY + 0.88 * maxScroll;
-  await page.evaluate((y) => window.scrollTo({ top: y, behavior: "instant" }), p5ScrollY);
-  await page.waitForTimeout(400);
-  expect(await getActiveOutfit()).toBe("4");
-  const timeP5 = await getVideoTime();
-  expect(timeP5).toBeGreaterThan(timeP4);
-
-  // 6. Symmetrical reverse scroll back to Outfit 1 (Kurtis)
-  await page.evaluate((y) => window.scrollTo({ top: y, behavior: "instant" }), p2ScrollY);
-  await page.waitForTimeout(400);
-  expect(await getActiveOutfit()).toBe("1");
-  const revTime = await getVideoTime();
-  expect(revTime).toBeLessThan(timeP5);
-
-  // 7. Verify Campaign elements
-  const activeCutout = page.locator(".hero-model-cutout-layer.active");
-  await expect(activeCutout).toHaveCount(1);
-
+  // 9. Verify luxury branding headline, dots, and CTA exist
   const headline = page.locator(".hero-campaign-headline");
+  await headline.scrollIntoViewIfNeeded();
   await expect(headline).toBeVisible();
 
-  // 8. Verify Arrivals Section
-  const arrivals = page.locator(".arrivals-section");
-  await expect(arrivals).toBeAttached();
+  const dots = page.locator(".pagination-dot");
+  await expect(dots).toHaveCount(5);
+
+  const ctaBtn = page.locator(".hero-cta-button");
+  await expect(ctaBtn).toBeVisible();
+
+  // 10. Verify right-side message panel with synchronized dress quotes
+  const messagePanel = page.locator(".hero-campaign-message-panel");
+  await expect(messagePanel).toBeVisible();
+
+  const messageCards = page.locator(".hero-dress-message-card");
+  await expect(messageCards).toHaveCount(5);
+
+  const activeMessageCard = page.locator(".hero-dress-message-card.active");
+  await expect(activeMessageCard).toHaveCount(1);
+
+  // Active message must have a quote tagline
+  const quote = activeMessageCard.locator(".dress-tagline-quote");
+  await expect(quote).toBeVisible();
+  const quoteText = await quote.textContent();
+  expect(quoteText).toBeTruthy();
+
+  // On desktop viewports, verify that the message panel is positioned on the right side
+  if (!isMobile) {
+    const stageBox = await page.locator(".cinematic-sticky-stage").boundingBox();
+    const panelBox = await messagePanel.boundingBox();
+    expect(stageBox).not.toBeNull();
+    expect(panelBox).not.toBeNull();
+    // Panel must be on the right half of the stage
+    expect(panelBox!.x + panelBox!.width / 2).toBeGreaterThan(stageBox!.x + stageBox!.width / 2);
+  }
 });
+

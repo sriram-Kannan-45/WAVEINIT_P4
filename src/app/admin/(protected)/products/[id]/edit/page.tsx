@@ -1,6 +1,11 @@
 import { notFound } from "next/navigation";
 import { z } from "zod";
-import { adminTaxonomies, adminProduct } from "@/lib/admin-data";
+import { configured } from "@/lib/supabase/server";
+import {
+  adminTaxonomies,
+  adminSubcategories,
+  adminProduct,
+} from "@/lib/admin-data";
 import { ProductForm } from "@/components/admin/product-form";
 export default async function EditProduct({
   params,
@@ -8,10 +13,11 @@ export default async function EditProduct({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  if (!z.uuid().safeParse(id).success) notFound();
-  const [product, categories, collections] = await Promise.all([
+  if (configured() && !z.uuid().safeParse(id).success) notFound();
+  const [product, categories, subcategories, collections] = await Promise.all([
     adminProduct(id),
     adminTaxonomies("categories"),
+    adminSubcategories(),
     adminTaxonomies("collections"),
   ]);
   if (!product) notFound();
@@ -26,6 +32,7 @@ export default async function EditProduct({
       <ProductForm
         product={product}
         categories={categories}
+        subcategories={subcategories}
         collections={collections}
       />
     </>

@@ -8,11 +8,20 @@ export const metadata = {
   alternates: { canonical: "/collections" },
 };
 export default async function Collections() {
-  const collections = await getTaxonomies("collections");
+  let collections = await getTaxonomies("collections");
+  if (!collections || collections.length === 0) {
+    collections = await getTaxonomies("categories");
+  }
+
   return (
     <>
       <div className="page-heading">
         <div className="container">
+          <nav className="breadcrumbs" aria-label="Breadcrumb">
+            <Link href="/">Home</Link>
+            <span>/</span>
+            <span aria-current="page">Collections</span>
+          </nav>
           <p className="eyebrow">THE CONSIDERED EDIT</p>
           <h1>For every beautiful moment.</h1>
           <p>Explore collections with a story of their own.</p>
@@ -48,8 +57,8 @@ export default async function Collections() {
             <div className="empty-state">
               <h2>A new chapter, soon.</h2>
               <p>Our collections are being prepared.</p>
-              <Link className="button" href="/shop">
-                Explore all pieces
+              <Link className="button" href="/">
+                Return to home
               </Link>
             </div>
           </div>

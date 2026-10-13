@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ArrowLeft, ArrowRight, Trash2, Star } from "lucide-react";
 import { toast } from "sonner";
 import { uploadImage } from "@/app/admin/actions";
-import { imageUrl } from "@/lib/utils";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import type { ProductImage } from "@/types";
 async function prepare(file: File): Promise<File> {
   if (
@@ -131,8 +131,8 @@ export function ImageUploader({
         ))}
         {images.map((img, i) => (
           <div className="upload-thumb" key={img.storage_path}>
-            <Image
-              src={imageUrl(img.storage_path)}
+            <OptimizedImage
+              src={img.storage_path}
               width={104}
               height={120}
               alt={img.alt_text || `Upload ${i + 1}`}

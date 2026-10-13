@@ -5,6 +5,7 @@ export type Variant = {
   stock_quantity: number;
   active: boolean;
   sku?: string;
+  price?: number | null;
 };
 export type ProductImage = {
   id?: string;
@@ -23,11 +24,25 @@ export type Taxonomy = {
   display_order: number;
   featured?: boolean;
 };
+export type Subcategory = {
+  id: string;
+  category_id: string;
+  name: string;
+  slug: string;
+  description: string;
+  image: string;
+  active: boolean;
+  display_order: number;
+  created_at?: string;
+  updated_at?: string;
+  categories?: { name: string; slug: string };
+};
 export type Product = {
   id: string;
   name: string;
   slug: string;
   category_id: string;
+  subcategory_id?: string | null;
   short_description: string;
   description: string;
   fabric: string;
@@ -49,7 +64,16 @@ export type Product = {
   product_variants: Variant[];
   product_collections: { collection_id: string }[];
   categories?: { name: string; slug: string };
+  subcategories?: { name: string; slug: string } | null;
   sample?: boolean;
+  vendor_id?: string | null;
+  vendor_name?: string | null;
+  vendor_whatsapp_number?: string | null;
+  vendor?: {
+    id?: string;
+    name: string;
+    whatsapp_number: string;
+  } | null;
 };
 export type StoreSettings = {
   id: number;
@@ -132,3 +156,40 @@ export type Enquiry = {
     subtotal_snapshot: number;
   }[];
 };
+
+export type AdminNotification = {
+  id: string;
+  type: "out_of_stock" | "low_stock" | "restocked";
+  product_id: string;
+  variant_id?: string | null;
+  title: string;
+  message: string;
+  product_name: string;
+  size: string;
+  stock_quantity: number;
+  read: boolean;
+  created_at: string;
+};
+
+export type NewArrivalItem = {
+  id: string;
+  product_id: string;
+  display_order: number;
+  badge_text: string;
+  start_date?: string | null;
+  end_date?: string | null;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+  products?: Product;
+};
+
+export type InventorySummary = {
+  total_active_products: number;
+  in_stock_products: number;
+  out_of_stock_products: number;
+  low_stock_variants: number;
+  total_inventory_units: number;
+  restock_needed_count: number;
+};
+

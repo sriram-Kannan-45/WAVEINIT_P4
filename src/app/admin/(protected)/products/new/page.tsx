@@ -1,8 +1,9 @@
-import { adminTaxonomies } from "@/lib/admin-data";
+import { adminTaxonomies, adminSubcategories } from "@/lib/admin-data";
 import { ProductForm } from "@/components/admin/product-form";
 export default async function NewProduct() {
-  const [categories, collections] = await Promise.all([
+  const [categories, subcategories, collections] = await Promise.all([
     adminTaxonomies("categories"),
+    adminSubcategories(),
     adminTaxonomies("collections"),
   ]);
   return (
@@ -13,7 +14,11 @@ export default async function NewProduct() {
           <p>Add the details, photographs, and available sizes.</p>
         </div>
       </div>
-      <ProductForm categories={categories} collections={collections} />
+      <ProductForm
+        categories={categories}
+        subcategories={subcategories}
+        collections={collections}
+      />
     </>
   );
 }

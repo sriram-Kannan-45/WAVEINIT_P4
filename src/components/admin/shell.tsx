@@ -1,4 +1,5 @@
 "use client";
+import { useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -6,6 +7,7 @@ import {
   LayoutDashboard,
   Shirt,
   Tags,
+  FolderTree,
   Layers3,
   Boxes,
   MessageCircle,
@@ -16,14 +18,20 @@ import {
   LogOut,
   ArrowUpRight,
   Menu,
+  Sparkles,
 } from "lucide-react";
 import { Modal } from "@/components/ui/dialog";
 import { logout } from "@/app/admin/actions";
+import { clearAccessToken, restoreSession, getAccessToken } from "@/lib/admin-client";
+import { NotificationsDropdown } from "./notifications-dropdown";
+import type { AdminNotification } from "@/types";
 const routes = [
   ["Dashboard", "dashboard", LayoutDashboard],
   ["Products", "products", Shirt],
   ["Categories", "categories", Tags],
+  ["Subcategories", "subcategories", FolderTree],
   ["Collections", "collections", Layers3],
+  ["New arrivals", "new-arrivals", Sparkles],
   ["Inventory", "inventory", Boxes],
   ["Order enquiries", "orders", MessageCircle],
   ["Homepage", "homepage", PanelsTopLeft],
@@ -64,7 +72,12 @@ function Sidebar({ drawer = false }: { drawer?: boolean }) {
         <Link href="/" target="_blank">
           View your boutique <ArrowUpRight size={15} />
         </Link>
-        <form action={logout}>
+        <form
+          action={logout}
+          onSubmit={() => {
+            clearAccessToken();
+          }}
+        >
           <button>
             <LogOut size={15} />
             Sign out
@@ -74,30 +87,47 @@ function Sidebar({ drawer = false }: { drawer?: boolean }) {
     </aside>
   );
 }
-export function AdminShell({ children }: { children: React.ReactNode }) {
+export function AdminShell({
+  children,
+  initialNotifications = [],
+}: {
+  children: React.ReactNode;
+  initialNotifications?: AdminNotification[];
+}) {
+  useEffect(() => {
+    if (!getAccessToken()) {
+      restoreSession();
+    }
+  }, []);
+
   return (
     <div className="admin-shell">
       <Sidebar />
       <div className="admin-content">
         <div className="admin-topbar">
-          <span>ACHU DESIGNER BOUTIQUE · OWNER’S SPACE</span>
-          <div className="admin-mobile-trigger">
-            <Modal
-              side
-              title="Manage your boutique"
-              trigger={
-                <button
-                  className="icon-button"
-                  aria-label="Open owner navigation"
-                >
-                  <Menu size={20} />
-                </button>
-              }
-            >
-              <Sidebar drawer />
-            </Modal>
+          <div className="admin-topbar-left">
+            <span>ACHU DESIGNER BOUTIQUE · OWNER’S SPACE</span>
           </div>
-          <span className="desktop-filter">Your collection. Your control.</span>
+          <div className="admin-topbar-right">
+            <NotificationsDropdown initialNotifications={initialNotifications} />
+            <div className="admin-mobile-trigger">
+              <Modal
+                side
+                title="Manage your boutique"
+                trigger={
+                  <button
+                    className="icon-button"
+                    aria-label="Open owner navigation"
+                  >
+                    <Menu size={20} />
+                  </button>
+                }
+              >
+                <Sidebar drawer />
+              </Modal>
+            </div>
+            <span className="desktop-filter">Your collection. Your control.</span>
+          </div>
         </div>
         <main className="admin-main">{children}</main>
       </div>

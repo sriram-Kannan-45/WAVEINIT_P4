@@ -9,25 +9,92 @@ import {
   Sparkles,
   Leaf,
 } from "lucide-react";
-import { getHomepage, getProducts, getStore, getTaxonomies } from "@/lib/data";
+import { getHomepage, getStore, getTaxonomies, getNewArrivals } from "@/lib/data";
 import { ProductCard } from "@/components/product/card";
-import { StoreDetails } from "@/components/layout/store-details";
 import { imageUrl } from "@/lib/utils";
 import { LuxuryHero3DBackground } from "@/components/home/LuxuryHero3DBackground";
 export default async function Home() {
-  const [h, store, categories, collections, arrivals] = await Promise.all([
+  const [h, store, categories, arrivals] = await Promise.all([
     getHomepage(),
     getStore(),
     getTaxonomies("categories"),
-    getTaxonomies("collections"),
-    getProducts({ new: "true" }, 4),
+    getNewArrivals(4),
   ]);
-  const featured = collections.find((c) => c.id === h.featured_collection_id);
   return (
     <>
+      {h.show_categories && categories.length > 0 && (
+        <section className="section categories-section">
+          <div className="container">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">CURATED COLLECTIONS</p>
+                <h2>
+                  The Boutique <em>Categories.</em>
+                </h2>
+              </div>
+              <Link className="text-link" href="/collections">
+                Explore all collections <ArrowUpRight size={16} />
+              </Link>
+            </div>
+            <div className="category-grid category-circle-grid" role="list">
+              {categories.map((c) => (
+                <Link
+                  href={`/category/${c.slug}`}
+                  className="category-card category-circle-card"
+                  key={c.id}
+                  role="listitem"
+                  aria-label={`Browse ${c.name} collection`}
+                >
+                  <div className="category-circle-thumb-wrapper">
+                    <div className="category-circle-thumb">
+                      <Image
+                        src={imageUrl(c.image)}
+                        alt={c.name}
+                        fill
+                        sizes="(max-width: 600px) 150px, 180px"
+                      />
+                    </div>
+                    <span className="round-arrow category-circle-badge">
+                      <ArrowUpRight size={17} />
+                    </span>
+                  </div>
+                  <h3>{c.name}</h3>
+                  <p>{c.description}</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+      {h.show_new_arrivals && arrivals.length > 0 && (
+        <section className="section arrivals-section">
+          <div className="container">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">FRESH FROM OUR EDIT</p>
+                <h2 aria-label="New & noteworthy.">
+                  New & <em>noteworthy.</em>
+                </h2>
+              </div>
+              <Link className="text-link" href="/shop?new=true">
+                Explore new arrivals <ArrowUpRight size={16} />
+              </Link>
+            </div>
+            <div className="product-grid">
+              {arrivals.map((p) => (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  threshold={store.low_stock_threshold}
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
       <LuxuryHero3DBackground
         categories={categories}
-        arrivals={arrivals.products}
+        arrivals={arrivals}
         lowStockThreshold={store.low_stock_threshold}
       />
       <div className="brand-strip">
@@ -50,99 +117,7 @@ export default async function Home() {
           Rooted in Indian elegance
         </span>
       </div>
-      {h.show_new_arrivals && arrivals.products.length > 0 && (
-        <section className="section arrivals-section">
-          <div className="container">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">FRESH FROM OUR EDIT</p>
-                <h2 aria-label="New & noteworthy.">
-                  New & <em>noteworthy.</em>
-                </h2>
-              </div>
-              <Link className="text-link" href="/shop?new=true">
-                Explore new arrivals <ArrowUpRight size={16} />
-              </Link>
-            </div>
-            <div className="product-grid">
-              {arrivals.products.map((p) => (
-                <ProductCard
-                  key={p.id}
-                  product={p}
-                  threshold={store.low_stock_threshold}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-      {h.show_categories && categories.length > 0 && (
-        <section className="section categories-section">
-          <div className="container">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">CURATED COLLECTIONS</p>
-                <h2>
-                  The Boutique <em>Categories.</em>
-                </h2>
-              </div>
-              <Link className="text-link" href="/shop">
-                Shop all categories <ArrowUpRight size={16} />
-              </Link>
-            </div>
-            <div className="category-grid">
-              {categories.map((c) => (
-                <Link
-                  href={`/category/${c.slug}`}
-                  className="category-card"
-                  key={c.id}
-                >
-                  <div className="category-image">
-                    <Image
-                      src={imageUrl(c.image)}
-                      alt={c.name}
-                      fill
-                      sizes="(max-width: 600px) 48vw, 25vw"
-                    />
-                    <span className="round-arrow">
-                      <ArrowUpRight size={19} />
-                    </span>
-                  </div>
-                  <h3>{c.name}</h3>
-                  <p>{c.description}</p>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-      {h.show_featured && featured && (
-        <section className="featured-section">
-          <div className="featured-image">
-            <Image
-              src={imageUrl(h.featured_image || featured.image)}
-              alt={featured.name}
-              fill
-              sizes="(max-width: 700px) 100vw, 50vw"
-            />
-          </div>
-          <div className="featured-content">
-            <p className="eyebrow light">THE OCCASION EDIT</p>
-            <h2>{h.featured_title}</h2>
-            <div className="gold-line" />
-            <p>{h.featured_description || featured.description}</p>
-            <Link
-              className="button gold-outline"
-              href={`/collections/${featured.slug}`}
-            >
-              Explore the collection <ArrowUpRight size={17} />
-            </Link>
-            <div className="featured-decoration" aria-hidden="true">
-              <Flower2 size={100} strokeWidth={0.5} />
-            </div>
-          </div>
-        </section>
-      )}
+
       {h.show_promo && h.promo_image && (
         <section className="promo container">
           <Image
@@ -221,7 +196,6 @@ export default async function Home() {
           </a>
         </section>
       )}
-      {h.show_store && <StoreDetails store={store} />}
     </>
   );
 }

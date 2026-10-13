@@ -1,4 +1,11 @@
-import { demoCategories, demoCollections, demoProducts } from "../demo";
+import {
+  demoCategories,
+  demoCollections,
+  demoProducts,
+  demoSubcategories,
+  demoNotifications,
+  demoNewArrivals,
+} from "../demo";
 import { defaultStore } from "../defaults";
 
 type QueryResult<T> = {
@@ -172,17 +179,29 @@ export function createDemoAdminDb(): DemoAdminDb {
       if (fn === "save_product") {
         return { data: "demo-product-id", error: null };
       }
+      if (fn === "admin_set_enquiry_status") {
+        return { data: { ok: true, status: args?.p_status }, error: null };
+      }
       return { data: null, error: null };
     },
     from: (table: string) => {
       if (table === "categories") {
         return createDemoQueryBuilder(demoCategories);
       }
+      if (table === "subcategories") {
+        return createDemoQueryBuilder(demoSubcategories);
+      }
       if (table === "collections") {
         return createDemoQueryBuilder(demoCollections);
       }
       if (table === "products") {
         return createDemoQueryBuilder(demoProducts.map((p) => ({ ...p })));
+      }
+      if (table === "new_arrivals") {
+        return createDemoQueryBuilder(demoNewArrivals);
+      }
+      if (table === "admin_notifications") {
+        return createDemoQueryBuilder(demoNotifications);
       }
       if (table === "product_variants") {
         const variants = demoProducts.flatMap((p) =>

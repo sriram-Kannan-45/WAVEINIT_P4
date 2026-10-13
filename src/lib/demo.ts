@@ -1,4 +1,4 @@
-import type { Product, Taxonomy } from "@/types";
+import type { Product, Subcategory, Taxonomy } from "@/types";
 import { defaultHomepage } from "./defaults";
 // Design-preview fixtures only. Never a fallback after a database error.
 export const demoCategories: Taxonomy[] = [
@@ -39,7 +39,148 @@ export const demoCategories: Taxonomy[] = [
     display_order: 3,
   },
 ];
+export const demoSubcategories: Subcategory[] = [
+  {
+    id: "sub-stone-work",
+    category_id: "sample-sarees",
+    name: "Stone work",
+    slug: "stone-work",
+    description: "Dazzling stone-embellished borders and pallu",
+    image: "/images/saree.png",
+    active: true,
+    display_order: 0,
+    categories: { name: "Sarees", slug: "sarees" },
+  },
+  {
+    id: "sub-plain-sarees",
+    category_id: "sample-sarees",
+    name: "Plain sarees",
+    slug: "plain-sarees",
+    description: "Minimalist luxury with graceful fluid drape",
+    image: "/images/hero.png",
+    active: true,
+    display_order: 1,
+    categories: { name: "Sarees", slug: "sarees" },
+  },
+  {
+    id: "sub-zari-work",
+    category_id: "sample-sarees",
+    name: "Zari work",
+    slug: "zari-work",
+    description: "Opulent metallic zari heritage craftsmanship",
+    image: "/images/saree.png",
+    active: true,
+    display_order: 2,
+    categories: { name: "Sarees", slug: "sarees" },
+  },
+  {
+    id: "sub-embroidered-sarees",
+    category_id: "sample-sarees",
+    name: "Embroidered sarees",
+    slug: "embroidered-sarees",
+    description: "Intricate needlework and botanical motifs",
+    image: "/images/occasion.png",
+    active: true,
+    display_order: 3,
+    categories: { name: "Sarees", slug: "sarees" },
+  },
+  {
+    id: "sub-bridal-sarees",
+    category_id: "sample-sarees",
+    name: "Bridal sarees",
+    slug: "bridal-sarees",
+    description: "Grand bridal silks for ceremonial moments",
+    image: "/images/saree.png",
+    active: true,
+    display_order: 4,
+    categories: { name: "Sarees", slug: "sarees" },
+  },
+  {
+    id: "sub-daily-wear",
+    category_id: "sample-kurtis",
+    name: "Daily wear",
+    slug: "daily-wear",
+    description: "Breathable comfort and refined everyday style",
+    image: "/images/kurti.png",
+    active: true,
+    display_order: 0,
+    categories: { name: "Kurtis & sets", slug: "kurtis" },
+  },
+  {
+    id: "sub-festive-sets",
+    category_id: "sample-kurtis",
+    name: "Festive sets",
+    slug: "festive-sets",
+    description: "Heavily adorned festive celebration ensembles",
+    image: "/images/occasion.png",
+    active: true,
+    display_order: 1,
+    categories: { name: "Kurtis & sets", slug: "kurtis" },
+  },
+  {
+    id: "sub-couture-gowns",
+    category_id: "sample-designer",
+    name: "Couture gowns",
+    slug: "couture-gowns",
+    description: "Bespoke handcrafted statement silhouettes",
+    image: "/images/hero.png",
+    active: true,
+    display_order: 0,
+    categories: { name: "Designer wear", slug: "designer-wear" },
+  },
+  {
+    id: "sub-anarkali-suits",
+    category_id: "sample-occasion",
+    name: "Anarkali suits",
+    slug: "anarkali-suits",
+    description: "Royal floor-length flared elegance",
+    image: "/images/occasion.png",
+    active: true,
+    display_order: 0,
+    categories: { name: "Occasion wear", slug: "occasion-wear" },
+  },
+];
 export const demoCollections: Taxonomy[] = [
+  {
+    id: "collection-sarees",
+    name: "Sarees",
+    slug: "sarees",
+    description: "A timeless drape of handcrafted silk and opulent borders.",
+    image: "/images/saree.png",
+    active: true,
+    featured: true,
+    display_order: 0,
+  },
+  {
+    id: "collection-kurtis",
+    name: "Kurtis & sets",
+    slug: "kurtis",
+    description: "Everyday luxury and festive kurta ensembles elevated with fine craft.",
+    image: "/images/kurti.png",
+    active: true,
+    featured: true,
+    display_order: 1,
+  },
+  {
+    id: "collection-designer",
+    name: "Designer wear",
+    slug: "designer-wear",
+    description: "Bespoke handcrafted statement silhouettes tailored for you.",
+    image: "/images/hero.png",
+    active: true,
+    featured: true,
+    display_order: 2,
+  },
+  {
+    id: "collection-occasion",
+    name: "Occasion wear",
+    slug: "occasion-wear",
+    description: "Rich textures, intricate flair, and graceful anarkali silhouettes.",
+    image: "/images/occasion.png",
+    active: true,
+    featured: true,
+    display_order: 3,
+  },
   {
     id: "sample-festive",
     name: "The festive edit",
@@ -49,9 +190,27 @@ export const demoCollections: Taxonomy[] = [
     image: "/images/occasion.png",
     active: true,
     featured: true,
-    display_order: 0,
+    display_order: 4,
   },
 ];
+const demoProductSubMap: { [key: number]: { id: string; name: string; slug: string } } = {
+  0: { id: "sub-stone-work", name: "Stone work", slug: "stone-work" },
+  1: { id: "sub-daily-wear", name: "Daily wear", slug: "daily-wear" },
+  2: { id: "sub-anarkali-suits", name: "Anarkali suits", slug: "anarkali-suits" },
+  3: { id: "sub-couture-gowns", name: "Couture gowns", slug: "couture-gowns" },
+};
+const demoProductCollectionMap: { [key: number]: string } = {
+  0: "collection-sarees",
+  1: "collection-kurtis",
+  2: "collection-occasion",
+  3: "collection-designer",
+};
+const demoVendorMap: { [key: number]: { id: string; name: string; whatsapp_number: string } } = {
+  0: { id: "vendor-achu", name: "Achu Designer Boutique", whatsapp_number: "916381102874" },
+  1: { id: "vendor-varanasi", name: "Varanasi Silk Weavers", whatsapp_number: "919876543211" },
+  2: { id: "vendor-kashmir", name: "Kashmir Heritage Crafts", whatsapp_number: "919876543212" },
+  3: { id: "vendor-achu", name: "Achu Designer Boutique", whatsapp_number: "916381102874" },
+};
 export const demoProducts: Product[] = [
   [
     "Emerald silk saree",
@@ -102,6 +261,7 @@ export const demoProducts: Product[] = [
   name: String(row[0]),
   slug: String(row[1]),
   category_id: demoCategories[Number(row[2])].id,
+  subcategory_id: demoProductSubMap[i]?.id ?? null,
   short_description:
     "Illustrative sample design. This piece is shown for preview and is not actual boutique inventory.",
   description:
@@ -137,11 +297,24 @@ export const demoProducts: Product[] = [
       stock_quantity: j === 1 ? 0 : 4,
       active: true,
     })),
-  product_collections: [{ collection_id: "sample-festive" }],
+  product_collections: [
+    { collection_id: demoProductCollectionMap[i] || "sample-festive" },
+    { collection_id: "sample-festive" },
+  ],
   categories: {
     name: demoCategories[Number(row[2])].name,
     slug: demoCategories[Number(row[2])].slug,
   },
+  subcategories: demoProductSubMap[i]
+    ? {
+        name: demoProductSubMap[i].name,
+        slug: demoProductSubMap[i].slug,
+      }
+    : null,
+  vendor_id: demoVendorMap[i]?.id ?? null,
+  vendor_name: demoVendorMap[i]?.name ?? null,
+  vendor_whatsapp_number: demoVendorMap[i]?.whatsapp_number ?? null,
+  vendor: demoVendorMap[i] ?? null,
   sample: true,
 }));
 // Deliberately centralized image mapping for editorial sample records.
@@ -155,3 +328,72 @@ export const demoHomepage = {
   featured_image: "/images/occasion.png",
   promo_image: "/images/hero.png",
 };
+
+export const demoNotifications = [
+  {
+    id: "notif-1",
+    type: "out_of_stock",
+    product_id: demoProducts[0].id,
+    variant_id: demoProducts[0].product_variants[1]?.id || null,
+    title: `Out of stock: ${demoProducts[0].name} (M)`,
+    message: `${demoProducts[0].name} size M is now completely sold out (0 units remaining).`,
+    product_name: demoProducts[0].name,
+    size: "M",
+    stock_quantity: 0,
+    read: false,
+    created_at: new Date(Date.now() - 3600000).toISOString(),
+  },
+  {
+    id: "notif-2",
+    type: "low_stock",
+    product_id: demoProducts[1].id,
+    variant_id: demoProducts[1].product_variants[0]?.id || null,
+    title: `Low stock warning: ${demoProducts[1].name} (S)`,
+    message: `${demoProducts[1].name} size S has reached low stock (2 units remaining).`,
+    product_name: demoProducts[1].name,
+    size: "S",
+    stock_quantity: 2,
+    read: false,
+    created_at: new Date(Date.now() - 7200000).toISOString(),
+  },
+];
+
+export const demoNewArrivals = [
+  {
+    id: "arrival-1",
+    product_id: demoProducts[0].id,
+    display_order: 1,
+    badge_text: "NEW",
+    start_date: null,
+    end_date: null,
+    active: true,
+    created_at: "2026-10-01T00:00:00Z",
+    updated_at: "2026-10-01T00:00:00Z",
+    products: demoProducts[0],
+  },
+  {
+    id: "arrival-2",
+    product_id: demoProducts[1].id,
+    display_order: 2,
+    badge_text: "EXCLUSIVE",
+    start_date: null,
+    end_date: null,
+    active: true,
+    created_at: "2026-10-01T00:00:00Z",
+    updated_at: "2026-10-01T00:00:00Z",
+    products: demoProducts[1],
+  },
+  {
+    id: "arrival-3",
+    product_id: demoProducts[2].id,
+    display_order: 3,
+    badge_text: "JUST IN",
+    start_date: null,
+    end_date: null,
+    active: true,
+    created_at: "2026-10-01T00:00:00Z",
+    updated_at: "2026-10-01T00:00:00Z",
+    products: demoProducts[2],
+  },
+];
+
