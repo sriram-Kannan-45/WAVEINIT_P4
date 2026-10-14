@@ -172,6 +172,13 @@ function TaxonomyModal({
                 <ImageUploader
                   folder={table}
                   multiple={false}
+                  defaultAspect={table === "categories" ? 1 / 1 : 4 / 3}
+                  cropShape={table === "categories" ? "round" : "rect"}
+                  modalTitle={
+                    table === "categories"
+                      ? "Crop Category Showcase Photograph (1:1 / Circle)"
+                      : "Crop Collection Photograph"
+                  }
                   images={
                     image
                       ? [
@@ -193,6 +200,7 @@ function TaxonomyModal({
               </div>
               {image && (
                 <div
+                  className="circular-preview-card"
                   style={{
                     textAlign: "center",
                     padding: "12px 18px",

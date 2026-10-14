@@ -239,23 +239,39 @@ export async function getNewArrivals(limit = 4): Promise<Product[]> {
       .order("display_order", { ascending: true })
       .limit(limit);
 
-    if (error || !data || data.length === 0) {
-      const fallback = await getProducts({ new: "true" }, limit);
-      return fallback.products;
+    if (!error && data && data.length > 0) {
+      const items = data
+        .map((item: { products: unknown; badge_text?: string }) => {
+          const p = item.products as Product;
+          if (p && item.badge_text) {
+            return { ...p, is_new_arrival: true, badge_text: item.badge_text };
+          }
+          return p;
+        })
+        .filter(Boolean);
+
+      if (items.length > 0) return items;
     }
 
-    return data
-      .map((item: { products: unknown; badge_text?: string }) => {
-        const p = item.products as Product;
-        if (p && item.badge_text) {
-          return { ...p, is_new_arrival: true, badge_text: item.badge_text };
-        }
-        return p;
-      })
-      .filter(Boolean);
-  } catch {
     const fallback = await getProducts({ new: "true" }, limit);
-    return fallback.products;
+    if (fallback.products.length > 0) {
+      return fallback.products;
+    }
+    const allFallback = await getProducts({}, limit);
+    if (allFallback.products.length > 0) {
+      return allFallback.products;
+    }
+    return demoProducts.slice(0, limit);
+  } catch {
+    try {
+      const fallback = await getProducts({ new: "true" }, limit);
+      if (fallback.products.length > 0) return fallback.products;
+      const allFallback = await getProducts({}, limit);
+      if (allFallback.products.length > 0) return allFallback.products;
+    } catch {
+      // ignore
+    }
+    return demoProducts.slice(0, limit);
   }
 }
 

@@ -311,6 +311,9 @@ export function ProductForm({
       </div>
       <h3>Photographs</h3>
       <ImageUploader
+        folder="products"
+        defaultAspect={3 / 4}
+        modalTitle="Crop & Frame Product Photograph"
         images={images.map((i) => ({
           ...i,
           storage_path: i.storage_path || "",
@@ -364,7 +367,10 @@ export function ProductForm({
         })}
       </div>
 
-      <div className="admin-table-wrap" style={{ background: "#fcfaf4", border: "1px solid var(--line)", borderRadius: "8px", padding: "12px" }}>
+      <div className="table-scroll-hint mobile-only">
+        ← Swipe table horizontally to edit SKU, Price, and active status →
+      </div>
+      <div className="admin-table-wrap variant-table-wrap" style={{ background: "#fcfaf4", border: "1px solid var(--line)", borderRadius: "8px", padding: "12px" }}>
         <table className="admin-table" style={{ margin: 0 }}>
           <thead>
             <tr>
@@ -421,7 +427,7 @@ export function ProductForm({
                     type="number"
                     step="0.01"
                     min="0"
-                    placeholder="Default base price"
+                    placeholder="Base price"
                     value={v.price === null || v.price === undefined ? "" : v.price}
                     style={{ minHeight: "36px", padding: "6px 10px" }}
                     onChange={(e) =>
@@ -494,7 +500,7 @@ export function ProductForm({
         </table>
       </div>
 
-      <div style={{ display: "flex", gap: "12px", alignItems: "center", marginTop: "12px", flexWrap: "wrap" }}>
+      <div className="variant-table-actions" style={{ display: "flex", gap: "12px", alignItems: "center", marginTop: "12px", flexWrap: "wrap" }}>
         <button
           className="button outline"
           type="button"
@@ -528,7 +534,7 @@ export function ProductForm({
           Reset to default sizes (S–3XL)
         </button>
 
-        <span style={{ marginLeft: "auto", fontSize: "12px", color: "var(--muted)" }}>
+        <span className="variant-total-stock" style={{ marginLeft: "auto", fontSize: "12px", color: "var(--muted)" }}>
           Total stock: <strong>{variants.reduce((sum, v) => sum + (v.active ? v.stock_quantity : 0), 0)} units</strong>
         </span>
       </div>

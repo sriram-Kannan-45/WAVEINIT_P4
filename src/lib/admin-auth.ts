@@ -89,8 +89,11 @@ export function getAdminServiceClient(): SupabaseClient | null {
   return cachedServiceClient;
 }
 
-// In-memory session store for demo / local / fallback mode
-const memorySessions = new Map<string, RefreshSession>();
+// In-memory session store for demo / local / fallback mode (persisted on globalThis across HMR and route bundles)
+const globalForSessions = globalThis as unknown as {
+  __memorySessions?: Map<string, RefreshSession>;
+};
+const memorySessions = (globalForSessions.__memorySessions ??= new Map<string, RefreshSession>());
 
 function base64UrlEncode(str: string): string {
   return Buffer.from(str, "utf8").toString("base64url");
@@ -556,6 +559,14 @@ export async function rotateAdminSession(
             family_id: dbResult.family_id,
           };
         } else {
+          // If database could not find the token, fall back to in-memory session (for standalone or demo admin accounts)
+          if (dbResult.error === "invalid_token") {
+            const memRes = rotateMemorySession(oldTokenHash, newTokenHash, newExpiresAt);
+            if (memRes.ok) {
+              return memRes;
+            }
+          }
+
           if (dbResult.error === "reuse_detected") {
             const existing = memorySessions.get(oldTokenHash);
             if (existing) {

@@ -162,15 +162,21 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  const { data, error } = await db.auth.getClaims();
-  if (!isLoginPage && (error || !data?.claims?.sub)) {
-    const denied = NextResponse.redirect(new URL("/admin/login", request.url));
-    response.cookies.getAll().forEach((c) => denied.cookies.set(c));
-    return denied;
-  }
+  try {
+    const { data, error } = await db.auth.getUser();
+    if (!isLoginPage && (error || !data?.user)) {
+      const denied = NextResponse.redirect(new URL("/admin/login", request.url));
+      response.cookies.getAll().forEach((c) => denied.cookies.set(c));
+      return denied;
+    }
 
-  if (isLoginPage && data?.claims?.sub) {
-    return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+    if (isLoginPage && data?.user) {
+      return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+    }
+  } catch {
+    if (!isLoginPage) {
+      return NextResponse.redirect(new URL("/admin/login", request.url));
+    }
   }
 
   return response;

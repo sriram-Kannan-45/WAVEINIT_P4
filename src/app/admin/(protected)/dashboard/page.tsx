@@ -26,9 +26,73 @@ export default async function Dashboard() {
       .order("created_at", { ascending: false })
       .limit(5),
   ]);
-  if (stats.error || orders.error || recent.error)
-    throw new Error("Dashboard could not be loaded.");
-  const s = stats.data;
+
+  type DashboardStats = {
+    total_products: number;
+    active_products: number;
+    out_of_stock: number;
+    low_stock: number;
+    categories: number;
+    collections: number;
+    new_enquiries: number;
+    low_stock_products: Low[];
+    [key: string]: unknown;
+  };
+
+  let s: DashboardStats;
+
+  if (!stats.error && stats.data) {
+    s = stats.data as DashboardStats;
+  } else {
+    // Direct service-role fallback calculation
+    const [
+      { count: total_products },
+      { count: active_products },
+      { count: categories },
+      { count: collections },
+      { count: new_enquiries },
+      { data: variants },
+    ] = await Promise.all([
+      db.from("products").select("id", { count: "exact", head: true }),
+      db
+        .from("products")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "active"),
+      db.from("categories").select("id", { count: "exact", head: true }),
+      db.from("collections").select("id", { count: "exact", head: true }),
+      db
+        .from("order_enquiries")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "new"),
+      db.from("product_variants").select("product_id, stock_quantity, active"),
+    ]);
+
+    const stockMap: Record<string, number> = {};
+    for (const v of variants || []) {
+      if (v.active) {
+        stockMap[v.product_id] =
+          (stockMap[v.product_id] || 0) + (v.stock_quantity || 0);
+      }
+    }
+
+    let out_of_stock = 0;
+    let low_stock = 0;
+    for (const total of Object.values(stockMap)) {
+      if (total === 0) out_of_stock++;
+      else if (total <= 3) low_stock++;
+    }
+
+    s = {
+      total_products: total_products || 0,
+      active_products: active_products || 0,
+      out_of_stock,
+      low_stock,
+      categories: categories || 0,
+      collections: collections || 0,
+      new_enquiries: new_enquiries || 0,
+      low_stock_products: [],
+    };
+  }
   return (
     <>
       <div className="admin-page-title">
@@ -54,7 +118,7 @@ export default async function Dashboard() {
         ].map(([name, key]) => (
           <div key={key} className="stat-card">
             <span>{name}</span>
-            <strong>{s[key]}</strong>
+            <strong>{String(s[key] ?? 0)}</strong>
           </div>
         ))}
       </div>

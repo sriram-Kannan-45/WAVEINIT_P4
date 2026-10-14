@@ -20,6 +20,7 @@ import {
   Menu,
   Sparkles,
 } from "lucide-react";
+import * as Dialog from "@radix-ui/react-dialog";
 import { Modal } from "@/components/ui/dialog";
 import { logout } from "@/app/admin/actions";
 import { clearAccessToken, restoreSession, getAccessToken } from "@/lib/admin-client";
@@ -41,32 +42,50 @@ const routes = [
 ] as const;
 function Sidebar({ drawer = false }: { drawer?: boolean }) {
   const pathname = usePathname();
+
+  const brandLink = (
+    <Link href="/admin/dashboard" className="brand">
+      <Image
+        src="/brand/achu-designer-boutique-logo.png"
+        style={{ height: "auto" }}
+        width={56}
+        height={60}
+        alt="Achu official logo"
+      />
+      <span>
+        <strong>Achu</strong>
+        <small>OWNER’S SPACE</small>
+      </span>
+    </Link>
+  );
+
   return (
     <aside className={`admin-sidebar ${drawer ? "in-drawer" : ""}`}>
-      <Link href="/admin/dashboard" className="brand">
-        <Image
-          src="/brand/achu-designer-boutique-logo.png"
-          style={{ height: "auto" }}
-          width={56}
-          height={60}
-          alt="Achu official logo"
-        />
-        <span>
-          <strong>Achu</strong>
-          <small>OWNER’S SPACE</small>
-        </span>
-      </Link>
+      {drawer ? (
+        <Dialog.Close asChild>{brandLink}</Dialog.Close>
+      ) : (
+        brandLink
+      )}
       <nav aria-label="Owner navigation">
-        {routes.map(([name, path, Icon]) => (
-          <Link
-            key={path}
-            href={`/admin/${path}`}
-            className={pathname.includes(`/admin/${path}`) ? "active" : ""}
-          >
-            <Icon size={16} />
-            {name}
-          </Link>
-        ))}
+        {routes.map(([name, path, Icon]) => {
+          const item = (
+            <Link
+              key={path}
+              href={`/admin/${path}`}
+              className={pathname.includes(`/admin/${path}`) ? "active" : ""}
+            >
+              <Icon size={16} />
+              {name}
+            </Link>
+          );
+          return drawer ? (
+            <Dialog.Close asChild key={path}>
+              {item}
+            </Dialog.Close>
+          ) : (
+            item
+          );
+        })}
       </nav>
       <div className="admin-sidebar-footer">
         <Link href="/" target="_blank">

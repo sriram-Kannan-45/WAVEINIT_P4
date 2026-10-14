@@ -53,9 +53,19 @@ export function StoreDetails({ store }: { store: StoreSettings }) {
             )}
           </div>
           <div className="button-row">
-            {store.maps_url && (
+            {store.phone_number && (
               <a
                 className="button"
+                href={`tel:+${store.phone_number}`}
+                aria-label={`Call Achu Designer Boutique at +${store.phone_number}`}
+              >
+                <Phone size={16} />
+                Call now
+              </a>
+            )}
+            {store.maps_url && (
+              <a
+                className="button outline"
                 href={store.maps_url}
                 target="_blank"
                 rel="noopener noreferrer"

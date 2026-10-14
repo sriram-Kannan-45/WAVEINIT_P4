@@ -25,8 +25,8 @@ const image = z
   .refine(
     (s) =>
       s === "" ||
-      /^\/(?!\/)[a-zA-Z0-9/_.-]+$/.test(s) ||
-      /^(products|categories|collections|banners)\/[a-zA-Z0-9_.-]+$/.test(s) ||
+      /^\/(?!\/)[a-zA-Z0-9/_ .%+-]+$/.test(s) ||
+      /^(products|categories|collections|banners)\/[a-zA-Z0-9_ .%+-]+$/.test(s) ||
       (s.startsWith("https://ik.imagekit.io/") &&
         (s.includes("/9nwmg4m7o/") || s.includes("/9nwmg4m7o"))),
     "Upload an image using the image picker.",

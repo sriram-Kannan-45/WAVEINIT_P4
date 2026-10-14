@@ -1,8 +1,11 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import { z } from "zod";
 import { requireAdmin } from "@/lib/supabase/server";
 import { adminTaxonomies } from "@/lib/admin-data";
 import { ProductTable } from "@/components/admin/product-table";
+import type { Product } from "@/types";
+
 export default async function Products({
   searchParams,
 }: {
@@ -10,19 +13,65 @@ export default async function Products({
 }) {
   const s = await searchParams;
   const db = await requireAdmin();
+  const page = Math.max(1, Number(s.page) || 1);
+
   const [result, categories] = await Promise.all([
     db.rpc("admin_product_list", {
       p_query: s.q || "",
       p_category: s.category || null,
       p_status: s.status || "",
       p_stock: s.stock || "",
-      p_page: Math.max(1, Number(s.page) || 1),
+      p_page: page,
     }),
     adminTaxonomies("categories"),
   ]);
-  if (result.error) throw new Error("Unable to load products.");
-  const data = result.data;
-  const page = Math.max(1, Number(s.page) || 1);
+
+  let data: { count: number; products: (Product & { total_stock: number })[] };
+
+  if (!result.error && result.data) {
+    data = result.data;
+  } else {
+    // Direct service-role fallback
+    let q = db
+      .from("products")
+      .select(
+        "*, categories(name,slug), product_images(storage_path,alt_text,sort_order,is_cover), product_variants(id,size,stock_quantity,active,price)",
+        { count: "exact" },
+      );
+
+    if (s.q) q = q.ilike("name", `%${s.q.slice(0, 200)}%`);
+    if (s.category && z.uuid().safeParse(s.category).success) {
+      q = q.eq("category_id", s.category);
+    }
+    if (s.status && ["active", "draft", "hidden"].includes(s.status)) {
+      q = q.eq("status", s.status);
+    }
+
+    const { data: prods, count, error } = await q
+      .order("updated_at", { ascending: false })
+      .range((page - 1) * 30, page * 30 - 1);
+
+    if (error) throw new Error("Unable to load products.");
+
+    const mapped = (prods || []).map((p) => {
+      const vars = (p.product_variants || []) as {
+        stock_quantity: number;
+        active: boolean;
+      }[];
+      const total_stock = vars
+        .filter((v) => v.active)
+        .reduce((sum, v) => sum + (v.stock_quantity || 0), 0);
+      return {
+        ...p,
+        total_stock,
+      };
+    });
+
+    data = {
+      count: count || 0,
+      products: mapped as unknown as (Product & { total_stock: number })[],
+    };
+  }
   const pages = Math.ceil(data.count / 30);
   function url(p: number) {
     const params = new URLSearchParams(s as Record<string, string>);

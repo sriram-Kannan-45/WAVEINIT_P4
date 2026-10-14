@@ -2,13 +2,15 @@ import type { Homepage, StoreSettings } from "@/types";
 export const defaultStore: StoreSettings = {
   id: 1,
   business_name: "Achu Designer Boutique",
-  whatsapp_number: "916381102874",
-  phone_number: "916381102874",
+  whatsapp_number: "919629660022",
+  phone_number: "919629660022",
   instagram_url: "",
   email: "",
-  address: "",
-  maps_url: "",
-  map_embed_url: "",
+  address: "PMS Complex, Diamond Nagar, Near MDS Bakery, Thindal.",
+  maps_url:
+    "https://www.google.com/maps/search/?api=1&query=PMS+Complex,+Diamond+Nagar,+Near+MDS+Bakery,+Thindal",
+  map_embed_url:
+    "https://maps.google.com/maps?q=PMS+Complex,+Diamond+Nagar,+Near+MDS+Bakery,+Thindal&t=&z=15&ie=UTF8&iwloc=&output=embed",
   opening_hours: "",
   currency: "INR",
   low_stock_threshold: 3,

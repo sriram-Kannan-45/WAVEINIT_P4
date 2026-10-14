@@ -32,7 +32,8 @@ export async function POST(request: NextRequest) {
     request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
     request.headers.get("x-real-ip") ||
     "local";
-  const rateLimit = checkRateLimit(`login:${ip}`, 5, 600);
+  const isProd = process.env.NODE_ENV === "production";
+  const rateLimit = checkRateLimit(`login:${ip}`, isProd ? 5 : 100, 600);
   if (!rateLimit.allowed) {
     return NextResponse.json(
       {

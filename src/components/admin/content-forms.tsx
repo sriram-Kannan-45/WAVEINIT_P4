@@ -179,6 +179,14 @@ export function ContentForm({
                 <ImageUploader
                   folder="banners"
                   multiple={false}
+                  defaultAspect={
+                    field.key === "hero_mobile_image"
+                      ? 3 / 4
+                      : field.key === "featured_image"
+                        ? 4 / 3
+                        : 16 / 9
+                  }
+                  modalTitle={`Crop ${field.label}`}
                   images={
                     value
                       ? [

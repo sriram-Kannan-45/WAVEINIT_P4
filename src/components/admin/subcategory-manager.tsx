@@ -189,6 +189,9 @@ function SubcategoryModal({
                 <ImageUploader
                   folder="categories"
                   multiple={false}
+                  defaultAspect={1 / 1}
+                  cropShape="round"
+                  modalTitle="Crop Subcategory Photograph (1:1 / Circle)"
                   images={
                     image
                       ? [
@@ -210,6 +213,7 @@ function SubcategoryModal({
               </div>
               {image && (
                 <div
+                  className="circular-preview-card"
                   style={{
                     textAlign: "center",
                     padding: "12px 18px",
@@ -459,11 +463,13 @@ export function SubcategoryManager({
       </div>
 
       <div
+        className="subcategory-filter-row"
         style={{
           display: "flex",
           alignItems: "center",
           gap: "12px",
           marginBottom: "16px",
+          flexWrap: "wrap",
         }}
       >
         <label
@@ -479,7 +485,7 @@ export function SubcategoryManager({
           value={filterCat}
           onChange={(e) => setFilterCat(e.target.value)}
           style={{
-            padding: "6px 12px",
+            padding: "8px 12px",
             borderRadius: "6px",
             border: "1px solid #d5cebf",
             fontSize: "13px",

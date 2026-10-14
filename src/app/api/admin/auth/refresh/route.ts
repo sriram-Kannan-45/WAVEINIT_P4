@@ -4,6 +4,7 @@ import {
   generateRefreshToken,
   rotateAdminSession,
   createAdminAccessToken,
+  verifyAdminAccessToken,
   ADMIN_COOKIE_NAME,
   ADMIN_REFRESH_COOKIE_NAME,
   ACCESS_TOKEN_TTL_SEC,
@@ -22,6 +23,19 @@ export async function POST(request: NextRequest) {
       { ok: false, error: "Invalid request origin." },
       { status: 403 },
     );
+  }
+
+  // Fast-path: If caller presents an unexpired, cryptographically valid access token cookie,
+  // return it directly so client in-memory state is restored without rotating refresh token
+  const currentAccessToken = request.cookies.get(ADMIN_COOKIE_NAME)?.value;
+  const verifiedCurrent = currentAccessToken ? verifyAdminAccessToken(currentAccessToken) : null;
+  if (verifiedCurrent) {
+    return NextResponse.json({
+      ok: true,
+      access_token: currentAccessToken,
+      token_type: "Bearer",
+      expires_in: ACCESS_TOKEN_TTL_SEC,
+    });
   }
 
   const ip =
