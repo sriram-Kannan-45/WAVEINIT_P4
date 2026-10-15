@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 import { ArrowLeft, ArrowRight, Trash2, Star, Crop } from "lucide-react";
 import { toast } from "sonner";
@@ -52,7 +51,6 @@ export function ImageUploader({
 }) {
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState("");
-  const [previews, setPreviews] = useState<string[]>([]);
 
   // Cropper queue state
   const [pendingQueue, setPendingQueue] = useState<File[]>([]);
@@ -291,18 +289,6 @@ export function ImageUploader({
       )}
 
       <div className="upload-thumbnails">
-        {previews.map((url, i) => (
-          <div key={url} className="upload-thumb">
-            <Image
-              src={url}
-              alt={`Selected upload ${i + 1}`}
-              width={104}
-              height={120}
-              unoptimized
-            />
-            <span className="loading-label">Preparing…</span>
-          </div>
-        ))}
         {images.map((img, i) => (
           <div className="upload-thumb" key={img.storage_path}>
             <OptimizedImage

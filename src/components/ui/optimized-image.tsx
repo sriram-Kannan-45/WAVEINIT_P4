@@ -1,7 +1,7 @@
 "use client";
 
 import Image, { type ImageProps } from "next/image";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { imageUrl } from "@/lib/utils";
 
 export interface OptimizedImageProps extends Omit<ImageProps, "src"> {
@@ -30,14 +30,23 @@ export function OptimizedImage({
   ...rest
 }: OptimizedImageProps) {
   const [hasError, setHasError] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(Boolean(rest.priority));
+  const imgRef = useRef<HTMLImageElement>(null);
 
   const resolvedSrc = hasError
     ? fallbackSrc
     : imageUrl(src || fallbackSrc);
 
+  useEffect(() => {
+    if (imgRef.current?.complete) {
+      setIsLoaded(true);
+    }
+  }, [resolvedSrc]);
+
   return (
     <Image
+      ref={imgRef}
+      decoding="async"
       {...rest}
       src={resolvedSrc}
       alt={alt || "Achu Designer Boutique piece"}

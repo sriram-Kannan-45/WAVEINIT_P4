@@ -72,6 +72,10 @@ function failure(error: unknown): Result {
 function refresh() {
   try {
     revalidatePath("/", "layout");
+    revalidatePath("/shop", "page");
+    revalidatePath("/collections", "page");
+    revalidatePath("/admin/products", "page");
+    revalidatePath("/admin/dashboard", "page");
   } catch {
     /* revalidatePath is active only inside Next.js HTTP request lifecycle */
   }

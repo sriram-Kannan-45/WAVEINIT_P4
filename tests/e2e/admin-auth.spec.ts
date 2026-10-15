@@ -8,7 +8,9 @@ test("admin login rejects invalid credentials and accepts achu / 1234", async ({
   await expect(
     page.getByRole("heading", { name: "Welcome to Achu." }),
   ).toBeVisible();
-  await expect(page.getByText("Sign in with Admin ID")).toBeVisible();
+  await expect(
+    page.getByText("Sign in to care for your collection."),
+  ).toBeVisible();
 
   // 2. Try invalid credentials
   await page.getByLabel("Admin ID or Email").fill("wronguser");

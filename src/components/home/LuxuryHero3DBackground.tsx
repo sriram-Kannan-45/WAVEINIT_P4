@@ -276,7 +276,6 @@ export function LuxuryHero3DBackground({
                   width={outfit.width}
                   height={outfit.height}
                   priority={idx < 2}
-                  unoptimized
                   className="hero-cutout-image"
                   sizes="(max-width: 767px) 90vw, (max-width: 1200px) 60vw, 800px"
                 />

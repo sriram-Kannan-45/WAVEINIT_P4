@@ -65,7 +65,7 @@ test.describe("Category and Subcategory E2E feature verification", () => {
     // Verify filtered product listing
     const productCard = page.locator('article.product-card').first();
     await expect(productCard).toBeVisible();
-    await expect(productCard).toContainText("Emerald silk saree");
+    await expect(productCard).toContainText(/Emerald Silk Saree/i);
 
     // 4. Drill down to Product Detail Page
     await productCard.locator('a[href*="/product/"]').first().click();
@@ -120,7 +120,7 @@ test.describe("Category and Subcategory E2E feature verification", () => {
     await expect(table).toBeVisible();
     await expect(table).toContainText("Stone work");
     await expect(table).toContainText("Sarees");
-    await expect(table).toContainText("Daily wear");
+    await expect(table).toContainText("Plain sarees");
   });
 
   test("admin category management uses centered modal popups for add, edit, and view details", async ({

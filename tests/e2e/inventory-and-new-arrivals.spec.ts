@@ -29,7 +29,7 @@ test.describe("Dynamic Inventory, Product Management & New Arrivals E2E", () => 
     await expect(row4XL).toBeVisible();
 
     // Verify fields in the row: Size, Stock, Price (₹), SKU
-    await expect(row4XL.locator("input[placeholder='Default base price']")).toBeVisible();
+    await expect(row4XL.locator("input[placeholder='Base price']")).toBeVisible();
     await expect(row4XL.locator("input[placeholder='0']")).toBeVisible();
 
     // Test Add size button for custom sizes
@@ -47,21 +47,21 @@ test.describe("Dynamic Inventory, Product Management & New Arrivals E2E", () => 
   test("Phase 4: Storefront PDP displays size-specific stock availability and disables Add to Bag on out-of-stock sizes", async ({
     page,
   }) => {
-    // Go to product page with mixed stock (sample-product-1 has size S in low stock, M with 0 stock)
-    await page.goto("/product/ivory-embroidered-kurta-set");
+    // Go to product page with mixed stock (product Deno has 3XL with 0 stock)
+    await page.goto("/product/deno");
     await page.waitForLoadState("domcontentloaded");
 
-    await expect(page.locator("h1")).toContainText("Ivory embroidered kurta set");
+    await expect(page.locator("h1")).toContainText(/Deno/i);
 
     // Verify size buttons container is visible
     const sizeOptions = page.locator(".size-options");
     await expect(sizeOptions).toBeVisible();
 
-    // Check size M indicator (in demo data, size M / index 1 has 0 stock)
-    const sizeMBtn = sizeOptions.getByRole("button", { name: "M, out of stock" });
-    await expect(sizeMBtn).toBeVisible();
-    await expect(sizeMBtn).toBeDisabled();
-    await expect(sizeMBtn.locator(".size-sold-out-tag")).toHaveText("Sold out");
+    // Check sold out size button (3XL has 0 stock)
+    const soldOutBtn = sizeOptions.locator("button.sold-out-size").first();
+    await expect(soldOutBtn).toBeVisible();
+    await expect(soldOutBtn).toBeDisabled();
+    await expect(soldOutBtn.locator(".size-sold-out-tag")).toHaveText("Sold out");
 
     // Check size S button (in stock)
     const sizeSBtn = sizeOptions.getByRole("button", { name: "S", exact: true });

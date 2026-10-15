@@ -160,7 +160,11 @@ export const settingsSchema = z.object({
   address: text,
   maps_url: webUrl(["google.com", "google.co.in", "maps.app.goo.gl", "goo.gl"]),
   map_embed_url: webUrl(["google.com", "google.co.in"]).refine(
-    (s) => !s || new URL(s).pathname.startsWith("/maps/embed"),
+    (s) =>
+      !s ||
+      new URL(s).pathname.startsWith("/maps/embed") ||
+      (new URL(s).pathname.startsWith("/maps") &&
+        new URL(s).searchParams.get("output") === "embed"),
     "Use a Google Maps embed URL.",
   ),
   opening_hours: short,
