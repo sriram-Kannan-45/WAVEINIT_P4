@@ -17,7 +17,7 @@ import {
   User,
   LogOut,
   ArrowUpRight,
-  Menu,
+  MoreVertical,
   Sparkles,
 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -135,10 +135,11 @@ export function AdminShell({
                 title="Manage your boutique"
                 trigger={
                   <button
-                    className="icon-button"
+                    type="button"
+                    className="icon-button admin-menu-trigger"
                     aria-label="Open owner navigation"
                   >
-                    <Menu size={20} />
+                    <MoreVertical size={20} />
                   </button>
                 }
               >
