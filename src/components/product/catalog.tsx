@@ -27,9 +27,16 @@ export async function Catalog({
   const pageUrl = (page: number) => {
     const p = new URLSearchParams();
     Object.entries(filters).forEach(([k, v]) => {
-      if (v) p.set(k, v);
+      if (v && k !== "category" && k !== "subcategory") p.set(k, v);
     });
     p.set("page", String(page));
+    const qs = p.toString();
+    if (filters.category && filters.subcategory) {
+      return `/category/${filters.category}/${filters.subcategory}${qs ? `?${qs}` : ""}`;
+    }
+    if (filters.category) {
+      return `/category/${filters.category}${qs ? `?${qs}` : ""}`;
+    }
     return `/shop?${p}`;
   };
   return (
@@ -82,7 +89,16 @@ export async function Catalog({
             <div className="empty-state">
               <h2>A little more to discover.</h2>
               <p>No products matched your search.</p>
-              <Link className="button" href="/shop">
+              <Link
+                className="button"
+                href={
+                  filters.category && filters.subcategory
+                    ? `/category/${filters.category}/${filters.subcategory}`
+                    : filters.category
+                      ? `/category/${filters.category}`
+                      : "/shop"
+                }
+              >
                 Clear filters
               </Link>
             </div>

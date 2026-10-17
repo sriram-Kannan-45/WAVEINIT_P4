@@ -84,7 +84,7 @@ export function ProductForm({
           subcategory_id: "",
           selling_price: 0,
           original_price: null,
-          status: "draft",
+          status: "active",
           is_featured: false,
           is_new_arrival: false,
           is_best_seller: false,
@@ -115,8 +115,14 @@ export function ProductForm({
   const images = useWatch({ control, name: "images" });
   const chosen = useWatch({ control, name: "collection_ids" });
   const selectedCategoryId = useWatch({ control, name: "category_id" });
+  const selectedSubcategoryId = useWatch({ control, name: "subcategory_id" });
+  const selectedStatus = useWatch({ control, name: "status" });
   const availableSubcategories = (subcategories || []).filter(
     (s) => s.category_id === selectedCategoryId,
+  );
+  const currentCategory = categories.find((c) => c.id === selectedCategoryId);
+  const currentSubcategory = (subcategories || []).find(
+    (s) => s.id === selectedSubcategoryId,
   );
   async function submit(values: Output) {
     setBusy(true);
@@ -142,7 +148,87 @@ export function ProductForm({
       )}
       noValidate
     >
-      <h2>The essentials</h2>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "1rem",
+          flexWrap: "wrap",
+          gap: "0.75rem",
+        }}
+      >
+        <h2 style={{ margin: 0 }}>The essentials</h2>
+        {product && (
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            {product.slug && (
+              <a
+                href={`/product/${product.slug}`}
+                target="_blank"
+                rel="noreferrer"
+                className="button outline"
+                style={{
+                  fontSize: "0.82rem",
+                  padding: "0.35rem 0.75rem",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.35rem",
+                }}
+              >
+                View on store ↗
+              </a>
+            )}
+            {currentCategory?.slug && currentSubcategory?.slug && (
+              <a
+                href={`/category/${currentCategory.slug}/${currentSubcategory.slug}`}
+                target="_blank"
+                rel="noreferrer"
+                className="button outline"
+                style={{
+                  fontSize: "0.82rem",
+                  padding: "0.35rem 0.75rem",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.35rem",
+                }}
+              >
+                View in subcategory ({currentSubcategory.name}) ↗
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+
+      {selectedStatus === "draft" && (
+        <div
+          style={{
+            border: "1px solid #fde68a",
+            background: "#fffbeb",
+            color: "#92400e",
+            padding: "12px 16px",
+            borderRadius: "6px",
+            marginBottom: "20px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "12px",
+            flexWrap: "wrap",
+          }}
+        >
+          <div style={{ fontSize: "0.88rem", lineHeight: 1.5 }}>
+            ⚠️ <strong>Draft Product:</strong> This product is saved as a Draft and is hidden from customers on the storefront and subcategory listings. Change status to <strong>Published</strong> to make it visible.
+          </div>
+          <button
+            type="button"
+            className="button"
+            style={{ fontSize: "0.82rem", padding: "0.4rem 0.85rem", whiteSpace: "nowrap" }}
+            onClick={() => setValue("status", "active")}
+          >
+            Switch to Published
+          </button>
+        </div>
+      )}
+
       {!categories.length && (
         <p className="setup-note">
           Create a category before adding products.{" "}
@@ -195,7 +281,11 @@ export function ProductForm({
         <label className="field">
           <span>Subcategory (optional)</span>
           <select {...register("subcategory_id")}>
-            <option value="">No subcategory</option>
+            <option value="">
+              {availableSubcategories.length === 0 && selectedCategoryId
+                ? "No subcategories in this category"
+                : "No subcategory"}
+            </option>
             {availableSubcategories.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
@@ -207,10 +297,25 @@ export function ProductForm({
         <label className="field">
           <span>Status</span>
           <select {...register("status")}>
-            <option value="draft">Draft</option>
-            <option value="active">Published</option>
-            <option value="hidden">Hidden</option>
+            <option value="active">Published (Visible in store & subcategory)</option>
+            <option value="draft">Draft (Hidden from store & subcategory)</option>
+            <option value="hidden">Hidden (Unlisted)</option>
           </select>
+          {selectedStatus === "draft" && (
+            <small style={{ color: "#d97706", display: "block", marginTop: "4px" }}>
+              ⚠️ Hidden from storefront and subcategories until published.
+            </small>
+          )}
+          {selectedStatus === "active" && (
+            <small style={{ color: "#059669", display: "block", marginTop: "4px" }}>
+              ✓ Live and visible inside category and assigned subcategory.
+            </small>
+          )}
+          {selectedStatus === "hidden" && (
+            <small style={{ color: "#64748b", display: "block", marginTop: "4px" }}>
+              👁️ Delisted from the catalog.
+            </small>
+          )}
         </label>
         <label className="field">
           <span>Selling price (₹) *</span>

@@ -45,6 +45,9 @@ export function CatalogFilters({
       {filters.new && <input type="hidden" name="new" value="true" />}
       {filters.best && <input type="hidden" name="best" value="true" />}
       {filters.sort && <input type="hidden" name="sort" value={filters.sort} />}
+      {filters.subcategory && (
+        <input type="hidden" name="subcategory" value={filters.subcategory} />
+      )}
       <label>
         <span>Search the collection</span>
         <div className="catalog-search">
