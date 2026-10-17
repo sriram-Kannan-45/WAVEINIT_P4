@@ -36,6 +36,7 @@ type VendorOrder = {
 export function Checkout({ enabled }: { enabled: boolean }) {
   const items = useCart((s) => s.items);
   const reconcile = useCart((s) => s.reconcile);
+  const remove = useCart((s) => s.remove);
   const [redirecting, setRedirecting] = useState(true);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
@@ -111,6 +112,8 @@ export function Checkout({ enabled }: { enabled: boolean }) {
           vendorGroups.length > 0 && vendorGroups[0].whatsapp_url
             ? vendorGroups[0].whatsapp_url
             : "";
+        // Safely clear demo items from cart
+        items.forEach((it) => remove(it.variant_id));
         setReady({
           reference: demoRef,
           subtotal,
@@ -165,6 +168,9 @@ export function Checkout({ enabled }: { enabled: boolean }) {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
+
+      // Safe cart clearing: remove only the items successfully persisted in this order
+      lineItems.forEach((it) => remove(it.variant_id));
       setReady(data);
     } catch (e) {
       setError(

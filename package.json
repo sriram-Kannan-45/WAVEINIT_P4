@@ -13,8 +13,9 @@
     "test:e2e": "playwright test",
     "format": "prettier --write src tests *.ts *.mjs *.json README.md",
     "test:db": "tsx --test tests/database.test.ts",
+    "test:workflow": "tsx --env-file=.env.local --test tests/workflow-integration.test.ts",
     "imagekit:migrate": "tsx scripts/migrate-to-imagekit.ts",
-    "check": "npm run typecheck && npm run lint && npm test && npm run test:db"
+    "check": "npm run typecheck && npm run lint && npm test && npm run test:db && npm run test:workflow"
   },
   "keywords": [],
   "author": "",

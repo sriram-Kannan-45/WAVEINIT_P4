@@ -37,6 +37,7 @@ export function whatsappUrl(number: string, message: string): string | null {
 export type OrderItem = {
   name: string;
   size?: string;
+  colour?: string;
   quantity: number;
   price: number;
   product_id?: string;
@@ -64,30 +65,34 @@ export type VendorOrderGroup = {
 
 /**
  * Builds an encoded pre-filled WhatsApp message containing all relevant order details:
- * - Product names
- * - Product quantities
- * - Selected sizes or variants
- * - Individual prices and subtotal
+ * - Boutique & Order Reference header
  * - Customer details and delivery address (if collected)
- * - Order summary & reference
+ * - Itemized list with sizes, quantities, unit prices, and subtotals
+ * - Total quantity, order total, and PENDING status
+ * - Availability confirmation request
  */
 export function orderMessage(
   order: OrderSnapshot,
   c?: Customer | null,
   vendorName?: string,
 ): string {
-  const recipientName =
-    vendorName || order.vendor_name || "Achu Designer Boutique";
+  const header = vendorName && vendorName !== "Achu Designer Boutique"
+    ? `${vendorName.toUpperCase()} — NEW ORDER`
+    : "ACHU DESIGNER BOUTIQUE — NEW ORDER";
+
+  const totalQty = order.items.reduce((sum, i) => sum + i.quantity, 0);
 
   const lines = order.items
-    .map(
-      (i, n) =>
-        `${n + 1}. ${i.name}\nSize: ${i.size || "Standard"}\nQuantity: ${i.quantity}\nPrice: ${money(i.price)}${i.quantity > 1 ? ` × ${i.quantity} (= ${money((paise(i.price) * i.quantity) / 100)})` : ""}`,
-    )
+    .map((i, n) => {
+      const lineSubtotal = (paise(i.price) * i.quantity) / 100;
+      const sizeLine = `\nSize: ${i.size || "Standard"}`;
+      const colorLine = i.colour ? `\nColor: ${i.colour}` : "";
+      return `${n + 1}. ${i.name}${sizeLine}${colorLine}\nQuantity: ${i.quantity}\nUnit Price: ${money(i.price)}\nSubtotal: ${money(lineSubtotal)}`;
+    })
     .join("\n\n");
 
   const orderRefLine = order.reference
-    ? `\n\nOrder Ref: ${order.reference}`
+    ? `\nOrder Reference: ${order.reference}`
     : "";
 
   let customerSection = "";
@@ -95,10 +100,10 @@ export function orderMessage(
     const addressLines = [c.address_line_1, c.address_line_2]
       .filter(Boolean)
       .join(", ");
-    customerSection = `\n\nCUSTOMER DETAILS\n\nName: ${c.full_name}\nPhone: ${c.phone}${c.alternate_phone ? `\nAlternate phone: ${c.alternate_phone}` : ""}\nAddress: ${addressLines}\nCity: ${c.city}\nState: ${c.state}\nPincode: ${c.pincode}${c.landmark ? `\nLandmark: ${c.landmark}` : ""}${c.note ? `\n\nNote:\n${c.note}` : ""}`;
+    customerSection = `\n\nCUSTOMER DETAILS\nCustomer Name: ${c.full_name}\nCustomer Phone: ${c.phone}${c.alternate_phone ? `\nAlternate Phone: ${c.alternate_phone}` : ""}\nDelivery Address: ${addressLines}, ${c.city}, ${c.state} - ${c.pincode}${c.landmark ? `\nLandmark: ${c.landmark}` : ""}${c.note ? `\nNote: ${c.note}` : ""}`;
   }
 
-  return `Hi ${recipientName} 👋\n\nI would like to place an order.${orderRefLine}\n\n--------------------------------\nORDER DETAILS\n--------------------------------\n\n${lines}\n\n--------------------------------\nSubtotal: ${money(order.subtotal)}\n--------------------------------${customerSection}\n\nPlease confirm availability and order details.\n\nThank you.`;
+  return `${header}${orderRefLine}${customerSection}\n\n--------------------------------\nORDER ITEMS\n--------------------------------\n\n${lines}\n\n--------------------------------\nTotal Quantity: ${totalQty}\nOrder Total: ${money(order.subtotal)}\nOrder Status: PENDING\n--------------------------------\n\nPlease review the order and confirm availability.\n\nThank you.`;
 }
 
 /**

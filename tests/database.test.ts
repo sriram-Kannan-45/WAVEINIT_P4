@@ -32,6 +32,9 @@ test("real PostgreSQL migrations, RLS, admin CRUD, and atomic enquiries", async 
       await readFile("supabase/migrations/005_admin_auth.sql", "utf8"),
     );
     await db.exec(
+      await readFile("supabase/migrations/007_order_confirmation_and_notifications.sql", "utf8"),
+    );
+    await db.exec(
       `grant all on all tables in schema public to service_role;insert into auth.users values('${owner}'),('${other}');insert into public.admin_roles(user_id) values('${owner}');`,
     );
     async function as(role: string, user = "") {
@@ -307,6 +310,18 @@ test("real PostgreSQL migrations, RLS, admin CRUD, and atomic enquiries", async 
           (await db.query("select * from order_enquiry_items")).rows.length,
           1,
         );
+        // Verify persistent admin notification created for the new order
+        const orderNotifs = (
+          await db.query<{ type: string; order_reference: string; title: string; read: boolean }>(
+            "select type, order_reference, title, read from admin_notifications where order_reference = $1",
+            [order.reference],
+          )
+        ).rows;
+        assert.equal(orderNotifs.length, 1);
+        assert.equal(orderNotifs[0].type, "new_order");
+        assert.equal(orderNotifs[0].order_reference, order.reference);
+        assert.equal(orderNotifs[0].read, false);
+        assert.ok(orderNotifs[0].title.startsWith("New Order:"));
       },
     );
     await t.test(
@@ -609,8 +624,27 @@ test("real PostgreSQL migrations, RLS, admin CRUD, and atomic enquiries", async 
           [enqId, pId, sVar.id],
         );
 
-        // Transition to confirmed: should deduct 2 units from size S (10 -> 8)
-        await db.query("select admin_set_enquiry_status($1, 'confirmed')", [enqId]);
+        // Transition to confirmed via admin_confirm_order: should deduct 2 units from size S (10 -> 8)
+        const confirmRes = (
+          await db.query<{ res: { ok: boolean; status: string; stock_deducted: boolean } }>(
+            "select admin_confirm_order($1, 'admin@achuboutique.com') as res",
+            [enqId],
+          )
+        ).rows[0].res;
+        assert.equal(confirmRes.ok, true);
+        assert.equal(confirmRes.status, "confirmed");
+        assert.equal(confirmRes.stock_deducted, true);
+
+        const enqAfterConfirm = (
+          await db.query<{ status: string; stock_deducted: boolean; confirmed_by: string; confirmed_at: string }>(
+            "select status, stock_deducted, confirmed_by, confirmed_at from order_enquiries where id = $1",
+            [enqId],
+          )
+        ).rows[0];
+        assert.equal(enqAfterConfirm.status, "confirmed");
+        assert.equal(enqAfterConfirm.stock_deducted, true);
+        assert.equal(enqAfterConfirm.confirmed_by, "admin@achuboutique.com");
+        assert.ok(enqAfterConfirm.confirmed_at);
 
         const sAfterConfirm = (
           await db.query<{ stock_quantity: number }>(
@@ -621,7 +655,15 @@ test("real PostgreSQL migrations, RLS, admin CRUD, and atomic enquiries", async 
         assert.equal(sAfterConfirm, 8);
 
         // Idempotency: confirming again should NOT deduct twice
-        await db.query("select admin_set_enquiry_status($1, 'confirmed')", [enqId]);
+        const retryRes = (
+          await db.query<{ res: { ok: boolean; already_confirmed: boolean } }>(
+            "select admin_confirm_order($1, 'admin@achuboutique.com') as res",
+            [enqId],
+          )
+        ).rows[0].res;
+        assert.equal(retryRes.ok, true);
+        assert.equal(retryRes.already_confirmed, true);
+
         const sAfterRetry = (
           await db.query<{ stock_quantity: number }>(
             "select stock_quantity from product_variants where id = $1",
@@ -639,6 +681,189 @@ test("real PostgreSQL migrations, RLS, admin CRUD, and atomic enquiries", async 
           )
         ).rows[0].stock_quantity;
         assert.equal(sAfterCancel, 10);
+
+        // Test: Insufficient inventory stops confirmation and does NOT deduct stock
+        const excessEnqRes = await db.query<{ id: string }>(
+          `insert into order_enquiries(order_reference, idempotency_key, request_hash, customer_name, phone, address, city, state, pincode, subtotal, status)
+           values('ORD-TEST-EXCESS', gen_random_uuid(), 'hash-excess-123', 'Meera', '9876543211', '456 Silk St', 'Chennai', 'Tamil Nadu', '600001', 5000, 'new')
+           returning id`,
+        );
+        const excessEnqId = excessEnqRes.rows[0].id;
+        await db.query(
+          `insert into order_enquiry_items(order_enquiry_id, product_id, variant_id, product_name_snapshot, size_snapshot, quantity, unit_price_snapshot, subtotal_snapshot)
+           values($1, $2, $3, 'Festive Anarkali', 'S', 99, 2499, 247401)`,
+          [excessEnqId, pId, sVar.id],
+        );
+        // Attempting to confirm with 99 requested when only 10 available MUST fail
+        await assert.rejects(
+          () => db.query("select admin_confirm_order($1, 'admin')", [excessEnqId]),
+          /Insufficient stock for Festive Anarkali \(Size S\)\. Ordered: 99, Available: 10/i,
+        );
+        // Stock remains untouched at 10!
+        const stockAfterFailedConfirm = (
+          await db.query<{ stock_quantity: number }>(
+            "select stock_quantity from product_variants where id = $1",
+            [sVar.id],
+          )
+        ).rows[0].stock_quantity;
+        assert.equal(stockAfterFailedConfirm, 10);
+
+        // Order remains in 'new' status and stock_deducted remains false
+        const excessEnqStatus = (
+          await db.query<{ status: string; stock_deducted: boolean }>(
+            "select status, stock_deducted from order_enquiries where id = $1",
+            [excessEnqId],
+          )
+        ).rows[0];
+        assert.equal(excessEnqStatus.status, "new");
+        assert.equal(excessEnqStatus.stock_deducted, false);
+
+        // Test: Admin rejection records reason, sets status to 'rejected', does NOT deduct stock
+        const rejectRes = (
+          await db.query<{ res: { ok: boolean; status: string; stock_deducted: boolean } }>(
+            "select admin_reject_order($1, 'Size requested is completely sold out', 'admin') as res",
+            [excessEnqId],
+          )
+        ).rows[0].res;
+        assert.equal(rejectRes.ok, true);
+        assert.equal(rejectRes.status, "rejected");
+        assert.equal(rejectRes.stock_deducted, false);
+
+        const rejectedOrder = (
+          await db.query<{ status: string; rejection_reason: string }>(
+            "select status, rejection_reason from order_enquiries where id = $1",
+            [excessEnqId],
+          )
+        ).rows[0];
+        assert.equal(rejectedOrder.status, "rejected");
+        assert.equal(rejectedOrder.rejection_reason, "Size requested is completely sold out");
+
+        // Attempting to confirm a rejected order MUST fail!
+        await assert.rejects(
+          () => db.query("select admin_confirm_order($1, 'admin')", [excessEnqId]),
+          /Cannot confirm an order that has status rejected/i,
+        );
+
+        // Scenario G: Concurrent competition for the last single unit (stock = 1)
+        const lastUnitVarRes = await db.query<{ id: string }>(
+          `insert into product_variants(product_id, size, stock_quantity, active, price)
+           values($1, 'LAST-UNIT-SIZE', 1, true, 2000) returning id`,
+          [pId],
+        );
+        const lastUnitVarId = lastUnitVarRes.rows[0].id;
+
+        // Order 1 requesting 1 unit
+        const enq1Res = await db.query<{ id: string }>(
+          `insert into order_enquiries(order_reference, idempotency_key, request_hash, customer_name, phone, address, city, state, pincode, subtotal, status)
+           values('ORD-COMPETE-1', gen_random_uuid(), 'hash-compete-1', 'Buyer 1', '9876500001', 'Address 1', 'City', 'State', '600001', 2000, 'new')
+           returning id`,
+        );
+        const enq1Id = enq1Res.rows[0].id;
+        await db.query(
+          `insert into order_enquiry_items(order_enquiry_id, product_id, variant_id, product_name_snapshot, size_snapshot, quantity, unit_price_snapshot, subtotal_snapshot)
+           values($1, $2, $3, 'Test Saree', 'LAST-UNIT-SIZE', 1, 2000, 2000)`,
+          [enq1Id, pId, lastUnitVarId],
+        );
+
+        // Order 2 requesting 1 unit
+        const enq2Res = await db.query<{ id: string }>(
+          `insert into order_enquiries(order_reference, idempotency_key, request_hash, customer_name, phone, address, city, state, pincode, subtotal, status)
+           values('ORD-COMPETE-2', gen_random_uuid(), 'hash-compete-2', 'Buyer 2', '9876500002', 'Address 2', 'City', 'State', '600001', 2000, 'new')
+           returning id`,
+        );
+        const enq2Id = enq2Res.rows[0].id;
+        await db.query(
+          `insert into order_enquiry_items(order_enquiry_id, product_id, variant_id, product_name_snapshot, size_snapshot, quantity, unit_price_snapshot, subtotal_snapshot)
+           values($1, $2, $3, 'Test Saree', 'LAST-UNIT-SIZE', 1, 2000, 2000)`,
+          [enq2Id, pId, lastUnitVarId],
+        );
+
+        // Order 1 confirms first: succeeds, stock drops from 1 to 0
+        const conf1 = (
+          await db.query<{ res: { ok: boolean; status: string } }>(
+            "select admin_confirm_order($1, 'admin') as res",
+            [enq1Id],
+          )
+        ).rows[0].res;
+        assert.equal(conf1.ok, true);
+        assert.equal(conf1.status, "confirmed");
+
+        const stockAfterFirst = (
+          await db.query<{ stock_quantity: number }>(
+            "select stock_quantity from product_variants where id = $1",
+            [lastUnitVarId],
+          )
+        ).rows[0].stock_quantity;
+        assert.equal(stockAfterFirst, 0);
+
+        // Order 2 attempts confirmation: MUST FAIL with Insufficient stock!
+        await assert.rejects(
+          () => db.query("select admin_confirm_order($1, 'admin')", [enq2Id]),
+          /Insufficient stock/i,
+        );
+
+        // Stock MUST remain 0 and NEVER negative!
+        const stockAfterSecond = (
+          await db.query<{ stock_quantity: number }>(
+            "select stock_quantity from product_variants where id = $1",
+            [lastUnitVarId],
+          )
+        ).rows[0].stock_quantity;
+        assert.equal(stockAfterSecond, 0, "Stock must never become negative");
+
+        // Scenario H: Multi-item order failure rolls back with zero partial deduction
+        const multiVarRes = await db.query<{ id: string }>(
+          `insert into product_variants(product_id, size, stock_quantity, active, price)
+           values($1, 'MULTI-IN-STOCK', 5, true, 1000) returning id`,
+          [pId],
+        );
+        const multiVarId = multiVarRes.rows[0].id;
+
+        const multiEnqRes = await db.query<{ id: string }>(
+          `insert into order_enquiries(order_reference, idempotency_key, request_hash, customer_name, phone, address, city, state, pincode, subtotal, status)
+           values('ORD-MULTI-FAIL', gen_random_uuid(), 'hash-multi', 'Buyer Multi', '9876500003', 'Address 3', 'City', 'State', '600001', 3000, 'new')
+           returning id`,
+        );
+        const multiEnqId = multiEnqRes.rows[0].id;
+        // Item 1 has stock (1 unit of 5)
+        await db.query(
+          `insert into order_enquiry_items(order_enquiry_id, product_id, variant_id, product_name_snapshot, size_snapshot, quantity, unit_price_snapshot, subtotal_snapshot)
+           values($1, $2, $3, 'Test Saree', 'MULTI-IN-STOCK', 1, 1000, 1000)`,
+          [multiEnqId, pId, multiVarId],
+        );
+        // Item 2 has 0 stock (lastUnitVarId has 0 stock)
+        await db.query(
+          `insert into order_enquiry_items(order_enquiry_id, product_id, variant_id, product_name_snapshot, size_snapshot, quantity, unit_price_snapshot, subtotal_snapshot)
+           values($1, $2, $3, 'Test Saree', 'LAST-UNIT-SIZE', 1, 2000, 2000)`,
+          [multiEnqId, pId, lastUnitVarId],
+        );
+
+        // Confirmation fails on Item 2:
+        await assert.rejects(
+          () => db.query("select admin_confirm_order($1, 'admin')", [multiEnqId]),
+          /Insufficient stock/i,
+        );
+
+        // Verification of ZERO partial deduction: Item 1 stock MUST remain exactly 5!
+        const multiStockAfterRollback = (
+          await db.query<{ stock_quantity: number }>(
+            "select stock_quantity from product_variants where id = $1",
+            [multiVarId],
+          )
+        ).rows[0].stock_quantity;
+        assert.equal(multiStockAfterRollback, 5, "Multi-item transaction failure must leave in-stock variant untouched");
+
+        // Test: Non-admin authorization check
+        await as("authenticated", other);
+        await assert.rejects(
+          () => db.query("select admin_confirm_order($1, 'hacker')", [enqId]),
+          /Admin authorization required/i,
+        );
+        await assert.rejects(
+          () => db.query("select admin_reject_order($1, 'hacker')", [enqId]),
+          /Admin authorization required/i,
+        );
+        await as("authenticated", owner);
 
         // 5. New arrivals CRUD: link product, check RLS, delete from new_arrivals without deleting product
         const naRes = await db.query<{ id: string }>(

@@ -355,31 +355,34 @@ export default async function Section({
       .range(from, from + 29);
     if (
       filters.status &&
-      ["new", "contacted", "confirmed", "completed", "cancelled"].includes(
+      ["new", "contacted", "confirmed", "rejected", "completed", "cancelled"].includes(
         filters.status,
       )
     )
       q = q.eq("status", filters.status);
-    if (filters.q) q = q.ilike("customer_name", `%${filters.q.slice(0, 100)}%`);
+    if (filters.q) {
+      const cleanQ = filters.q.slice(0, 100);
+      q = q.or(`customer_name.ilike.%${cleanQ}%,order_reference.ilike.%${cleanQ}%,phone.ilike.%${cleanQ}%`);
+    }
     const { data, error, count } = await q;
     if (error) throw new Error("Unable to load enquiries.");
     return (
       <>
         <div className="admin-page-title">
           <div>
-            <h1>Your conversations</h1>
+            <h1>Orders & WhatsApp Enquiries</h1>
             <p>
-              {count || 0} enquiries · Expand a reference to view delivery
-              details and item snapshots.
+              {count || 0} orders · Review pending customer orders, confirm stock allocations, and track delivery details.
             </p>
           </div>
         </div>
         <form className="admin-filters">
           <input
             name="q"
-            placeholder="Search customer…"
-            aria-label="Search enquiry customer"
+            placeholder="Search by customer, reference (ACHU-…), or phone…"
+            aria-label="Search orders"
             defaultValue={filters.q || ""}
+            style={{ minWidth: 260 }}
           />
           <select
             name="status"
@@ -387,15 +390,20 @@ export default async function Section({
             defaultValue={filters.status || ""}
           >
             <option value="">All statuses</option>
-            {["new", "contacted", "confirmed", "completed", "cancelled"].map(
+            {["new", "contacted", "confirmed", "rejected", "completed", "cancelled"].map(
               (s) => (
                 <option key={s} value={s}>
-                  {s}
+                  {s.charAt(0).toUpperCase() + s.slice(1)}
                 </option>
               ),
             )}
           </select>
           <button className="button outline">Apply</button>
+          {Object.keys(filters).length > 0 && (
+            <Link className="text-link" href="/admin/orders">
+              Clear
+            </Link>
+          )}
         </form>
         <div className="admin-panel" style={{ marginTop: 0 }}>
           <OrdersTable orders={(data || []) as Enquiry[]} />

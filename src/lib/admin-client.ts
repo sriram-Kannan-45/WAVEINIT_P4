@@ -206,6 +206,12 @@ export const updateInventory = (
 export const setEnquiryStatus = (
   ...args: Parameters<typeof actions.setEnquiryStatus>
 ) => attempt(() => actions.setEnquiryStatus(...args));
+export const confirmOrder = (
+  ...args: Parameters<typeof actions.confirmOrder>
+) => attempt(() => actions.confirmOrder(...args));
+export const rejectOrder = (
+  ...args: Parameters<typeof actions.rejectOrder>
+) => attempt(() => actions.rejectOrder(...args));
 export const saveHomepage = (
   ...args: Parameters<typeof actions.saveHomepage>
 ) => attempt(() => actions.saveHomepage(...args));

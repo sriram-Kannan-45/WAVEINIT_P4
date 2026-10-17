@@ -483,4 +483,63 @@ test("savedCartSchema allows ImageKit URLs and rejects foreign untrusted image o
   assert.equal(invalidCart.success, false);
 });
 
+test("WhatsApp orderMessage generates complete boutique specification with PENDING status", () => {
+  const testCustomer = {
+    full_name: "Priya Sundaram",
+    phone: "919876543210",
+    alternate_phone: "919876543219",
+    address_line_1: "74, Anna Salai",
+    address_line_2: "Suite 301",
+    city: "Chennai",
+    state: "Tamil Nadu",
+    pincode: "600002",
+    landmark: "Opposite Metro Station",
+    note: "Please pack with extra tissue for gifting.",
+    consent: true as const,
+  };
+
+  const testOrder = {
+    reference: "ACHU-20261017-X9Y8Z7",
+    subtotal: 6498,
+    whatsapp_number: "919876543210",
+    items: [
+      {
+        name: "Royal Velvet Kurti",
+        size: "M",
+        colour: "Deep Navy",
+        quantity: 2,
+        price: 2499,
+      },
+      {
+        name: "Zari Embroidered Dupatta",
+        size: "Standard",
+        quantity: 1,
+        price: 1500,
+      },
+    ],
+  };
+
+  const message = orderMessage(testOrder, testCustomer);
+
+  assert.match(message, /ACHU DESIGNER BOUTIQUE — NEW ORDER/);
+  assert.match(message, /Order Reference: ACHU-20261017-X9Y8Z7/);
+  assert.match(message, /Customer Name: Priya Sundaram/);
+  assert.match(message, /Customer Phone: 919876543210/);
+  assert.match(message, /Delivery Address: 74, Anna Salai, Suite 301, Chennai, Tamil Nadu - 600002/);
+  assert.match(message, /Landmark: Opposite Metro Station/);
+  assert.match(message, /Note: Please pack with extra tissue for gifting\./);
+  assert.match(message, /ORDER ITEMS/);
+  assert.match(message, /1\. Royal Velvet Kurti/);
+  assert.match(message, /Size: M/);
+  assert.match(message, /Color: Deep Navy/);
+  assert.match(message, /Quantity: 2/);
+  assert.match(message, /Unit Price: ₹2,499/);
+  assert.match(message, /Subtotal: ₹4,998/);
+  assert.match(message, /2\. Zari Embroidered Dupatta/);
+  assert.match(message, /Total Quantity: 3/);
+  assert.match(message, /Order Total: ₹6,498/);
+  assert.match(message, /Order Status: PENDING/);
+  assert.match(message, /Please review the order and confirm availability\./);
+});
+
 

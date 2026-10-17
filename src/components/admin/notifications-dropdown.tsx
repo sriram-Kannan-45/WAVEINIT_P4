@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, AlertTriangle, AlertOctagon, CheckCheck, ExternalLink } from "lucide-react";
+import { Bell, AlertTriangle, AlertOctagon, CheckCheck, ExternalLink, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { markNotificationRead, markAllNotificationsRead, getNotifications } from "@/lib/admin-client";
 import type { AdminNotification } from "@/types";
@@ -85,7 +85,13 @@ export function NotificationsDropdown({
       await markNotificationRead(notif.id);
     }
     setOpen(false);
-    router.push(`/admin/inventory?product=${notif.product_id}`);
+    if (notif.type === "new_order" || notif.order_reference || notif.order_id) {
+      router.push(`/admin/orders?q=${encodeURIComponent(notif.order_reference || "")}`);
+    } else if (notif.product_id) {
+      router.push(`/admin/inventory?product=${notif.product_id}`);
+    } else {
+      router.push("/admin/inventory");
+    }
   };
 
   const handleMarkAllRead = async () => {
@@ -106,7 +112,7 @@ export function NotificationsDropdown({
       <button
         type="button"
         className="icon-button notification-trigger"
-        aria-label={`Stock alerts (${unreadCount} unread)`}
+        aria-label={`Notifications (${unreadCount} unread)`}
         aria-expanded={open}
         onClick={handleOpen}
       >
@@ -144,11 +150,12 @@ export function NotificationsDropdown({
             {notifications.length === 0 ? (
               <div className="notifications-empty">
                 <Bell size={24} style={{ opacity: 0.3, marginBottom: 8 }} />
-                <p>No stock alerts right now.</p>
-                <small>Healthy inventory across all sizes and products.</small>
+                <p>No notifications right now.</p>
+                <small>Orders and inventory updates will appear here.</small>
               </div>
             ) : (
               notifications.map((notif) => {
+                const isNewOrder = notif.type === "new_order";
                 const isOutOfStock = notif.type === "out_of_stock" || notif.stock_quantity === 0;
                 return (
                   <div
@@ -165,7 +172,24 @@ export function NotificationsDropdown({
                     }}
                   >
                     <div className="notification-icon-wrap">
-                      {isOutOfStock ? (
+                      {isNewOrder ? (
+                        <div
+                          className="notif-badge-icon new-order"
+                          style={{
+                            backgroundColor: "#e6f4ea",
+                            color: "#137333",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            width: 24,
+                            height: 24,
+                            borderRadius: "50%",
+                          }}
+                          title="New Order Received"
+                        >
+                          <ShoppingBag size={13} />
+                        </div>
+                      ) : isOutOfStock ? (
                         <div className="notif-badge-icon out-of-stock" title="Out of stock">
                           <AlertOctagon size={14} />
                         </div>
@@ -178,19 +202,37 @@ export function NotificationsDropdown({
                     <div className="notification-content">
                       <div className="notification-item-top">
                         <strong className="notification-product-name">
-                          {notif.product_name}
+                          {notif.title || notif.product_name}
                         </strong>
                         <span className="notification-time">{timeAgo(notif.created_at)}</span>
                       </div>
                       <div className="notification-details">
-                        <span className="notif-tag size-tag">Size: {notif.size}</span>
-                        <span
-                          className={`notif-tag ${isOutOfStock ? "out-tag" : "low-tag"}`}
-                        >
-                          {isOutOfStock
-                            ? "Out of stock (0 units)"
-                            : `Low stock (${notif.stock_quantity} left)`}
-                        </span>
+                        {isNewOrder ? (
+                          <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                            <div style={{ display: "flex", gap: 6 }}>
+                              <span className="notif-tag size-tag" style={{ backgroundColor: "#eef2ff", color: "#3730a3" }}>
+                                {notif.order_reference || "Order"}
+                              </span>
+                              <span className="notif-tag" style={{ backgroundColor: "#fef3c7", color: "#92400e" }}>
+                                Pending Review
+                              </span>
+                            </div>
+                            <small style={{ color: "var(--muted, #666)", fontSize: 12 }}>
+                              {notif.message}
+                            </small>
+                          </div>
+                        ) : (
+                          <>
+                            <span className="notif-tag size-tag">Size: {notif.size}</span>
+                            <span
+                              className={`notif-tag ${isOutOfStock ? "out-tag" : "low-tag"}`}
+                            >
+                              {isOutOfStock
+                                ? "Out of stock (0 units)"
+                                : `Low stock (${notif.stock_quantity} left)`}
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
                     {!notif.read && <span className="unread-dot" title="Unread" />}
@@ -200,13 +242,21 @@ export function NotificationsDropdown({
             )}
           </div>
 
-          <div className="notifications-footer">
+          <div className="notifications-footer" style={{ display: "flex", justifyContent: "space-between", padding: "10px 16px" }}>
+            <Link
+              href="/admin/orders"
+              className="view-inventory-link"
+              onClick={() => setOpen(false)}
+            >
+              <span>View all orders</span>
+              <ExternalLink size={12} />
+            </Link>
             <Link
               href="/admin/inventory"
               className="view-inventory-link"
               onClick={() => setOpen(false)}
             >
-              <span>Manage all inventory</span>
+              <span>Manage inventory</span>
               <ExternalLink size={12} />
             </Link>
           </div>

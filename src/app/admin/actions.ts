@@ -29,6 +29,7 @@ import {
   supabaseServer,
   supabaseService,
   configured,
+  getAuthenticatedAdmin,
 } from "@/lib/supabase/server";
 import {
   taxonomySchema,
@@ -485,6 +486,176 @@ export async function updateInventory(
     return failure(e);
   }
 }
+export async function confirmOrder(id: string): Promise<Result> {
+  const db = await requireAdmin();
+  try {
+    z.uuid().parse(id);
+    const adminPayload = await getAuthenticatedAdmin();
+    const adminId = adminPayload?.email || adminPayload?.sub || "admin";
+
+    const rpcRes = await db.rpc("admin_confirm_order", {
+      p_order_id: id,
+      p_admin_id: adminId,
+    });
+    if (!rpcRes.error) {
+      refresh();
+      return { ok: true };
+    }
+
+    const errMsg = rpcRes.error.message || "";
+    const isMissingRpc =
+      errMsg.includes("Could not find the function") ||
+      rpcRes.error.code === "42883";
+
+    if (!isMissingRpc) {
+      throw new Error(errMsg || "Unable to confirm order.");
+    }
+
+    // Direct service-role confirmation fallback
+    const { data: order, error: orderErr } = await db
+      .from("order_enquiries")
+      .select("id, status, stock_deducted")
+      .eq("id", id)
+      .single();
+
+    if (orderErr || !order) throw new Error("Order not found.");
+    if (order.status === "confirmed") return { ok: true };
+    if (order.status === "cancelled" || order.status === "rejected") {
+      throw new Error(`Cannot confirm an order with status '${order.status}'.`);
+    }
+
+    const { data: items, error: itemsErr } = await db
+      .from("order_enquiry_items")
+      .select("id, variant_id, quantity, product_name_snapshot, size_snapshot")
+      .eq("order_enquiry_id", id);
+
+    if (itemsErr || !items || items.length === 0) {
+      throw new Error("Order items could not be loaded.");
+    }
+
+    // Stock verification across all items
+    for (const item of items) {
+      const { data: variant, error: varErr } = await db
+        .from("product_variants")
+        .select("id, stock_quantity, active")
+        .eq("id", item.variant_id)
+        .single();
+
+      if (varErr || !variant) {
+        throw new Error(
+          `Variant for '${item.product_name_snapshot}' (${item.size_snapshot}) not found.`,
+        );
+      }
+      if (variant.stock_quantity < item.quantity) {
+        throw new Error(
+          `Insufficient stock for '${item.product_name_snapshot}' (${item.size_snapshot}): only ${variant.stock_quantity} available, but ${item.quantity} requested.`,
+        );
+      }
+    }
+
+    // Atomically deduct stock
+    for (const item of items) {
+      const { data: variant } = await db
+        .from("product_variants")
+        .select("stock_quantity")
+        .eq("id", item.variant_id)
+        .single();
+
+      if (variant) {
+        await db
+          .from("product_variants")
+          .update({
+            stock_quantity: Math.max(0, variant.stock_quantity - item.quantity),
+          })
+          .eq("id", item.variant_id);
+      }
+    }
+
+    const nowIso = new Date().toISOString();
+    const { error: updErr } = await db
+      .from("order_enquiries")
+      .update({
+        status: "confirmed",
+        stock_deducted: true,
+        confirmed_at: nowIso,
+        confirmed_by: adminId,
+      })
+      .eq("id", id);
+
+    if (updErr) {
+      await db
+        .from("order_enquiries")
+        .update({ status: "confirmed", stock_deducted: true })
+        .eq("id", id);
+    }
+
+    refresh();
+    return { ok: true };
+  } catch (e) {
+    return failure(e);
+  }
+}
+
+export async function rejectOrder(id: string, reason?: string): Promise<Result> {
+  const db = await requireAdmin();
+  try {
+    z.uuid().parse(id);
+    const adminPayload = await getAuthenticatedAdmin();
+    const adminId = adminPayload?.email || adminPayload?.sub || "admin";
+    const cleanReason = (reason || "").trim().slice(0, 500);
+
+    const rpcRes = await db.rpc("admin_reject_order", {
+      p_order_id: id,
+      p_reason: cleanReason,
+      p_admin_id: adminId,
+    });
+    if (!rpcRes.error) {
+      refresh();
+      return { ok: true };
+    }
+
+    const errMsg = rpcRes.error.message || "";
+    const isMissingRpc =
+      errMsg.includes("Could not find the function") ||
+      rpcRes.error.code === "42883";
+
+    if (!isMissingRpc) {
+      throw new Error(errMsg || "Unable to reject order.");
+    }
+
+    const { data: order, error: orderErr } = await db
+      .from("order_enquiries")
+      .select("id, status")
+      .eq("id", id)
+      .single();
+
+    if (orderErr || !order) throw new Error("Order not found.");
+    if (order.status === "confirmed") {
+      throw new Error("Cannot reject an already confirmed order.");
+    }
+
+    const { error: updErr } = await db
+      .from("order_enquiries")
+      .update({
+        status: "rejected",
+        rejection_reason: cleanReason || null,
+      })
+      .eq("id", id);
+
+    if (updErr) {
+      const { error: rejErr } = await db.from("order_enquiries").update({ status: "rejected" }).eq("id", id);
+      if (rejErr) {
+        await db.from("order_enquiries").update({ status: "cancelled" }).eq("id", id);
+      }
+    }
+
+    refresh();
+    return { ok: true };
+  } catch (e) {
+    return failure(e);
+  }
+}
+
 export async function setEnquiryStatus(
   id: string,
   status: string,
@@ -492,21 +663,22 @@ export async function setEnquiryStatus(
   const db = await requireAdmin();
   try {
     z.uuid().parse(id);
-    z.enum(["new", "contacted", "confirmed", "cancelled", "completed"]).parse(
+    z.enum(["new", "contacted", "confirmed", "rejected", "cancelled", "completed"]).parse(
       status,
     );
+    if (status === "confirmed") {
+      return await confirmOrder(id);
+    }
+    if (status === "rejected") {
+      return await rejectOrder(id);
+    }
     // Use atomic inventory deduction/restoration RPC
     const rpcRes = await db.rpc("admin_set_enquiry_status", {
       p_enquiry_id: id,
       p_status: status,
     });
     if (rpcRes.error) {
-      // Fallback in case of mock/demo db
-      const { error } = await db
-        .from("order_enquiries")
-        .update({ status })
-        .eq("id", id);
-      if (error) throw error;
+      throw new Error(rpcRes.error.message || "Failed to update enquiry status");
     }
     refresh();
     return { ok: true };

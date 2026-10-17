@@ -146,9 +146,16 @@ export type Enquiry = {
   landmark: string;
   customer_note: string;
   subtotal: number;
-  status: "new" | "contacted" | "confirmed" | "cancelled" | "completed";
+  status: "new" | "contacted" | "confirmed" | "rejected" | "cancelled" | "completed";
+  stock_deducted?: boolean;
+  confirmed_at?: string | null;
+  confirmed_by?: string | null;
+  rejection_reason?: string | null;
   created_at: string;
   order_enquiry_items: {
+    id?: string;
+    product_id?: string | null;
+    variant_id?: string | null;
     product_name_snapshot: string;
     size_snapshot: string;
     quantity: number;
@@ -159,9 +166,11 @@ export type Enquiry = {
 
 export type AdminNotification = {
   id: string;
-  type: "out_of_stock" | "low_stock" | "restocked";
-  product_id: string;
+  type: "out_of_stock" | "low_stock" | "restocked" | "new_order";
+  product_id?: string | null;
   variant_id?: string | null;
+  order_id?: string | null;
+  order_reference?: string | null;
   title: string;
   message: string;
   product_name: string;

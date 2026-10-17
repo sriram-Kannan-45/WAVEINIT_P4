@@ -182,6 +182,12 @@ export function createDemoAdminDb(): DemoAdminDb {
       if (fn === "admin_set_enquiry_status") {
         return { data: { ok: true, status: args?.p_status }, error: null };
       }
+      if (fn === "admin_confirm_order") {
+        return { data: { ok: true, status: "confirmed", stock_deducted: true }, error: null };
+      }
+      if (fn === "admin_reject_order") {
+        return { data: { ok: true, status: "rejected", stock_deducted: false }, error: null };
+      }
       return { data: null, error: null };
     },
     from: (table: string) => {
