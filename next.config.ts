@@ -22,6 +22,7 @@ const config: NextConfig = {
   devIndicators: false,
   experimental: { serverActions: { bodySizeLimit: "4mb" } },
   images: {
+    dangerouslyAllowLocalIP: true,
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 2678400,
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
@@ -30,17 +31,18 @@ const config: NextConfig = {
       {
         protocol: "https",
         hostname: "ik.imagekit.io",
-        pathname: "/9nwmg4m7o/**",
+        pathname: "/**",
       },
-      ...(process.env.NEXT_PUBLIC_SUPABASE_URL
-        ? [
-            {
-              protocol: "https" as const,
-              hostname: new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).hostname,
-              pathname: "/storage/v1/object/public/**",
-            },
-          ]
-        : []),
+      {
+        protocol: "https",
+        hostname: "*.supabase.co",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "ddhcgtnxshwlqipgziro.supabase.co",
+        pathname: "/**",
+      },
     ],
   },
   async headers() {

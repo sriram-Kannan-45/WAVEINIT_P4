@@ -295,6 +295,7 @@ function SubcategoryDetailsModal({
   onClose: () => void;
   onEdit: () => void;
 }) {
+  const [imgError, setImgError] = useState(false);
   return (
     <AdminModal
       open={true}
@@ -307,13 +308,17 @@ function SubcategoryDetailsModal({
     >
       <div className="admin-details-card">
         <div className="admin-details-hero">
-          {item.image ? (
+          {item.image && !imgError ? (
             <div className="admin-details-thumb">
               <Image
                 src={imageUrl(item.image)}
                 alt={item.name}
                 fill
                 sizes="64px"
+                unoptimized
+                priority
+                onError={() => setImgError(true)}
+                style={{ objectFit: "cover" }}
               />
             </div>
           ) : (

@@ -227,6 +227,7 @@ function TaxonomyModal({
                       alt={imageAlt || "Preview"}
                       fill
                       sizes="100px"
+                      unoptimized
                       style={{
                         objectFit: "cover",
                         objectPosition: "center 25%",
@@ -282,6 +283,7 @@ function TaxonomyDetailsModal({
   onClose: () => void;
   onEdit: () => void;
 }) {
+  const [imgError, setImgError] = useState(false);
   const singular = table === "categories" ? "Category" : "Collection";
 
   return (
@@ -296,13 +298,17 @@ function TaxonomyDetailsModal({
     >
       <div className="admin-details-card">
         <div className="admin-details-hero">
-          {item.image ? (
+          {item.image && !imgError ? (
             <div className="admin-details-thumb">
               <Image
                 src={imageUrl(item.image)}
                 alt={item.name}
                 fill
                 sizes="64px"
+                unoptimized
+                priority
+                onError={() => setImgError(true)}
+                style={{ objectFit: "cover" }}
               />
             </div>
           ) : (

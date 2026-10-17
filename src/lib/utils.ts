@@ -40,11 +40,13 @@ export function imageUrl(
     return path;
   }
   if (path.startsWith("/")) {
-    return path;
+    return encodeURI(path);
   }
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const base =
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    "https://ddhcgtnxshwlqipgziro.supabase.co";
   if (base) {
-    return `${base}/storage/v1/object/public/boutique/${path}`;
+    return `${base}/storage/v1/object/public/boutique/${encodeURI(path)}`;
   }
   return buildImageKitUrl(path, options);
 }
