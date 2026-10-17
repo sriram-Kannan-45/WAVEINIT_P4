@@ -347,13 +347,14 @@ export async function saveProduct(
     // Handle images synchronization
     await db.from("product_images").delete().eq("product_id", pid);
     if (images.length > 0) {
+      const hasExplicitCover = images.some((img) => Boolean(img.is_cover));
       const { error: iErr } = await db.from("product_images").insert(
-        images.map((img) => ({
+        images.map((img, idx) => ({
           product_id: pid,
           storage_path: img.storage_path,
           alt_text: img.alt_text || "",
-          sort_order: img.sort_order,
-          is_cover: Boolean(img.is_cover),
+          sort_order: typeof img.sort_order === "number" ? img.sort_order : idx,
+          is_cover: hasExplicitCover ? Boolean(img.is_cover) : idx === 0,
         })),
       );
       if (iErr) throw iErr;

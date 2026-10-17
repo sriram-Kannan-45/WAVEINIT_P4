@@ -21,6 +21,14 @@ export async function generateMetadata({
   };
 }
 
+const CATEGORY_DEFAULT_IMAGES: Record<string, string> = {
+  sarees: "/pic/Elegant Emerald Green Saree Portrait.webp",
+  kurtis: "/pic/Elegant Navy Indian Ensemble.webp",
+  "designer-wear": "/pic/Lavender Embroidered Anarkali Portrait.webp",
+  "occasion-wear": "/pic/Maroon Embroidered Anarkali Portrait.webp",
+  "demo-2": "/pic/Elegant Ivory Embroidered Anarkali Portrait.webp",
+};
+
 export default async function CategoryPage({
   params,
   searchParams,
@@ -36,6 +44,11 @@ export default async function CategoryPage({
   ]);
   const c = categories.find((cat) => cat.slug === slug);
   if (!c) notFound();
+
+  const fallbackCatImg =
+    CATEGORY_DEFAULT_IMAGES[slug] ||
+    "/pic/Elegant Emerald Green Saree Portrait.webp";
+  const heroImgSrc = c.image || fallbackCatImg;
 
   return (
     <div className="category-detail-page">
@@ -54,10 +67,11 @@ export default async function CategoryPage({
               <p className="category-hero-desc">{c.description}</p>
             )}
           </div>
-          {c.image && (
+          {heroImgSrc && (
             <div className="category-hero-media">
               <OptimizedImage
-                src={c.image}
+                src={heroImgSrc}
+                fallbackSrc={fallbackCatImg}
                 alt={c.name}
                 fill
                 priority
@@ -78,31 +92,36 @@ export default async function CategoryPage({
               </div>
             </div>
             <div className="subcategory-circle-grid" role="list">
-              {subcategories.map((sub) => (
-                <Link
-                  href={`/category/${slug}/${sub.slug}`}
-                  key={sub.id}
-                  className="subcategory-circle-card"
-                  role="listitem"
-                  aria-label={`Explore ${sub.name}`}
-                >
-                  <div className="subcategory-circle-thumb-wrapper">
-                    <div className="subcategory-circle-thumb">
-                      <OptimizedImage
-                        src={sub.image || c.image}
-                        alt={sub.name}
-                        fill
-                        sizes="(max-width: 600px) 130px, 160px"
-                      />
+              {subcategories.map((sub) => {
+                const subFallback = heroImgSrc;
+                const subImgSrc = sub.image || subFallback;
+                return (
+                  <Link
+                    href={`/category/${slug}/${sub.slug}`}
+                    key={sub.id}
+                    className="subcategory-circle-card"
+                    role="listitem"
+                    aria-label={`Explore ${sub.name}`}
+                  >
+                    <div className="subcategory-circle-thumb-wrapper">
+                      <div className="subcategory-circle-thumb">
+                        <OptimizedImage
+                          src={subImgSrc}
+                          fallbackSrc={subFallback}
+                          alt={sub.name}
+                          fill
+                          sizes="(max-width: 600px) 130px, 160px"
+                        />
+                      </div>
+                      <span className="subcategory-circle-badge">
+                        <ArrowUpRight size={15} />
+                      </span>
                     </div>
-                    <span className="subcategory-circle-badge">
-                      <ArrowUpRight size={15} />
-                    </span>
-                  </div>
-                  <h3>{sub.name}</h3>
-                  {sub.description && <p>{sub.description}</p>}
-                </Link>
-              ))}
+                    <h3>{sub.name}</h3>
+                    {sub.description && <p>{sub.description}</p>}
+                  </Link>
+                );
+              })}
             </div>
           </section>
         )}

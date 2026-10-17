@@ -210,6 +210,13 @@ export async function getProduct(slug: string): Promise<Product | null> {
     .eq("status", "active")
     .maybeSingle();
   if (error) throw new Error("Product could not be loaded.");
+  if (data && Array.isArray((data as Product).product_images)) {
+    (data as Product).product_images.sort((a, b) => {
+      if (a.is_cover && !b.is_cover) return -1;
+      if (!a.is_cover && b.is_cover) return 1;
+      return (a.sort_order ?? 0) - (b.sort_order ?? 0);
+    });
+  }
   return data as Product | null;
 }
 export async function getPolicy(slug: string): Promise<Policy | null> {

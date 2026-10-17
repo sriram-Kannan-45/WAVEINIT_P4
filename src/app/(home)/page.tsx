@@ -13,6 +13,16 @@ import { getHomepage, getStore, getTaxonomies, getNewArrivals } from "@/lib/data
 import { ProductCard } from "@/components/product/card";
 import { imageUrl } from "@/lib/utils";
 import { LuxuryHero3DBackground } from "@/components/home/LuxuryHero3DBackground";
+import { OptimizedImage } from "@/components/ui/optimized-image";
+
+const CATEGORY_DEFAULT_IMAGES: Record<string, string> = {
+  sarees: "/pic/Elegant Emerald Green Saree Portrait.webp",
+  kurtis: "/pic/Elegant Navy Indian Ensemble.webp",
+  "designer-wear": "/pic/Lavender Embroidered Anarkali Portrait.webp",
+  "occasion-wear": "/pic/Maroon Embroidered Anarkali Portrait.webp",
+  "demo-2": "/pic/Elegant Ivory Embroidered Anarkali Portrait.webp",
+};
+
 export default async function Home() {
   const [h, store, categories, arrivals] = await Promise.all([
     getHomepage(),
@@ -37,31 +47,39 @@ export default async function Home() {
               </Link>
             </div>
             <div className="category-grid category-circle-grid" role="list">
-              {categories.map((c) => (
-                <Link
-                  href={`/category/${c.slug}`}
-                  className="category-card category-circle-card"
-                  key={c.id}
-                  role="listitem"
-                  aria-label={`Browse ${c.name} collection`}
-                >
-                  <div className="category-circle-thumb-wrapper">
-                    <div className="category-circle-thumb">
-                      <Image
-                        src={imageUrl(c.image)}
-                        alt={c.name}
-                        fill
-                        sizes="(max-width: 600px) 150px, 180px"
-                      />
+              {categories.map((c) => {
+                const fallbackImg =
+                  CATEGORY_DEFAULT_IMAGES[c.slug] ||
+                  "/pic/Elegant Emerald Green Saree Portrait.webp";
+                const catImgSrc = c.image || fallbackImg;
+                return (
+                  <Link
+                    href={`/category/${c.slug}`}
+                    className="category-card category-circle-card"
+                    key={c.id}
+                    role="listitem"
+                    aria-label={`Browse ${c.name} collection`}
+                  >
+                    <div className="category-circle-thumb-wrapper">
+                      <div className="category-circle-thumb">
+                        <OptimizedImage
+                          src={catImgSrc}
+                          fallbackSrc={fallbackImg}
+                          alt={c.name}
+                          fill
+                          priority
+                          sizes="(max-width: 600px) 150px, 180px"
+                        />
+                      </div>
+                      <span className="round-arrow category-circle-badge">
+                        <ArrowUpRight size={17} />
+                      </span>
                     </div>
-                    <span className="round-arrow category-circle-badge">
-                      <ArrowUpRight size={17} />
-                    </span>
-                  </div>
-                  <h3>{c.name}</h3>
-                  <p>{c.description}</p>
-                </Link>
-              ))}
+                    <h3>{c.name}</h3>
+                    <p>{c.description}</p>
+                  </Link>
+                );
+              })}
             </div>
           </div>
         </section>

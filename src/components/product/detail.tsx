@@ -20,6 +20,25 @@ import {
   productEnquiryMessage,
   productDirectOrderMessage,
 } from "@/lib/whatsapp";
+function extractViewLabel(altText?: string): string {
+  if (!altText || !altText.trim()) return "";
+  const known = [
+    "Front View",
+    "Back View",
+    "Left View",
+    "Right View",
+    "Side View",
+    "Fabric Detail",
+    "Border Detail",
+    "Blouse Detail",
+    "Detail View",
+  ];
+  for (const k of known) {
+    if (altText.toLowerCase().includes(k.toLowerCase())) return k;
+  }
+  return "";
+}
+
 export function ProductDetail({
   product: p,
   store,
@@ -53,6 +72,11 @@ export function ProductDetail({
     p.vendor_name ||
     p.vendor?.name ||
     store.business_name;
+
+  const currentViewLabel = extractViewLabel(images[index]?.alt_text);
+  const imagesWithLabels = images
+    .map((img, i) => ({ img, i, label: extractViewLabel(img.alt_text) }))
+    .filter((item) => Boolean(item.label));
 
   const enquiry = whatsappUrl(
     vendorWhatsApp,
@@ -124,6 +148,14 @@ export function ProductDetail({
               );
           }}
         >
+          {currentViewLabel && (
+            <span className="gallery-view-tag">{currentViewLabel}</span>
+          )}
+          {images.length > 1 && (
+            <span className="gallery-counter">
+              {index + 1} / {images.length}
+            </span>
+          )}
           <OptimizedImage
             src={images[index]?.storage_path || ""}
             alt={images[index]?.alt_text || p.name}
@@ -153,24 +185,56 @@ export function ProductDetail({
             </div>
           )}
         </div>
-        {images.length > 1 && (
-          <div className="gallery-thumbnails">
-            {images.map((img, i) => (
+
+        {imagesWithLabels.length > 0 && (
+          <div
+            className="gallery-view-pills"
+            role="tablist"
+            aria-label="Product viewing angles"
+          >
+            {imagesWithLabels.map((item) => (
               <button
-                key={i}
-                className={index === i ? "selected" : ""}
-                onClick={() => setIndex(i)}
-                aria-label={`View product image ${i + 1}`}
-                aria-pressed={index === i}
+                key={item.i}
+                type="button"
+                className={`gallery-view-pill ${index === item.i ? "active" : ""}`}
+                onClick={() => setIndex(item.i)}
+                aria-selected={index === item.i}
               >
-                <OptimizedImage
-                  src={img.storage_path}
-                  alt={img.alt_text || p.name}
-                  fill
-                  sizes="65px"
-                />
+                {item.label}
               </button>
             ))}
+          </div>
+        )}
+
+        {images.length > 1 && (
+          <div
+            className="gallery-thumbnails"
+            role="tablist"
+            aria-label="Product image gallery thumbnails"
+          >
+            {images.map((img, i) => {
+              const thumbLabel = extractViewLabel(img.alt_text);
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  className={`gallery-thumb-btn ${index === i ? "selected" : ""}`}
+                  onClick={() => setIndex(i)}
+                  aria-label={`View ${thumbLabel || `product image ${i + 1}`}`}
+                  aria-pressed={index === i}
+                >
+                  <OptimizedImage
+                    src={img.storage_path}
+                    alt={img.alt_text || p.name}
+                    fill
+                    sizes="72px"
+                  />
+                  {thumbLabel && (
+                    <span className="gallery-thumb-caption">{thumbLabel}</span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>

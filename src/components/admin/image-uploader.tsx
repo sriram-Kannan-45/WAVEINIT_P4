@@ -1,13 +1,52 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, ArrowRight, Trash2, Star, Crop } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Trash2,
+  Star,
+  Crop,
+  RefreshCw,
+} from "lucide-react";
 import { toast } from "sonner";
 import { uploadImage } from "@/app/admin/actions";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { ImageCropperModal } from "./image-cropper-modal";
 import { imageUrl } from "@/lib/utils";
 import type { ProductImage } from "@/types";
+
+export const VIEW_LABEL_OPTIONS = [
+  { value: "", label: "General View (Default)" },
+  { value: "Front View", label: "Front View" },
+  { value: "Back View", label: "Back View" },
+  { value: "Left View", label: "Left View" },
+  { value: "Right View", label: "Right View" },
+  { value: "Side View", label: "Side View" },
+  { value: "Fabric Detail", label: "Fabric Detail" },
+  { value: "Border Detail", label: "Border Detail" },
+  { value: "Blouse Detail", label: "Blouse Detail" },
+  { value: "Other", label: "Other / Custom" },
+] as const;
+
+export const STANDARD_VIEW_LABELS = [
+  "Front View",
+  "Back View",
+  "Left View",
+  "Right View",
+  "Side View",
+  "Fabric Detail",
+  "Border Detail",
+  "Blouse Detail",
+];
+
+function getSelectedViewOption(alt: string): string {
+  if (!alt || !alt.trim()) return "";
+  for (const label of STANDARD_VIEW_LABELS) {
+    if (alt === label || alt.startsWith(`${label} -`)) return label;
+  }
+  return "Other";
+}
 
 async function prepare(file: File): Promise<File> {
   if (
@@ -79,12 +118,12 @@ export function ImageUploader({
       }
 
       if (typeof recropIndex === "number" && recropIndex >= 0) {
-        // Replace existing image path
+        // Replace existing image path, preserving metadata
         const next = images.map((img, idx) =>
           idx === recropIndex ? { ...img, storage_path: r.path! } : img,
         );
         onChange(next);
-        toast.success("Image recropped and updated successfully.");
+        toast.success("Image replaced and updated successfully.");
       } else {
         // Append new image
         const next = multiple ? [...images] : [];
@@ -195,16 +234,22 @@ export function ImageUploader({
       return;
     }
     const rawFile = cropTarget.rawFile;
+    const isRecrop = cropTarget.isRecrop;
+    const recropIndex = cropTarget.recropIndex;
     if (cropTarget.imageSrc.startsWith("blob:")) {
       URL.revokeObjectURL(cropTarget.imageSrc);
     }
     try {
       const preparedFile = await prepare(rawFile);
-      await performUpload(preparedFile);
+      await performUpload(preparedFile, isRecrop ? recropIndex : undefined);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Upload failed.");
     }
-    proceedToNextInQueue();
+    if (!isRecrop) {
+      proceedToNextInQueue();
+    } else {
+      setCropTarget(null);
+    }
   }
 
   /**
@@ -235,6 +280,32 @@ export function ImageUploader({
     });
   }
 
+  /**
+   * Replace an individual image with a new uploaded file
+   */
+  function handleReplaceSelect(index: number, files: FileList | null) {
+    if (!files?.length) return;
+    const file = files[0];
+    if (
+      !["image/jpeg", "image/png", "image/webp", "image/avif"].includes(file.type)
+    ) {
+      toast.error("Please choose JPG, PNG, WebP, or AVIF images only.");
+      return;
+    }
+    if (file.size > 25 * 1024 * 1024) {
+      toast.error("File size must be under 25 MB.");
+      return;
+    }
+    const objectUrl = URL.createObjectURL(file);
+    setCropTarget({
+      imageSrc: objectUrl,
+      fileName: file.name,
+      isRecrop: true,
+      recropIndex: index,
+      rawFile: file,
+    });
+  }
+
   function move(index: number, direction: number) {
     const next = [...images];
     [next[index], next[index + direction]] = [
@@ -248,14 +319,16 @@ export function ImageUploader({
     <div className="uploader">
       <label className="field">
         <span>
-          {multiple ? "Product photographs" : "Cover photograph"} · JPG, PNG,
-          WebP or AVIF
+          {multiple
+            ? `Product photographs (${images.length}/20 uploaded)`
+            : "Cover photograph"}{" "}
+          · JPG, PNG, WebP or AVIF
         </span>
         <input
           type="file"
           accept="image/jpeg,image/png,image/webp,image/avif"
           multiple={multiple}
-          disabled={busy}
+          disabled={busy || (multiple && images.length >= 20)}
           onChange={(e) => {
             handleFileSelect(e.target.files);
             e.target.value = "";
@@ -265,7 +338,9 @@ export function ImageUploader({
       <p className="loading-label" aria-live="polite">
         {busy
           ? progress
-          : "Images are framed and cropped to match storefront display areas before upload. Maximum 25 MB."}
+          : multiple
+            ? "Upload up to 20 images. Assign viewing angles (Front, Back, Detail, etc.), choose the Primary Cover, reorder, or replace photos as needed."
+            : "Images are framed and cropped to match storefront display areas before upload. Maximum 25 MB."}
       </p>
 
       {/* Cropper Modal */}
@@ -278,102 +353,184 @@ export function ImageUploader({
           defaultAspect={defaultAspect}
           title={
             cropTarget.isRecrop
-              ? `Re-crop Image ${(cropTarget.recropIndex ?? 0) + 1}`
+              ? `Re-crop / Replace Image ${(cropTarget.recropIndex ?? 0) + 1}`
               : modalTitle ||
                 `Crop & Frame Image ${pendingQueue.length > 0 ? `(1 of ${pendingQueue.length + 1})` : ""}`
           }
           onConfirm={handleCropConfirm}
-          onSkip={!cropTarget.isRecrop ? handleCropSkip : undefined}
+          onSkip={handleCropSkip}
           onCancel={handleCropCancel}
         />
       )}
 
-      <div className="upload-thumbnails">
-        {images.map((img, i) => (
-          <div className="upload-thumb" key={img.storage_path}>
-            <OptimizedImage
-              src={img.storage_path}
-              width={104}
-              height={120}
-              alt={img.alt_text || `Upload ${i + 1}`}
-            />
-            <input
-              aria-label={`Alt text for image ${i + 1}`}
-              value={img.alt_text}
-              placeholder="Describe this image"
-              onChange={(e) =>
-                onChange(
-                  images.map((v, j) =>
-                    j === i ? { ...v, alt_text: e.target.value } : v,
-                  ),
-                )
-              }
-            />
-            <div>
-              {/* Re-crop Button */}
-              <button
-                type="button"
-                className="recrop-btn"
-                title="Adjust crop & framing"
-                aria-label={`Re-crop image ${i + 1}`}
-                onClick={() => handleRecropExisting(i)}
+      {images.length > 0 && (
+        <div className="upload-thumbnails-grid">
+          {images.map((img, i) => {
+            const currentView = getSelectedViewOption(img.alt_text);
+            return (
+              <div
+                className={`upload-thumb-card ${img.is_cover ? "is-cover-thumb" : ""}`}
+                key={`${img.storage_path}-${i}`}
               >
-                <Crop size={12} />
-              </button>
-
-              {multiple && (
-                <button
-                  type="button"
-                  aria-label={`Set image ${i + 1} as cover`}
-                  onClick={() =>
-                    onChange(
-                      images.map((v, j) => ({ ...v, is_cover: j === i })),
+                <div className="upload-thumb-header">
+                  <span className="upload-thumb-index">#{i + 1}</span>
+                  {multiple && (
+                    img.is_cover ? (
+                      <span className="upload-cover-pill active" title="Active primary storefront cover">
+                        <Star size={11} fill="#d4af37" /> PRIMARY
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        className="upload-set-cover-btn"
+                        onClick={() => {
+                          const next = images.map((v, j) => ({
+                            ...v,
+                            is_cover: j === i,
+                          }));
+                          onChange(next);
+                          toast.success(`Image #${i + 1} set as Primary Cover.`);
+                        }}
+                        title="Set as storefront primary cover"
+                      >
+                        <Star size={11} /> Make Primary
+                      </button>
                     )
-                  }
-                >
-                  <Star size={13} fill={img.is_cover ? "#d6af5c" : "none"} />
-                </button>
-              )}
-              <button
-                type="button"
-                aria-label={`Remove image ${i + 1}`}
-                onClick={() => {
-                  const next = images.filter((_, j) => i !== j);
-                  onChange(
-                    next.map((v, j) => ({
-                      ...v,
-                      sort_order: j,
-                      is_cover: img.is_cover ? j === 0 : v.is_cover,
-                    })),
-                  );
-                }}
-              >
-                <Trash2 size={12} />
-              </button>
-              {multiple && (
-                <>
+                  )}
+                </div>
+
+                <div className="upload-thumb-image-container">
+                  <OptimizedImage
+                    src={img.storage_path}
+                    fill
+                    alt={img.alt_text || `Product view ${i + 1}`}
+                    sizes="200px"
+                  />
+                  {currentView && currentView !== "Other" && (
+                    <span className="upload-view-badge">{currentView}</span>
+                  )}
+                </div>
+
+                <div className="upload-thumb-toolbar">
+                  <label
+                    className="upload-tool-btn"
+                    title="Replace with a new image"
+                  >
+                    <RefreshCw size={12} />
+                    <span>Replace</span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/avif"
+                      disabled={busy}
+                      style={{ display: "none" }}
+                      onChange={(e) => {
+                        handleReplaceSelect(i, e.target.files);
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+
                   <button
                     type="button"
-                    disabled={!i}
-                    aria-label={`Move image ${i + 1} earlier`}
-                    onClick={() => move(i, -1)}
+                    className="upload-tool-btn"
+                    title="Re-crop and adjust framing"
+                    onClick={() => handleRecropExisting(i)}
                   >
-                    <ArrowLeft size={12} />
+                    <Crop size={12} />
+                    <span>Crop</span>
                   </button>
+
+                  {multiple && (
+                    <>
+                      <button
+                        type="button"
+                        className="upload-tool-btn"
+                        disabled={i === 0}
+                        title="Move image left"
+                        onClick={() => move(i, -1)}
+                      >
+                        <ArrowLeft size={12} />
+                      </button>
+                      <button
+                        type="button"
+                        className="upload-tool-btn"
+                        disabled={i === images.length - 1}
+                        title="Move image right"
+                        onClick={() => move(i, 1)}
+                      >
+                        <ArrowRight size={12} />
+                      </button>
+                    </>
+                  )}
+
                   <button
                     type="button"
-                    disabled={i === images.length - 1}
-                    aria-label={`Move image ${i + 1} later`}
-                    onClick={() => move(i, 1)}
+                    className="upload-tool-btn danger"
+                    title="Remove photograph"
+                    onClick={() => {
+                      const next = images.filter((_, j) => i !== j);
+                      onChange(
+                        next.map((v, j) => ({
+                          ...v,
+                          sort_order: j,
+                          is_cover: img.is_cover ? j === 0 : v.is_cover,
+                        })),
+                      );
+                      toast.info(`Image #${i + 1} removed.`);
+                    }}
                   >
-                    <ArrowRight size={12} />
+                    <Trash2 size={12} />
                   </button>
-                </>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+                </div>
+
+                <div className="upload-thumb-meta">
+                  <label className="upload-meta-field">
+                    <span>View angle:</span>
+                    <select
+                      value={currentView}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        let newAlt = val;
+                        if (val === "Other") {
+                          newAlt =
+                            img.alt_text && !STANDARD_VIEW_LABELS.includes(img.alt_text)
+                              ? img.alt_text
+                              : "Detail View";
+                        }
+                        const next = images.map((v, j) =>
+                          j === i ? { ...v, alt_text: newAlt } : v,
+                        );
+                        onChange(next);
+                      }}
+                    >
+                      {VIEW_LABEL_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="upload-meta-field">
+                    <span>Alt description:</span>
+                    <input
+                      value={img.alt_text}
+                      placeholder="e.g. Front View, Saree border detail"
+                      onChange={(e) => {
+                        const text = e.target.value;
+                        const next = images.map((v, j) =>
+                          j === i ? { ...v, alt_text: text } : v,
+                        );
+                        onChange(next);
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
