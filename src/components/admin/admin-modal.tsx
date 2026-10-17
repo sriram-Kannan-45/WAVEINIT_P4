@@ -10,7 +10,6 @@ export function AdminModal({
   description,
   children,
   maxWidth = "720px",
-  isDirty = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -21,15 +20,6 @@ export function AdminModal({
   isDirty?: boolean;
 }) {
   const handleClose = () => {
-    if (isDirty) {
-      if (
-        !window.confirm(
-          "You have unsaved changes. Are you sure you want to discard them?",
-        )
-      ) {
-        return;
-      }
-    }
     onOpenChange(false);
   };
 
@@ -49,17 +39,11 @@ export function AdminModal({
         <Dialog.Content
           className="dialog-content admin-modal-content"
           style={{ "--modal-max-width": maxWidth } as React.CSSProperties}
-          onPointerDownOutside={(e) => {
-            if (isDirty) {
-              e.preventDefault();
-              handleClose();
-            }
+          onPointerDownOutside={() => {
+            handleClose();
           }}
-          onEscapeKeyDown={(e) => {
-            if (isDirty) {
-              e.preventDefault();
-              handleClose();
-            }
+          onEscapeKeyDown={() => {
+            handleClose();
           }}
         >
           <div className="admin-modal-header">
@@ -75,14 +59,16 @@ export function AdminModal({
                 </Dialog.Description>
               )}
             </div>
-            <button
-              type="button"
-              className="icon-button admin-modal-close"
-              aria-label="Close dialog"
-              onClick={handleClose}
-            >
-              <X size={18} />
-            </button>
+            <Dialog.Close asChild>
+              <button
+                type="button"
+                className="icon-button admin-modal-close"
+                aria-label="Close dialog"
+                onClick={handleClose}
+              >
+                <X size={18} />
+              </button>
+            </Dialog.Close>
           </div>
           <div className="admin-modal-body">{children}</div>
         </Dialog.Content>

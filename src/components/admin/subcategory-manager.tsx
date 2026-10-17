@@ -66,15 +66,6 @@ function SubcategoryModal({
   const nameVal = useWatch({ control, name: "name" }) || "";
 
   const handleCancel = () => {
-    if (isDirty) {
-      if (
-        !window.confirm(
-          "You have unsaved changes. Are you sure you want to discard them?",
-        )
-      ) {
-        return;
-      }
-    }
     onClose();
   };
 
