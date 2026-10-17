@@ -104,7 +104,8 @@ export function ImageCropperModal({
       );
       onConfirm(file, blobUrl);
     } catch (err) {
-      console.error("Failed to crop image:", err);
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("Failed to crop image:", message, err);
       // Fallback: if crop fails, skip
       onSkip?.();
     } finally {
