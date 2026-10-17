@@ -45,6 +45,14 @@ const config: NextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: "/test/Pics/:path*",
+        destination: "/test/pics/:path*",
+      },
+    ];
+  },
   async headers() {
     return [
       {

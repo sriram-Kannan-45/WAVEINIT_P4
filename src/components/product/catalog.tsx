@@ -16,14 +16,15 @@ export async function Catalog({
   title?: string;
   subtitle?: string;
 }) {
+  const limit = Math.min(100, Math.max(1, Number(filters.limit) || 24));
   const [result, categories, collections, store] = await Promise.all([
-    getProducts(filters),
+    getProducts(filters, limit),
     getTaxonomies("categories"),
     getTaxonomies("collections"),
     getStore(),
   ]);
   const page = Math.max(1, Number(filters.page) || 1);
-  const pages = Math.ceil(result.count / 24);
+  const pages = Math.ceil(result.count / limit);
   const pageUrl = (page: number) => {
     const p = new URLSearchParams();
     Object.entries(filters).forEach(([k, v]) => {

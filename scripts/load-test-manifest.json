@@ -1,0 +1,2243 @@
+{
+  "generated_at": "2026-10-17T13:42:53.316Z",
+  "total_products": 100,
+  "categories": {
+    "sarees": {
+      "id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "slug": "sarees",
+      "count": 50
+    },
+    "demo": {
+      "id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "slug": "demo-2",
+      "count": 50
+    }
+  },
+  "unique_source_images_used": 70,
+  "products": [
+    {
+      "id": "8e0137a0-c36f-4a8d-acde-dbffe0738031",
+      "name": "LOAD_TEST Banarasi Katan Silk Saree in Emerald Green #01",
+      "slug": "load-test-saree-01",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_001",
+      "selling_price": 4349,
+      "original_price": 6349,
+      "images": [
+        {
+          "storage_path": "/test/pics/1722688045724.jpg",
+          "file_name": "1722688045724.jpg",
+          "file_size_bytes": 181544,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "6289aa46-947a-476c-a08f-78f8947e372e",
+      "name": "LOAD_TEST Kanjivaram Pure Silk Saree in Royal Crimson #02",
+      "slug": "load-test-saree-02",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_002",
+      "selling_price": 4699,
+      "original_price": 6699,
+      "images": [
+        {
+          "storage_path": "/test/pics/1722688045724.png",
+          "file_name": "1722688045724.png",
+          "file_size_bytes": 211648,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "31039407-6b23-403e-b388-4c600409a6a6",
+      "name": "LOAD_TEST Chanderi Zari Tissue Saree in Peacock Blue #03",
+      "slug": "load-test-saree-03",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_003",
+      "selling_price": 5049,
+      "original_price": 7049,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG20250111113244.jpg",
+          "file_name": "IMG20250111113244.jpg",
+          "file_size_bytes": 2258312,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5384.JPG",
+          "file_name": "IMG_5384.JPG",
+          "file_size_bytes": 7718129,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "8557797d-3bb7-4234-904d-9c811a7e61d2",
+      "name": "LOAD_TEST Handloom Tussar Silk Saree in Ivory Gold #04",
+      "slug": "load-test-saree-04",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_004",
+      "selling_price": 5399,
+      "original_price": 7399,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_20240929_165747.jpg",
+          "file_name": "IMG_20240929_165747.jpg",
+          "file_size_bytes": 196221,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "ecfd5db1-1546-4d54-b1c7-faac99c77774",
+      "name": "LOAD_TEST Organza Embroidered Saree in Dusty Rose #05",
+      "slug": "load-test-saree-05",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_005",
+      "selling_price": 5749,
+      "original_price": 7749,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_20240929_165806.jpg",
+          "file_name": "IMG_20240929_165806.jpg",
+          "file_size_bytes": 475156,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "70b48dc4-59fa-4069-803e-a254a6a3b682",
+      "name": "LOAD_TEST Raw Silk Handwoven Saree in Deep Plum #06",
+      "slug": "load-test-saree-06",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_006",
+      "selling_price": 6099,
+      "original_price": 8099,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5360.JPG",
+          "file_name": "IMG_5360.JPG",
+          "file_size_bytes": 7376087,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5387.JPG",
+          "file_name": "IMG_5387.JPG",
+          "file_size_bytes": 7540764,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "c95d47c6-4b95-49b0-9c72-35d94830ea6e",
+      "name": "LOAD_TEST Georgette Chikankari Saree in Midnight Navy #07",
+      "slug": "load-test-saree-07",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_007",
+      "selling_price": 6449,
+      "original_price": 8449,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5361.JPG",
+          "file_name": "IMG_5361.JPG",
+          "file_size_bytes": 7978972,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "6de4053a-0975-4165-9f2c-bd589e28f5a7",
+      "name": "LOAD_TEST Paithani Border Silk Saree in Marigold Amber #08",
+      "slug": "load-test-saree-08",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_008",
+      "selling_price": 6799,
+      "original_price": 8799,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5362.JPG",
+          "file_name": "IMG_5362.JPG",
+          "file_size_bytes": 6965338,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "0765fead-51df-446e-ba95-cf2b351b6b1f",
+      "name": "LOAD_TEST Mysore Crepe Silk Saree in Sage Whisper #09",
+      "slug": "load-test-saree-09",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_009",
+      "selling_price": 7149,
+      "original_price": 9149,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5363.JPG",
+          "file_name": "IMG_5363.JPG",
+          "file_size_bytes": 7954203,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5390.JPG",
+          "file_name": "IMG_5390.JPG",
+          "file_size_bytes": 8778710,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "6d60e376-a48c-40e5-b0b1-e644a52c36e7",
+      "name": "LOAD_TEST Chiffon Resham Draped Saree in Blush Peach #10",
+      "slug": "load-test-saree-10",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_010",
+      "selling_price": 7499,
+      "original_price": 9499,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5364.JPG",
+          "file_name": "IMG_5364.JPG",
+          "file_size_bytes": 9451338,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "e7bbbf54-201b-495b-8669-4153cc7c89f6",
+      "name": "LOAD_TEST Banarasi Katan Silk Saree in Copper Bronze #11",
+      "slug": "load-test-saree-11",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_011",
+      "selling_price": 7849,
+      "original_price": 9849,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5365.JPG",
+          "file_name": "IMG_5365.JPG",
+          "file_size_bytes": 8856902,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "a92e1327-35ed-46b4-b3a7-c383f1c63a5a",
+      "name": "LOAD_TEST Kanjivaram Pure Silk Saree in Sapphire Azure #12",
+      "slug": "load-test-saree-12",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_012",
+      "selling_price": 8199,
+      "original_price": 10199,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5366.JPG",
+          "file_name": "IMG_5366.JPG",
+          "file_size_bytes": 8908395,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5393.JPG",
+          "file_name": "IMG_5393.JPG",
+          "file_size_bytes": 8653157,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "3fda95ef-a01f-4997-bdc4-09ea4110d886",
+      "name": "LOAD_TEST Chanderi Zari Tissue Saree in Emerald Green #13",
+      "slug": "load-test-saree-13",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_013",
+      "selling_price": 8549,
+      "original_price": 10549,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5367.JPG",
+          "file_name": "IMG_5367.JPG",
+          "file_size_bytes": 8576328,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "54c0e086-c4ed-4989-be43-d3cfc50f7151",
+      "name": "LOAD_TEST Handloom Tussar Silk Saree in Royal Crimson #14",
+      "slug": "load-test-saree-14",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_014",
+      "selling_price": 8899,
+      "original_price": 10899,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5368.JPG",
+          "file_name": "IMG_5368.JPG",
+          "file_size_bytes": 8535786,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "be0c3e99-d8f2-4b86-80aa-6ee5b4a1a831",
+      "name": "LOAD_TEST Organza Embroidered Saree in Peacock Blue #15",
+      "slug": "load-test-saree-15",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_015",
+      "selling_price": 9249,
+      "original_price": 11249,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5369.JPG",
+          "file_name": "IMG_5369.JPG",
+          "file_size_bytes": 7061142,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5396.JPG",
+          "file_name": "IMG_5396.JPG",
+          "file_size_bytes": 8052235,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "0d626ba9-3b6f-48bf-a077-25289f140d23",
+      "name": "LOAD_TEST Raw Silk Handwoven Saree in Ivory Gold #16",
+      "slug": "load-test-saree-16",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_016",
+      "selling_price": 9599,
+      "original_price": 11599,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5370.JPG",
+          "file_name": "IMG_5370.JPG",
+          "file_size_bytes": 8556854,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "37a83165-e019-4097-b0ff-9dda97fb4fee",
+      "name": "LOAD_TEST Georgette Chikankari Saree in Dusty Rose #17",
+      "slug": "load-test-saree-17",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_017",
+      "selling_price": 9949,
+      "original_price": 11949,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5371.JPG",
+          "file_name": "IMG_5371.JPG",
+          "file_size_bytes": 9219458,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "e53c5ffa-1e83-45af-aae3-c8ba9bc1a789",
+      "name": "LOAD_TEST Paithani Border Silk Saree in Deep Plum #18",
+      "slug": "load-test-saree-18",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_018",
+      "selling_price": 10299,
+      "original_price": 12299,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5372.JPG",
+          "file_name": "IMG_5372.JPG",
+          "file_size_bytes": 7239157,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5399.JPG",
+          "file_name": "IMG_5399.JPG",
+          "file_size_bytes": 8508420,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "3bfe0865-45d0-40ea-b757-c774d7ddd2eb",
+      "name": "LOAD_TEST Mysore Crepe Silk Saree in Midnight Navy #19",
+      "slug": "load-test-saree-19",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_019",
+      "selling_price": 10649,
+      "original_price": 12649,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5373.JPG",
+          "file_name": "IMG_5373.JPG",
+          "file_size_bytes": 8253908,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "0548d570-91d6-4619-9d47-0caedd651dd4",
+      "name": "LOAD_TEST Chiffon Resham Draped Saree in Marigold Amber #20",
+      "slug": "load-test-saree-20",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_020",
+      "selling_price": 10999,
+      "original_price": 12999,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5374.JPG",
+          "file_name": "IMG_5374.JPG",
+          "file_size_bytes": 8288361,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "7c32b8ca-1304-496e-94d1-53282a698b06",
+      "name": "LOAD_TEST Banarasi Katan Silk Saree in Sage Whisper #21",
+      "slug": "load-test-saree-21",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_021",
+      "selling_price": 11349,
+      "original_price": 13349,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5376.JPG",
+          "file_name": "IMG_5376.JPG",
+          "file_size_bytes": 8412594,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5403.JPG",
+          "file_name": "IMG_5403.JPG",
+          "file_size_bytes": 8534633,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "b703d8cb-58c2-4d30-846c-734c1a0cf43a",
+      "name": "LOAD_TEST Kanjivaram Pure Silk Saree in Blush Peach #22",
+      "slug": "load-test-saree-22",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_022",
+      "selling_price": 11699,
+      "original_price": 13699,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5377.JPG",
+          "file_name": "IMG_5377.JPG",
+          "file_size_bytes": 8826390,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "06542a6c-32ea-4229-afd0-4748ec9ba80f",
+      "name": "LOAD_TEST Chanderi Zari Tissue Saree in Copper Bronze #23",
+      "slug": "load-test-saree-23",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_023",
+      "selling_price": 12049,
+      "original_price": 14049,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5378.JPG",
+          "file_name": "IMG_5378.JPG",
+          "file_size_bytes": 8620172,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "94f9fb2e-c962-497c-b387-7be4f9e67c54",
+      "name": "LOAD_TEST Handloom Tussar Silk Saree in Sapphire Azure #24",
+      "slug": "load-test-saree-24",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_024",
+      "selling_price": 12399,
+      "original_price": 14399,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5379.JPG",
+          "file_name": "IMG_5379.JPG",
+          "file_size_bytes": 8251294,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5407.JPG",
+          "file_name": "IMG_5407.JPG",
+          "file_size_bytes": 7402364,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "b4a3769a-e530-49f6-867e-2c5a55c93c09",
+      "name": "LOAD_TEST Organza Embroidered Saree in Emerald Green #25",
+      "slug": "load-test-saree-25",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_025",
+      "selling_price": 12749,
+      "original_price": 14749,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5380.JPG",
+          "file_name": "IMG_5380.JPG",
+          "file_size_bytes": 8307852,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "0aa7d133-2716-4c53-a891-dc49572320d6",
+      "name": "LOAD_TEST Raw Silk Handwoven Saree in Royal Crimson #26",
+      "slug": "load-test-saree-26",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_026",
+      "selling_price": 13099,
+      "original_price": 15099,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5381.JPG",
+          "file_name": "IMG_5381.JPG",
+          "file_size_bytes": 8335144,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "f276c5e0-85f2-4a4c-a5eb-42149840cf75",
+      "name": "LOAD_TEST Georgette Chikankari Saree in Peacock Blue #27",
+      "slug": "load-test-saree-27",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_027",
+      "selling_price": 13449,
+      "original_price": 15449,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5382.JPG",
+          "file_name": "IMG_5382.JPG",
+          "file_size_bytes": 8324094,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5410.JPG",
+          "file_name": "IMG_5410.JPG",
+          "file_size_bytes": 8371797,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "0b5b774b-f54d-4bff-8a45-a27f41c77e10",
+      "name": "LOAD_TEST Paithani Border Silk Saree in Ivory Gold #28",
+      "slug": "load-test-saree-28",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_028",
+      "selling_price": 13799,
+      "original_price": 15799,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5383.JPG",
+          "file_name": "IMG_5383.JPG",
+          "file_size_bytes": 8332526,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "f5ff1faf-0394-41cf-a0d5-579a38d768ff",
+      "name": "LOAD_TEST Mysore Crepe Silk Saree in Dusty Rose #29",
+      "slug": "load-test-saree-29",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_029",
+      "selling_price": 14149,
+      "original_price": 16149,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5384.JPG",
+          "file_name": "IMG_5384.JPG",
+          "file_size_bytes": 7718129,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "1974f728-8fa5-4f9c-9aac-d29207bfe0c4",
+      "name": "LOAD_TEST Chiffon Resham Draped Saree in Deep Plum #30",
+      "slug": "load-test-saree-30",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_030",
+      "selling_price": 14499,
+      "original_price": 16499,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5385.JPG",
+          "file_name": "IMG_5385.JPG",
+          "file_size_bytes": 7804822,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5413.JPG",
+          "file_name": "IMG_5413.JPG",
+          "file_size_bytes": 8461320,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "282e2b0f-c410-48d5-902d-1f47523a59f9",
+      "name": "LOAD_TEST Banarasi Katan Silk Saree in Midnight Navy #31",
+      "slug": "load-test-saree-31",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_031",
+      "selling_price": 14849,
+      "original_price": 16849,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5386.JPG",
+          "file_name": "IMG_5386.JPG",
+          "file_size_bytes": 7565419,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "4206e8ee-098d-4e7c-b534-dca3f0839d75",
+      "name": "LOAD_TEST Kanjivaram Pure Silk Saree in Marigold Amber #32",
+      "slug": "load-test-saree-32",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_032",
+      "selling_price": 15199,
+      "original_price": 17199,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5387.JPG",
+          "file_name": "IMG_5387.JPG",
+          "file_size_bytes": 7540764,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "5fb63aaa-0979-4b7f-85cd-7050212d13c0",
+      "name": "LOAD_TEST Chanderi Zari Tissue Saree in Sage Whisper #33",
+      "slug": "load-test-saree-33",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_033",
+      "selling_price": 15549,
+      "original_price": 17549,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5388.JPG",
+          "file_name": "IMG_5388.JPG",
+          "file_size_bytes": 8784142,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5416.JPG",
+          "file_name": "IMG_5416.JPG",
+          "file_size_bytes": 8504649,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "184276ac-9b0b-4e94-8eb1-d19506099b29",
+      "name": "LOAD_TEST Handloom Tussar Silk Saree in Blush Peach #34",
+      "slug": "load-test-saree-34",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_034",
+      "selling_price": 15899,
+      "original_price": 17899,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5389.JPG",
+          "file_name": "IMG_5389.JPG",
+          "file_size_bytes": 8863521,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "59cebadb-852a-4465-83a7-d47de579e7ff",
+      "name": "LOAD_TEST Organza Embroidered Saree in Copper Bronze #35",
+      "slug": "load-test-saree-35",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_035",
+      "selling_price": 16249,
+      "original_price": 18249,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5390.JPG",
+          "file_name": "IMG_5390.JPG",
+          "file_size_bytes": 8778710,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "23c94cd8-b313-4569-aa10-49ada3caa360",
+      "name": "LOAD_TEST Raw Silk Handwoven Saree in Sapphire Azure #36",
+      "slug": "load-test-saree-36",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_036",
+      "selling_price": 16599,
+      "original_price": 18599,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5391.JPG",
+          "file_name": "IMG_5391.JPG",
+          "file_size_bytes": 8378258,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5421.JPG",
+          "file_name": "IMG_5421.JPG",
+          "file_size_bytes": 7297854,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "1515c3e2-0145-47c5-86b7-7c77e1dce2a1",
+      "name": "LOAD_TEST Georgette Chikankari Saree in Emerald Green #37",
+      "slug": "load-test-saree-37",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_037",
+      "selling_price": 16949,
+      "original_price": 18949,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5392.JPG",
+          "file_name": "IMG_5392.JPG",
+          "file_size_bytes": 8560592,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "083f843c-abf8-4173-9d09-6b3a43544032",
+      "name": "LOAD_TEST Paithani Border Silk Saree in Royal Crimson #38",
+      "slug": "load-test-saree-38",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_038",
+      "selling_price": 17299,
+      "original_price": 19299,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5393.JPG",
+          "file_name": "IMG_5393.JPG",
+          "file_size_bytes": 8653157,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "fc7fff81-d72e-4721-b037-bf77795d1051",
+      "name": "LOAD_TEST Mysore Crepe Silk Saree in Peacock Blue #39",
+      "slug": "load-test-saree-39",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_039",
+      "selling_price": 17649,
+      "original_price": 19649,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5394.JPG",
+          "file_name": "IMG_5394.JPG",
+          "file_size_bytes": 7928147,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5424.JPG",
+          "file_name": "IMG_5424.JPG",
+          "file_size_bytes": 7057076,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "d54ac6fe-bbfc-4765-a516-0ddc58fae54b",
+      "name": "LOAD_TEST Chiffon Resham Draped Saree in Ivory Gold #40",
+      "slug": "load-test-saree-40",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_040",
+      "selling_price": 17999,
+      "original_price": 19999,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5395.JPG",
+          "file_name": "IMG_5395.JPG",
+          "file_size_bytes": 8691561,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "a7ddace1-1617-4894-9bfa-bd4e7277840d",
+      "name": "LOAD_TEST Banarasi Katan Silk Saree in Dusty Rose #41",
+      "slug": "load-test-saree-41",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_041",
+      "selling_price": 18349,
+      "original_price": 20349,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5396.JPG",
+          "file_name": "IMG_5396.JPG",
+          "file_size_bytes": 8052235,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "f1d5a650-19f8-444a-b6fb-8e40dcebd918",
+      "name": "LOAD_TEST Kanjivaram Pure Silk Saree in Deep Plum #42",
+      "slug": "load-test-saree-42",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_042",
+      "selling_price": 18699,
+      "original_price": 20699,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5397.JPG",
+          "file_name": "IMG_5397.JPG",
+          "file_size_bytes": 8600424,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5444.JPG",
+          "file_name": "IMG_5444.JPG",
+          "file_size_bytes": 10663496,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "ad0eb994-d4d9-424e-b4fe-5afbe681f125",
+      "name": "LOAD_TEST Chanderi Zari Tissue Saree in Midnight Navy #43",
+      "slug": "load-test-saree-43",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_043",
+      "selling_price": 19049,
+      "original_price": 21049,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5398.JPG",
+          "file_name": "IMG_5398.JPG",
+          "file_size_bytes": 8374903,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "71e9d6e6-07e7-4bfe-a4fe-86e37cf36009",
+      "name": "LOAD_TEST Handloom Tussar Silk Saree in Marigold Amber #44",
+      "slug": "load-test-saree-44",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_044",
+      "selling_price": 19399,
+      "original_price": 21399,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5399.JPG",
+          "file_name": "IMG_5399.JPG",
+          "file_size_bytes": 8508420,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "de743ec4-41c7-4e08-8888-4a206f0fd855",
+      "name": "LOAD_TEST Organza Embroidered Saree in Sage Whisper #45",
+      "slug": "load-test-saree-45",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_045",
+      "selling_price": 19749,
+      "original_price": 21749,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5401.JPG",
+          "file_name": "IMG_5401.JPG",
+          "file_size_bytes": 8546573,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5459.JPG",
+          "file_name": "IMG_5459.JPG",
+          "file_size_bytes": 8020406,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "9ed48fce-16fd-452d-976d-a2b9efbf1637",
+      "name": "LOAD_TEST Raw Silk Handwoven Saree in Blush Peach #46",
+      "slug": "load-test-saree-46",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_046",
+      "selling_price": 20099,
+      "original_price": 22099,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5402.JPG",
+          "file_name": "IMG_5402.JPG",
+          "file_size_bytes": 7865280,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "e65db396-5c4f-4d53-ad49-527b50a4cc22",
+      "name": "LOAD_TEST Georgette Chikankari Saree in Copper Bronze #47",
+      "slug": "load-test-saree-47",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_047",
+      "selling_price": 20449,
+      "original_price": 22449,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5403.JPG",
+          "file_name": "IMG_5403.JPG",
+          "file_size_bytes": 8534633,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "2685b97b-7521-4bec-8471-c22a2ad4d635",
+      "name": "LOAD_TEST Paithani Border Silk Saree in Sapphire Azure #48",
+      "slug": "load-test-saree-48",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_048",
+      "selling_price": 20799,
+      "original_price": 22799,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5404.JPG",
+          "file_name": "IMG_5404.JPG",
+          "file_size_bytes": 8201586,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5462.JPG",
+          "file_name": "IMG_5462.JPG",
+          "file_size_bytes": 5238793,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "4e56be8f-3dab-43f5-b84c-3df67f5cf673",
+      "name": "LOAD_TEST Mysore Crepe Silk Saree in Emerald Green #49",
+      "slug": "load-test-saree-49",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_049",
+      "selling_price": 21149,
+      "original_price": 23149,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5406.JPG",
+          "file_name": "IMG_5406.JPG",
+          "file_size_bytes": 7391478,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "86d055cc-d905-42de-80d4-251e64a09d32",
+      "name": "LOAD_TEST Chiffon Resham Draped Saree in Royal Crimson #50",
+      "slug": "load-test-saree-50",
+      "category_id": "150d3cfb-894c-460c-8440-7585684f3f6d",
+      "category_name": "Sarees",
+      "category_slug": "sarees",
+      "sku": "LOAD_TEST_SAR_050",
+      "selling_price": 21499,
+      "original_price": 23499,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5407.JPG",
+          "file_name": "IMG_5407.JPG",
+          "file_size_bytes": 7402364,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "bf5008fa-2c82-4ab5-8b7a-765f331e5934",
+      "name": "LOAD_TEST Embroidered Silk Blend Demo Ensemble in Deep Plum #01",
+      "slug": "load-test-demo-01",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_001",
+      "selling_price": 3419,
+      "original_price": 4919,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5371.JPG",
+          "file_name": "IMG_5371.JPG",
+          "file_size_bytes": 9219458,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "5cfde2fb-2611-4412-906d-cc74503f0854",
+      "name": "LOAD_TEST Handcrafted Chikankari Cotton Demo Ensemble in Midnight Navy #02",
+      "slug": "load-test-demo-02",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_002",
+      "selling_price": 3839,
+      "original_price": 5339,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5372.JPG",
+          "file_name": "IMG_5372.JPG",
+          "file_size_bytes": 7239157,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "7413bdbe-e5b7-4234-a50b-d9776e2ed25c",
+      "name": "LOAD_TEST Velvet Zardozi Couture Demo Ensemble in Marigold Amber #03",
+      "slug": "load-test-demo-03",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_003",
+      "selling_price": 4259,
+      "original_price": 5759,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5373.JPG",
+          "file_name": "IMG_5373.JPG",
+          "file_size_bytes": 8253908,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5399.JPG",
+          "file_name": "IMG_5399.JPG",
+          "file_size_bytes": 8508420,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "51ef6d95-205d-4536-a3c3-25ff6dd4d64c",
+      "name": "LOAD_TEST Pastel Organza Ensemble Demo Ensemble in Sage Whisper #04",
+      "slug": "load-test-demo-04",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_004",
+      "selling_price": 4679,
+      "original_price": 6179,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5374.JPG",
+          "file_name": "IMG_5374.JPG",
+          "file_size_bytes": 8288361,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "349834c3-b109-4ed1-b9f0-d9dd79984774",
+      "name": "LOAD_TEST Festive Brocade Jacquard Demo Ensemble in Blush Peach #05",
+      "slug": "load-test-demo-05",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_005",
+      "selling_price": 5099,
+      "original_price": 6599,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5376.JPG",
+          "file_name": "IMG_5376.JPG",
+          "file_size_bytes": 8412594,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "1e0bea7d-62d4-438c-88b3-179a07269f75",
+      "name": "LOAD_TEST Pure Linen Handloom Demo Ensemble in Copper Bronze #06",
+      "slug": "load-test-demo-06",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_006",
+      "selling_price": 5519,
+      "original_price": 7019,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5377.JPG",
+          "file_name": "IMG_5377.JPG",
+          "file_size_bytes": 8826390,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5403.JPG",
+          "file_name": "IMG_5403.JPG",
+          "file_size_bytes": 8534633,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "f2628e74-ddf4-487e-9c23-db669ef4bd4f",
+      "name": "LOAD_TEST Georgette Mirror Work Demo Ensemble in Sapphire Azure #07",
+      "slug": "load-test-demo-07",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_007",
+      "selling_price": 5939,
+      "original_price": 7439,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5378.JPG",
+          "file_name": "IMG_5378.JPG",
+          "file_size_bytes": 8620172,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "9e4b5fbc-0134-4915-8ef6-8ccf0245c2cd",
+      "name": "LOAD_TEST Tussar Hand-Block Print Demo Ensemble in Emerald Green #08",
+      "slug": "load-test-demo-08",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_008",
+      "selling_price": 6359,
+      "original_price": 7859,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5379.JPG",
+          "file_name": "IMG_5379.JPG",
+          "file_size_bytes": 8251294,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "c420e6dc-3ef6-4b03-aa73-fe8eeb89ce6b",
+      "name": "LOAD_TEST Embroidered Silk Blend Demo Ensemble in Royal Crimson #09",
+      "slug": "load-test-demo-09",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_009",
+      "selling_price": 6779,
+      "original_price": 8279,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5380.JPG",
+          "file_name": "IMG_5380.JPG",
+          "file_size_bytes": 8307852,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5407.JPG",
+          "file_name": "IMG_5407.JPG",
+          "file_size_bytes": 7402364,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "e5be0eb3-d886-4ab9-b1a5-ec3cbe3cc803",
+      "name": "LOAD_TEST Handcrafted Chikankari Cotton Demo Ensemble in Peacock Blue #10",
+      "slug": "load-test-demo-10",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_010",
+      "selling_price": 7199,
+      "original_price": 8699,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5381.JPG",
+          "file_name": "IMG_5381.JPG",
+          "file_size_bytes": 8335144,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "9abe3238-601f-4688-ac07-c3a7fab2a23e",
+      "name": "LOAD_TEST Velvet Zardozi Couture Demo Ensemble in Ivory Gold #11",
+      "slug": "load-test-demo-11",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_011",
+      "selling_price": 7619,
+      "original_price": 9119,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5382.JPG",
+          "file_name": "IMG_5382.JPG",
+          "file_size_bytes": 8324094,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "5df37b8c-2327-460e-af6b-bc8e77b65e4d",
+      "name": "LOAD_TEST Pastel Organza Ensemble Demo Ensemble in Dusty Rose #12",
+      "slug": "load-test-demo-12",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_012",
+      "selling_price": 8039,
+      "original_price": 9539,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5383.JPG",
+          "file_name": "IMG_5383.JPG",
+          "file_size_bytes": 8332526,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5410.JPG",
+          "file_name": "IMG_5410.JPG",
+          "file_size_bytes": 8371797,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "104025ef-8e9c-4b0a-a772-3101a9c5952e",
+      "name": "LOAD_TEST Festive Brocade Jacquard Demo Ensemble in Deep Plum #13",
+      "slug": "load-test-demo-13",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_013",
+      "selling_price": 8459,
+      "original_price": 9959,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5384.JPG",
+          "file_name": "IMG_5384.JPG",
+          "file_size_bytes": 7718129,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "d0a23612-be79-49f5-8aca-9bc08a8308d1",
+      "name": "LOAD_TEST Pure Linen Handloom Demo Ensemble in Midnight Navy #14",
+      "slug": "load-test-demo-14",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_014",
+      "selling_price": 8879,
+      "original_price": 10379,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5385.JPG",
+          "file_name": "IMG_5385.JPG",
+          "file_size_bytes": 7804822,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "0755b096-68d0-40f3-966c-e639b821efb0",
+      "name": "LOAD_TEST Georgette Mirror Work Demo Ensemble in Marigold Amber #15",
+      "slug": "load-test-demo-15",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_015",
+      "selling_price": 9299,
+      "original_price": 10799,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5386.JPG",
+          "file_name": "IMG_5386.JPG",
+          "file_size_bytes": 7565419,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5413.JPG",
+          "file_name": "IMG_5413.JPG",
+          "file_size_bytes": 8461320,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "86657dbf-067a-4b3e-a450-cf2804e05215",
+      "name": "LOAD_TEST Tussar Hand-Block Print Demo Ensemble in Sage Whisper #16",
+      "slug": "load-test-demo-16",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_016",
+      "selling_price": 9719,
+      "original_price": 11219,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5387.JPG",
+          "file_name": "IMG_5387.JPG",
+          "file_size_bytes": 7540764,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "d832d414-862e-47c9-9222-80f0f0ff8168",
+      "name": "LOAD_TEST Embroidered Silk Blend Demo Ensemble in Blush Peach #17",
+      "slug": "load-test-demo-17",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_017",
+      "selling_price": 10139,
+      "original_price": 11639,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5388.JPG",
+          "file_name": "IMG_5388.JPG",
+          "file_size_bytes": 8784142,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "fdbeb1c2-5633-4cb2-8bb8-19e5c7587785",
+      "name": "LOAD_TEST Handcrafted Chikankari Cotton Demo Ensemble in Copper Bronze #18",
+      "slug": "load-test-demo-18",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_018",
+      "selling_price": 10559,
+      "original_price": 12059,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5389.JPG",
+          "file_name": "IMG_5389.JPG",
+          "file_size_bytes": 8863521,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5416.JPG",
+          "file_name": "IMG_5416.JPG",
+          "file_size_bytes": 8504649,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "e4803197-f359-4bea-80c9-1f346c764158",
+      "name": "LOAD_TEST Velvet Zardozi Couture Demo Ensemble in Sapphire Azure #19",
+      "slug": "load-test-demo-19",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_019",
+      "selling_price": 10979,
+      "original_price": 12479,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5390.JPG",
+          "file_name": "IMG_5390.JPG",
+          "file_size_bytes": 8778710,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "9fafee16-91f6-46bc-8cd1-718116d29c97",
+      "name": "LOAD_TEST Pastel Organza Ensemble Demo Ensemble in Emerald Green #20",
+      "slug": "load-test-demo-20",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_020",
+      "selling_price": 11399,
+      "original_price": 12899,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5391.JPG",
+          "file_name": "IMG_5391.JPG",
+          "file_size_bytes": 8378258,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "7e20e16c-f955-405c-9208-5f6dc2668015",
+      "name": "LOAD_TEST Festive Brocade Jacquard Demo Ensemble in Royal Crimson #21",
+      "slug": "load-test-demo-21",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_021",
+      "selling_price": 11819,
+      "original_price": 13319,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5392.JPG",
+          "file_name": "IMG_5392.JPG",
+          "file_size_bytes": 8560592,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5421.JPG",
+          "file_name": "IMG_5421.JPG",
+          "file_size_bytes": 7297854,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "4072efa2-a2ec-4b6e-8e63-0b76f8389911",
+      "name": "LOAD_TEST Pure Linen Handloom Demo Ensemble in Peacock Blue #22",
+      "slug": "load-test-demo-22",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_022",
+      "selling_price": 12239,
+      "original_price": 13739,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5393.JPG",
+          "file_name": "IMG_5393.JPG",
+          "file_size_bytes": 8653157,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "ea5c1205-1b44-4a6d-8cb8-7f86cc4d4047",
+      "name": "LOAD_TEST Georgette Mirror Work Demo Ensemble in Ivory Gold #23",
+      "slug": "load-test-demo-23",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_023",
+      "selling_price": 12659,
+      "original_price": 14159,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5394.JPG",
+          "file_name": "IMG_5394.JPG",
+          "file_size_bytes": 7928147,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "f4ced3c4-ae91-4ecd-b2a0-51b4db9ad42f",
+      "name": "LOAD_TEST Tussar Hand-Block Print Demo Ensemble in Dusty Rose #24",
+      "slug": "load-test-demo-24",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_024",
+      "selling_price": 13079,
+      "original_price": 14579,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5395.JPG",
+          "file_name": "IMG_5395.JPG",
+          "file_size_bytes": 8691561,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5424.JPG",
+          "file_name": "IMG_5424.JPG",
+          "file_size_bytes": 7057076,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "d28101e3-980a-4bad-adcf-7351fc550e77",
+      "name": "LOAD_TEST Embroidered Silk Blend Demo Ensemble in Deep Plum #25",
+      "slug": "load-test-demo-25",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_025",
+      "selling_price": 13499,
+      "original_price": 14999,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5396.JPG",
+          "file_name": "IMG_5396.JPG",
+          "file_size_bytes": 8052235,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "ac7a3536-28f6-464f-9b52-1c2c5c9c0e99",
+      "name": "LOAD_TEST Handcrafted Chikankari Cotton Demo Ensemble in Midnight Navy #26",
+      "slug": "load-test-demo-26",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_026",
+      "selling_price": 13919,
+      "original_price": 15419,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5397.JPG",
+          "file_name": "IMG_5397.JPG",
+          "file_size_bytes": 8600424,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "d03c5f05-df32-4b0c-a09a-1753d80e7460",
+      "name": "LOAD_TEST Velvet Zardozi Couture Demo Ensemble in Marigold Amber #27",
+      "slug": "load-test-demo-27",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_027",
+      "selling_price": 14339,
+      "original_price": 15839,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5398.JPG",
+          "file_name": "IMG_5398.JPG",
+          "file_size_bytes": 8374903,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5444.JPG",
+          "file_name": "IMG_5444.JPG",
+          "file_size_bytes": 10663496,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "c1c8323d-dd05-40d4-a99b-c171e7d270f2",
+      "name": "LOAD_TEST Pastel Organza Ensemble Demo Ensemble in Sage Whisper #28",
+      "slug": "load-test-demo-28",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_028",
+      "selling_price": 14759,
+      "original_price": 16259,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5399.JPG",
+          "file_name": "IMG_5399.JPG",
+          "file_size_bytes": 8508420,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "c2fa7cfa-7c3c-457a-a96a-20a903382fd6",
+      "name": "LOAD_TEST Festive Brocade Jacquard Demo Ensemble in Blush Peach #29",
+      "slug": "load-test-demo-29",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_029",
+      "selling_price": 15179,
+      "original_price": 16679,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5401.JPG",
+          "file_name": "IMG_5401.JPG",
+          "file_size_bytes": 8546573,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "e67540b7-ccc8-45a6-8fc4-66966dd945b4",
+      "name": "LOAD_TEST Pure Linen Handloom Demo Ensemble in Copper Bronze #30",
+      "slug": "load-test-demo-30",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_030",
+      "selling_price": 15599,
+      "original_price": 17099,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5402.JPG",
+          "file_name": "IMG_5402.JPG",
+          "file_size_bytes": 7865280,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5459.JPG",
+          "file_name": "IMG_5459.JPG",
+          "file_size_bytes": 8020406,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "15cd97da-ba1d-40e8-8aee-4b32964ed13b",
+      "name": "LOAD_TEST Georgette Mirror Work Demo Ensemble in Sapphire Azure #31",
+      "slug": "load-test-demo-31",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_031",
+      "selling_price": 16019,
+      "original_price": 17519,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5403.JPG",
+          "file_name": "IMG_5403.JPG",
+          "file_size_bytes": 8534633,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "1ff5a04b-6de0-4132-88c8-06a9305edb71",
+      "name": "LOAD_TEST Tussar Hand-Block Print Demo Ensemble in Emerald Green #32",
+      "slug": "load-test-demo-32",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_032",
+      "selling_price": 16439,
+      "original_price": 17939,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5404.JPG",
+          "file_name": "IMG_5404.JPG",
+          "file_size_bytes": 8201586,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "f07bb527-7f8b-4c58-a9c9-45918c282ac0",
+      "name": "LOAD_TEST Embroidered Silk Blend Demo Ensemble in Royal Crimson #33",
+      "slug": "load-test-demo-33",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_033",
+      "selling_price": 16859,
+      "original_price": 18359,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5406.JPG",
+          "file_name": "IMG_5406.JPG",
+          "file_size_bytes": 7391478,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5462.JPG",
+          "file_name": "IMG_5462.JPG",
+          "file_size_bytes": 5238793,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "10bb479d-0ac4-4e1c-9fde-be9411705b41",
+      "name": "LOAD_TEST Handcrafted Chikankari Cotton Demo Ensemble in Peacock Blue #34",
+      "slug": "load-test-demo-34",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_034",
+      "selling_price": 17279,
+      "original_price": 18779,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5407.JPG",
+          "file_name": "IMG_5407.JPG",
+          "file_size_bytes": 7402364,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "f7a35c5c-615c-4f8a-99f7-21198584b1e6",
+      "name": "LOAD_TEST Velvet Zardozi Couture Demo Ensemble in Ivory Gold #35",
+      "slug": "load-test-demo-35",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_035",
+      "selling_price": 17699,
+      "original_price": 19199,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5408.JPG",
+          "file_name": "IMG_5408.JPG",
+          "file_size_bytes": 6918359,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "e8392fcc-041c-486f-9208-408804871cb1",
+      "name": "LOAD_TEST Pastel Organza Ensemble Demo Ensemble in Dusty Rose #36",
+      "slug": "load-test-demo-36",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_036",
+      "selling_price": 3119,
+      "original_price": 4619,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5409.JPG",
+          "file_name": "IMG_5409.JPG",
+          "file_size_bytes": 8176939,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5465.JPG",
+          "file_name": "IMG_5465.JPG",
+          "file_size_bytes": 5101775,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "abac16a0-7a39-4bd9-b661-e7f297d115dc",
+      "name": "LOAD_TEST Festive Brocade Jacquard Demo Ensemble in Deep Plum #37",
+      "slug": "load-test-demo-37",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_037",
+      "selling_price": 3539,
+      "original_price": 5039,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5410.JPG",
+          "file_name": "IMG_5410.JPG",
+          "file_size_bytes": 8371797,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "a1878099-0180-4bac-9254-4cd2e550b118",
+      "name": "LOAD_TEST Pure Linen Handloom Demo Ensemble in Midnight Navy #38",
+      "slug": "load-test-demo-38",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_038",
+      "selling_price": 3959,
+      "original_price": 5459,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5411.JPG",
+          "file_name": "IMG_5411.JPG",
+          "file_size_bytes": 8290836,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "daee1b9d-aa1f-4399-8246-a9a0be409822",
+      "name": "LOAD_TEST Georgette Mirror Work Demo Ensemble in Marigold Amber #39",
+      "slug": "load-test-demo-39",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_039",
+      "selling_price": 4379,
+      "original_price": 5879,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5412.JPG",
+          "file_name": "IMG_5412.JPG",
+          "file_size_bytes": 8078605,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/1722688045724.png",
+          "file_name": "1722688045724.png",
+          "file_size_bytes": 211648,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "1606ebea-82d5-432c-9b20-924cf6e4fd14",
+      "name": "LOAD_TEST Tussar Hand-Block Print Demo Ensemble in Sage Whisper #40",
+      "slug": "load-test-demo-40",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_040",
+      "selling_price": 4799,
+      "original_price": 6299,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5413.JPG",
+          "file_name": "IMG_5413.JPG",
+          "file_size_bytes": 8461320,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "ea69e70f-71ba-4d6c-97df-7ac8571e5566",
+      "name": "LOAD_TEST Embroidered Silk Blend Demo Ensemble in Blush Peach #41",
+      "slug": "load-test-demo-41",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_041",
+      "selling_price": 5219,
+      "original_price": 6719,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5414.JPG",
+          "file_name": "IMG_5414.JPG",
+          "file_size_bytes": 8785868,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "78163f29-0c71-4cf6-9a24-d6830ac122b3",
+      "name": "LOAD_TEST Handcrafted Chikankari Cotton Demo Ensemble in Copper Bronze #42",
+      "slug": "load-test-demo-42",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_042",
+      "selling_price": 5639,
+      "original_price": 7139,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5415.JPG",
+          "file_name": "IMG_5415.JPG",
+          "file_size_bytes": 8710970,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_20240929_165806.jpg",
+          "file_name": "IMG_20240929_165806.jpg",
+          "file_size_bytes": 475156,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "d4a058ed-5719-4165-b7ed-5fbdac179d25",
+      "name": "LOAD_TEST Velvet Zardozi Couture Demo Ensemble in Sapphire Azure #43",
+      "slug": "load-test-demo-43",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_043",
+      "selling_price": 6059,
+      "original_price": 7559,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5416.JPG",
+          "file_name": "IMG_5416.JPG",
+          "file_size_bytes": 8504649,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "9bc76436-dbb3-40c7-84b4-2baf6052d6c3",
+      "name": "LOAD_TEST Pastel Organza Ensemble Demo Ensemble in Emerald Green #44",
+      "slug": "load-test-demo-44",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_044",
+      "selling_price": 6479,
+      "original_price": 7979,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5417.JPG",
+          "file_name": "IMG_5417.JPG",
+          "file_size_bytes": 8415223,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "366b745d-015e-4819-aa44-5fcd8a7fde10",
+      "name": "LOAD_TEST Festive Brocade Jacquard Demo Ensemble in Royal Crimson #45",
+      "slug": "load-test-demo-45",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_045",
+      "selling_price": 6899,
+      "original_price": 8399,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5418.JPG",
+          "file_name": "IMG_5418.JPG",
+          "file_size_bytes": 7472769,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5362.JPG",
+          "file_name": "IMG_5362.JPG",
+          "file_size_bytes": 6965338,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "0c9eeaac-b90e-4ccc-a43e-8badca14d37c",
+      "name": "LOAD_TEST Pure Linen Handloom Demo Ensemble in Peacock Blue #46",
+      "slug": "load-test-demo-46",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_046",
+      "selling_price": 7319,
+      "original_price": 8819,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5421.JPG",
+          "file_name": "IMG_5421.JPG",
+          "file_size_bytes": 7297854,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "b0ea2ad8-ecb3-40c0-bb68-4a39dd3603f3",
+      "name": "LOAD_TEST Georgette Mirror Work Demo Ensemble in Ivory Gold #47",
+      "slug": "load-test-demo-47",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_047",
+      "selling_price": 7739,
+      "original_price": 9239,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5422.JPG",
+          "file_name": "IMG_5422.JPG",
+          "file_size_bytes": 7573259,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "c433571b-3458-4299-8123-58761073cea7",
+      "name": "LOAD_TEST Tussar Hand-Block Print Demo Ensemble in Dusty Rose #48",
+      "slug": "load-test-demo-48",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_048",
+      "selling_price": 8159,
+      "original_price": 9659,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5423.JPG",
+          "file_name": "IMG_5423.JPG",
+          "file_size_bytes": 7571567,
+          "is_cover": true,
+          "sort_order": 0
+        },
+        {
+          "storage_path": "/test/pics/IMG_5365.JPG",
+          "file_name": "IMG_5365.JPG",
+          "file_size_bytes": 8856902,
+          "is_cover": false,
+          "sort_order": 1
+        }
+      ]
+    },
+    {
+      "id": "358cf057-f3b5-45ed-a2bc-b3060e31f2a2",
+      "name": "LOAD_TEST Embroidered Silk Blend Demo Ensemble in Deep Plum #49",
+      "slug": "load-test-demo-49",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_049",
+      "selling_price": 8579,
+      "original_price": 10079,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5424.JPG",
+          "file_name": "IMG_5424.JPG",
+          "file_size_bytes": 7057076,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    },
+    {
+      "id": "dd8f438a-2759-43b4-bc4b-03a8efb5ed13",
+      "name": "LOAD_TEST Handcrafted Chikankari Cotton Demo Ensemble in Midnight Navy #50",
+      "slug": "load-test-demo-50",
+      "category_id": "de5a024d-419f-4cfe-95a5-d2ef12a4f24f",
+      "category_name": "Demo",
+      "category_slug": "demo-2",
+      "sku": "LOAD_TEST_DEM_050",
+      "selling_price": 8999,
+      "original_price": 10499,
+      "images": [
+        {
+          "storage_path": "/test/pics/IMG_5425.JPG",
+          "file_name": "IMG_5425.JPG",
+          "file_size_bytes": 7211795,
+          "is_cover": true,
+          "sort_order": 0
+        }
+      ]
+    }
+  ]
+}

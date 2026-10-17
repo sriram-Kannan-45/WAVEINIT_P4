@@ -109,11 +109,16 @@ export type CatalogFilter = {
   new?: string;
   best?: string;
   page?: string;
+  limit?: string;
 };
 export async function getProducts(
   filter: CatalogFilter = {},
   limit = 24,
 ): Promise<{ products: Product[]; count: number }> {
+  const effectiveLimit = Math.min(
+    100,
+    Math.max(1, Number(filter.limit) || limit),
+  );
   if (!configured()) {
     let p = previewMode() ? [...demoProducts] : [];
     if (filter.q)
@@ -168,7 +173,7 @@ export async function getProducts(
       p.sort((a, b) => b.selling_price - a.selling_price);
     const page = Math.max(1, Number(filter.page) || 1);
     return {
-      products: p.slice((page - 1) * limit, page * limit),
+      products: p.slice((page - 1) * effectiveLimit, page * effectiveLimit),
       count: p.length,
     };
   }
@@ -186,7 +191,7 @@ export async function getProducts(
     p_new: filter.new === "true",
     p_best: filter.best === "true",
     p_page: Math.max(1, Number(filter.page) || 1),
-    p_limit: limit,
+    p_limit: effectiveLimit,
   });
   if (error)
     throw new Error("The collection could not be loaded. Please try again.");

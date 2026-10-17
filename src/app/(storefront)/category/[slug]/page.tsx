@@ -1,10 +1,9 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import { getTaxonomies, getSubcategories } from "@/lib/data";
 import { Catalog } from "@/components/product/catalog";
-import { imageUrl } from "@/lib/utils";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 
 export async function generateMetadata({
   params,
@@ -57,8 +56,8 @@ export default async function CategoryPage({
           </div>
           {c.image && (
             <div className="category-hero-media">
-              <Image
-                src={imageUrl(c.image)}
+              <OptimizedImage
+                src={c.image}
                 alt={c.name}
                 fill
                 priority
@@ -89,8 +88,8 @@ export default async function CategoryPage({
                 >
                   <div className="subcategory-circle-thumb-wrapper">
                     <div className="subcategory-circle-thumb">
-                      <Image
-                        src={imageUrl(sub.image || c.image)}
+                      <OptimizedImage
+                        src={sub.image || c.image}
                         alt={sub.name}
                         fill
                         sizes="(max-width: 600px) 130px, 160px"
