@@ -15,6 +15,7 @@ import { ProductCard } from "@/components/product/card";
 import { imageUrl, safeJson, siteUrl } from "@/lib/utils";
 import { LuxuryHero3DBackground } from "@/components/home/LuxuryHero3DBackground";
 import { OptimizedImage } from "@/components/ui/optimized-image";
+import { CategoryReveal } from "@/components/home/CategoryReveal";
 
 export const metadata: Metadata = {
   title: "Achu Designer Boutique | Buy Sarees, Kurtis & Designer Ethnic Wear Online",
@@ -135,7 +136,7 @@ export default async function Home() {
                 Explore all collections <ArrowUpRight size={16} />
               </Link>
             </div>
-            <div className="category-grid category-circle-grid" role="list">
+            <CategoryReveal className="category-grid category-circle-grid" role="list">
               {categories.map((c) => {
                 const fallbackImg =
                   CATEGORY_DEFAULT_IMAGES[c.slug] ||
@@ -144,7 +145,7 @@ export default async function Home() {
                 return (
                   <Link
                     href={`/category/${c.slug}`}
-                    className="category-card category-circle-card"
+                    className="category-card category-circle-card reveal-card"
                     key={c.id}
                     role="listitem"
                     aria-label={`Browse ${c.name} collection`}
@@ -169,7 +170,7 @@ export default async function Home() {
                   </Link>
                 );
               })}
-            </div>
+            </CategoryReveal>
           </div>
         </section>
       )}
