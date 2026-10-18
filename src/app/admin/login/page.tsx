@@ -11,7 +11,7 @@ export default function Login() {
     <div className="admin-login">
       <Image
         src="/brand/achu-designer-boutique-logo.png"
-        style={{ height: "auto" }}
+        style={{ width: "auto", height: "auto" }}
         alt="Achu Designer Boutique official logo"
         width={110}
         height={117}
