@@ -17,14 +17,22 @@ export function CategoryReveal({
       grid.querySelectorAll<HTMLElement>(".reveal-card"),
     );
     const motion = matchMedia("(prefers-reduced-motion: reduce)");
-    const intro = document.querySelector<HTMLElement>(".intro-scroll");
+    const home = grid.closest<HTMLElement>(".home-experience");
     const visible = new Set<HTMLElement>();
     const revealed = new Set<HTMLElement>();
     let timer = 0;
-    const storeReady = () =>
-      motion.matches ||
-      (!intro && !document.documentElement.hasAttribute("data-mobile-intro")) ||
-      (intro ? intro.dataset.active === "false" : true);
+    const storeReady = () => {
+      if (motion.matches) return true;
+      if (document.documentElement.hasAttribute("data-mobile-intro"))
+        return false;
+      if (home?.querySelector(".intro-shell-placeholder")) return false;
+      const mobile = home?.querySelector<HTMLElement>(
+        ".mobile-intro-container",
+      );
+      if (mobile && mobile.dataset.status !== "exiting") return false;
+      const intro = home?.querySelector<HTMLElement>(".intro-scroll");
+      return !intro || intro.dataset.active === "false";
+    };
     const reveal = (card: HTMLElement) => {
       revealed.add(card);
       card.classList.add("is-visible");
@@ -68,10 +76,14 @@ export function CategoryReveal({
     // The store can intersect underneath the opaque pinned intro. Wait for
     // release instead of consuming card entrances while they are covered.
     const introObserver = new MutationObserver(wake);
-    if (intro) {
-      introObserver.observe(intro, {
+    // IntroExperience mounts the viewport-specific intro after hydration and
+    // can replace it on resize. Observe the home rather than a captured node.
+    if (home) {
+      introObserver.observe(home, {
+        childList: true,
+        subtree: true,
         attributes: true,
-        attributeFilter: ["data-active"],
+        attributeFilter: ["data-active", "data-status"],
       });
     }
     introObserver.observe(document.documentElement, {

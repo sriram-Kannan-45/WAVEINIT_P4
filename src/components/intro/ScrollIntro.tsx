@@ -49,7 +49,6 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
       current = 0,
       target = 0,
       targetProgress = 0,
-      displayedProgress = 0,
       displayedFade = 0,
       targetFront = 0,
       currentFront = 0;
@@ -61,6 +60,18 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
     let lastTick = 0,
       drawn = "",
       resized = true;
+    let initialized = false,
+      released = false;
+    const navigation = performance.getEntriesByType("navigation")[0] as
+      | PerformanceNavigationTiming
+      | undefined;
+    let restoringPosition =
+      navigation?.type === "reload" || navigation?.type === "back_forward";
+    const input = () => {
+      restoringPosition = false;
+      request();
+    };
+    const inputEvents = ["wheel", "touchstart", "pointerdown", "keydown"];
     let lastFadeStr = "",
       lastActiveStr = "",
       lastPhaseStr = "",
@@ -86,17 +97,36 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
       if (!disposed && !raf) raf = requestAnimationFrame(render);
     };
     const synchronize = () => {
-      const scrollY = Math.max(0, window.scrollY);
-      const introEnd = start + distance + frontDistance;
-      // Fast bypass: if user has already scrolled past the intro, skip all work
+      let scrollY = Math.max(0, window.scrollY);
+      const introEnd = Math.ceil(start + distance + frontDistance);
+      // Native scroll offsets and clientHeight round differently at browser
+      // zoom levels. Do not require an unreachable final fraction of a pixel.
+      const atEnd = scrollY >= introEnd - 1;
+      if (!atEnd) released = false;
+      // Browser restoration may happen after hydration. User input cancels
+      // this allowance before its scroll event, so fast gestures still wait.
+      if (restoringPosition && atEnd && !motion.matches) {
+        restoringPosition = false;
+        released = true;
+        current = frames.frameCount - 1;
+        displayedFade = 1;
+      }
+      // Native input can outrun decoding/interpolation. Keep the store at its
+      // first screen until the displayed sequence and fade have completed.
+      // Upward input is unrestricted; explicit Skip/restoration bypasses this.
+      if (initialized && !motion.matches && !released && scrollY > introEnd) {
+        window.scrollTo({ top: introEnd, behavior: "instant" });
+        scrollY = introEnd;
+      }
       if (
-        displayedProgress >= 1 &&
+        released &&
         scrollY > introEnd + 50 &&
         section.dataset.active === "false"
       ) {
         return;
       }
       const phases = introProgress(scrollY - start, frontDistance, distance);
+      if (atEnd) phases.video = 1;
       targetFront = motion.matches ? 0 : phases.front;
       targetProgress = motion.matches ? 0 : phases.video;
       target = motion.matches
@@ -144,6 +174,12 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
         1,
         section.querySelector<HTMLElement>(".intro-video-range")!.clientHeight,
       );
+      // Limit the document itself while held, so native wheel/key scrolling
+      // stops naturally instead of repeatedly overshooting and being reset.
+      home.style.setProperty(
+        "--intro-page-height",
+        `${frontDistance + distance + document.documentElement.clientHeight}px`,
+      );
       const mode = introMode(width, height);
       if (!cache || cache.mode !== mode) {
         previous?.dispose();
@@ -158,13 +194,6 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
       if (disposed) return;
 
       const scrollY = Math.max(0, window.scrollY);
-      const introEnd = start + distance + frontDistance;
-      if (scrollY > introEnd + height) {
-        current = target;
-        currentFront = targetFront;
-        displayedFade = 1;
-      }
-
       const dt = Math.min(32, Math.max(1, now - (lastTick || now - 16.67)));
       lastTick = now;
 
@@ -200,10 +229,6 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
         current = nextIndex === Math.round(next) ? next : nextIndex;
       }
 
-      displayedProgress = motion.matches
-        ? 0
-        : current / Math.max(1, frames.frameCount - 1);
-
       const fadeStart = frames.scroll.fadeStart;
       const fadeTarget =
         motion.matches || current < frames.frameCount - 1
@@ -217,8 +242,8 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
 
       const isPastIntro = motion.matches
         ? scrollY - start >= section.offsetHeight
-        : (displayedFade === 1 && targetProgress >= 1) ||
-          scrollY - start > frontDistance + distance + height;
+        : displayedFade === 1 && targetProgress >= 1;
+      if (isPastIntro && !motion.matches) released = true;
       const activeStr = String(
         motion.matches ? scrollY - start < section.offsetHeight : !isPastIntro,
       );
@@ -226,6 +251,8 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
         lastActiveStr = activeStr;
         section.dataset.active = activeStr;
       }
+      const hold = String(!motion.matches && !isPastIntro && !restoringPosition);
+      if (section.dataset.hold !== hold) section.dataset.hold = hold;
 
       const fade = displayedFade;
       const fadeStr = (1 - fade).toFixed(3);
@@ -428,10 +455,12 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
       synchronize();
     };
     const restore = () => {
+      // Only intentional Skip and motion-preference changes jump the timeline.
+      // A resumed tab or pageshow must not skip frames still being displayed.
+      released = true;
       geometry();
       current = target;
       currentFront = targetFront;
-      displayedProgress = targetProgress;
       displayedFade = motion.matches
         ? 0
         : clamp(
@@ -441,7 +470,10 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
       request();
     };
     const visibility = () => {
-      if (!document.hidden) restore();
+      if (!document.hidden) {
+        lastTick = 0;
+        geometry();
+      }
     };
     const observer = new ResizeObserver(geometry);
     observer.observe(section);
@@ -464,10 +496,19 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
     geometry();
     current = target;
     currentFront = targetFront;
-    displayedProgress = targetProgress;
+    released = targetProgress >= 1;
+    displayedFade = motion.matches
+      ? 0
+      : clamp(
+          (targetProgress - frames.scroll.fadeStart) /
+            (1 - frames.scroll.fadeStart),
+        );
+    initialized = true;
+    for (const event of inputEvents)
+      window.addEventListener(event, input, { passive: true });
     window.addEventListener("scroll", scroll, { passive: true });
     window.addEventListener("resize", geometry, { passive: true });
-    window.addEventListener("pageshow", restore);
+    window.addEventListener("pageshow", geometry);
     section.addEventListener("intro:skip", restore);
     window.visualViewport?.addEventListener("resize", geometry, {
       passive: true,
@@ -481,9 +522,11 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
       document.documentElement.removeAttribute("data-store-animate");
       observer.disconnect();
       intersectionObserver.disconnect();
+      for (const event of inputEvents)
+        window.removeEventListener(event, input);
       window.removeEventListener("scroll", scroll);
       window.removeEventListener("resize", geometry);
-      window.removeEventListener("pageshow", restore);
+      window.removeEventListener("pageshow", geometry);
       section.removeEventListener("intro:skip", restore);
       window.visualViewport?.removeEventListener("resize", geometry);
       document.removeEventListener("visibilitychange", visibility);
@@ -493,6 +536,7 @@ export function ScrollIntro({ frames }: { frames: IntroMetadata }) {
       if (store) store.inert = false;
       front.inert = false;
       videoStage.inert = false;
+      home.style.removeProperty("--intro-page-height");
       if (!dynamicViewport) home.style.removeProperty("--intro-visible-vh");
       if (!smallViewport) home.style.removeProperty("--intro-stable-vh");
     };

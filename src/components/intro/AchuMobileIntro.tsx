@@ -7,22 +7,57 @@ interface AchuMobileIntroProps {
   onComplete?: () => void;
 }
 
+const completedVisitKey = "achu:mobile-intro-completed";
+let completedInDocument = false;
+
+function hasCompletedIntro() {
+  if (typeof window === "undefined") return false;
+  if (completedInDocument) return true;
+  try {
+    return window.sessionStorage.getItem(completedVisitKey) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function rememberCompletedIntro() {
+  // Keep client-side navigation working even when browser storage is blocked.
+  completedInDocument = true;
+  try {
+    window.sessionStorage.setItem(completedVisitKey, "1");
+  } catch {
+    // The in-memory flag still covers this document's route changes.
+  }
+}
+
 export function AchuMobileIntro({ onComplete }: AchuMobileIntroProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const exitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const storeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const finishingRef = useRef(false);
+  const [alreadyCompleted] = useState(hasCompletedIntro);
 
-  const [status, setStatus] = useState<"playing" | "ended" | "exiting" | "dismissed">(() =>
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      ? "ended"
-      : "playing",
+  const [status, setStatus] = useState<
+    "playing" | "ended" | "exiting" | "dismissed"
+  >(() =>
+    alreadyCompleted
+      ? "dismissed"
+      : typeof window !== "undefined" &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "ended"
+        : "playing",
   );
   const [isMuted, setIsMuted] = useState(true);
   const [canSkip, setCanSkip] = useState(true);
   const [progress, setProgress] = useState(0);
 
   const finishIntro = useCallback(() => {
+    if (finishingRef.current) return;
+    finishingRef.current = true;
+    // Save before the exit animation so leaving during the fade cannot replay.
+    rememberCompletedIntro();
     if (holdTimerRef.current) {
       clearTimeout(holdTimerRef.current);
       holdTimerRef.current = null;
@@ -34,7 +69,7 @@ export function AchuMobileIntro({ onComplete }: AchuMobileIntroProps) {
 
     // Trigger synchronized entrance animation on boutique storefront
     document.documentElement.setAttribute("data-store-animate", "in");
-    window.setTimeout(() => {
+    storeTimerRef.current = setTimeout(() => {
       document.documentElement.setAttribute("data-store-animate", "done");
     }, 1800);
 
@@ -53,7 +88,7 @@ export function AchuMobileIntro({ onComplete }: AchuMobileIntroProps) {
     document.body.style.removeProperty("overflow");
     document.body.style.removeProperty("touch-action");
 
-    setTimeout(() => {
+    exitTimerRef.current = setTimeout(() => {
       setStatus("dismissed");
       if (onComplete) {
         onComplete();
@@ -63,17 +98,22 @@ export function AchuMobileIntro({ onComplete }: AchuMobileIntroProps) {
 
   // Lock mobile scrolling during active intro playback
   useEffect(() => {
+    // Returning to the home layout must not mount a video or lock restored scroll.
+    if (alreadyCompleted) return;
     document.documentElement.setAttribute("data-mobile-intro", "active");
     document.body.style.setProperty("overflow", "hidden");
     document.body.style.setProperty("touch-action", "none");
 
     return () => {
       if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+      if (exitTimerRef.current) clearTimeout(exitTimerRef.current);
+      if (storeTimerRef.current) clearTimeout(storeTimerRef.current);
       document.documentElement.removeAttribute("data-mobile-intro");
+      document.documentElement.removeAttribute("data-store-animate");
       document.body.style.removeProperty("overflow");
       document.body.style.removeProperty("touch-action");
     };
-  }, []);
+  }, [alreadyCompleted]);
 
   // Handle autoplay with safety fallback
   useEffect(() => {
@@ -109,6 +149,7 @@ export function AchuMobileIntro({ onComplete }: AchuMobileIntroProps) {
   };
 
   const handleEnded = () => {
+    if (finishingRef.current) return;
     setStatus("ended");
     setProgress(1);
 

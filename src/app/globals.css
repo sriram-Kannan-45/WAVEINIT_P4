@@ -93,6 +93,18 @@ body:has(.home-experience) {
   opacity: var(--intro-opacity, 1);
   pointer-events: var(--intro-pointer-events, auto);
 }
+@media (prefers-reduced-motion: no-preference) {
+  /* Decoded frames can lag behind native scroll. Completion, rather than the
+     section's physical bottom, releases the viewport-covering intro. */
+  .intro-scroll[data-active="true"] .intro-sticky {
+    position: fixed;
+    left: 0;
+  }
+  .home-experience:has(.intro-scroll[data-hold="true"]) {
+    max-height: var(--intro-page-height);
+    overflow: clip;
+  }
+}
 .intro-skip {
   position: fixed;
   top: 16px;
@@ -301,6 +313,20 @@ html[data-store-animate="in"] .intro-skip {
         var(--intro-desktop-video-distance, calc(500 * var(--intro-stable-vh, 1vh))) +
         100 * var(--intro-visible-vh, 1vh)
     );
+  }
+}
+@media (min-width: 768px) and (max-aspect-ratio: 1/1) {
+  .intro-shell-placeholder {
+    height: calc(
+      var(--intro-front-distance, calc(45 * var(--intro-stable-vh))) +
+        var(--intro-mobile-video-distance, calc(350 * var(--intro-stable-vh))) +
+        100 * var(--intro-visible-vh)
+    );
+  }
+}
+@media (min-width: 768px) and (prefers-reduced-motion: reduce) {
+  .intro-shell-placeholder {
+    height: calc(200 * var(--intro-visible-vh));
   }
 }
 @media (max-width: 767px) {

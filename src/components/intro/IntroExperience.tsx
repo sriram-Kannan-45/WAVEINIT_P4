@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import type { CSSProperties } from "react";
 import { ScrollIntro } from "./ScrollIntro";
 import { AchuMobileIntro } from "./AchuMobileIntro";
 import type { IntroMetadata } from "./canvas-utils";
@@ -27,7 +28,18 @@ export function IntroExperience({ frames }: IntroExperienceProps) {
   const isMobile = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   if (!mounted) {
-    return <div className="intro-shell-placeholder" aria-hidden="true" />;
+    return (
+      <div
+        className="intro-shell-placeholder"
+        aria-hidden="true"
+        style={
+          {
+            "--intro-desktop-video-distance": `calc(${(frames.scroll.desktopScreens - 1) * 100} * var(--intro-stable-vh))`,
+            "--intro-mobile-video-distance": `calc(${(frames.scroll.mobileScreens - 1) * 100} * var(--intro-stable-vh))`,
+          } as CSSProperties
+        }
+      />
+    );
   }
 
   // Mobile: Render only AchuMobileIntro (zero desktop canvas loops, zero 240-frame WebP downloads)
