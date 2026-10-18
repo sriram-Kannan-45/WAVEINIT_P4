@@ -3,7 +3,9 @@ import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { getStore } from "@/lib/data";
 export const metadata = {
-  title: "Our story",
+  title: "About Our Boutique & Heritage | Achu Designer Boutique",
+  description:
+    "Discover the craftsmanship, heritage, and story behind Achu Designer Boutique in Thindal, Erode. Tailored elegance in Indian ethnic fashion.",
   alternates: { canonical: "/about" },
 };
 export default async function About() {

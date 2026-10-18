@@ -2,19 +2,54 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
 import { getTaxonomies } from "@/lib/data";
-import { imageUrl } from "@/lib/utils";
+import { imageUrl, safeJson, siteUrl } from "@/lib/utils";
+
 export const metadata = {
-  title: "Collections",
+  title: "Designer Collections | Achu Designer Boutique",
+  description:
+    "Explore curated collections of luxury Indian wear, sarees, kurtis, and festive ensembles at Achu Designer Boutique.",
   alternates: { canonical: "/collections" },
+  openGraph: {
+    title: "Designer Collections | Achu Designer Boutique",
+    description:
+      "Explore curated collections of luxury Indian wear, sarees, kurtis, and festive ensembles at Achu Designer Boutique.",
+    url: `${siteUrl}/collections`,
+    siteName: "Achu Designer Boutique",
+    images: ["/brand/achu-designer-boutique-logo.png"],
+  },
 };
+
 export default async function Collections() {
   let collections = await getTaxonomies("collections");
   if (!collections || collections.length === 0) {
     collections = await getTaxonomies("categories");
   }
 
+  const breadcrumbsSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: siteUrl,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Collections",
+        item: `${siteUrl}/collections`,
+      },
+    ],
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJson(breadcrumbsSchema) }}
+      />
       <div className="page-heading">
         <div className="container">
           <nav className="breadcrumbs" aria-label="Breadcrumb">

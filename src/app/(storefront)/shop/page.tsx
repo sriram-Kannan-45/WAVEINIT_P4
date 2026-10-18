@@ -1,6 +1,11 @@
 import { Catalog } from "@/components/product/catalog";
 import type { CatalogFilter } from "@/lib/data";
-export const metadata = { title: "Shop", alternates: { canonical: "/shop" } };
+export const metadata = {
+  title: "Shop Sarees, Kurtis & Designer Wear | Achu Designer Boutique",
+  description:
+    "Discover our full edit of handcrafted Indian ethnic wear. Browse sarees, designer kurtis, occasion ensembles, and bridal designs online.",
+  alternates: { canonical: "/shop" },
+};
 export default async function Shop({
   searchParams,
 }: {
