@@ -85,11 +85,6 @@ export function ImageCropperModal({
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [mediaSize, setMediaSize] = useState<{ width: number; height: number } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Handle escape key
   useEffect(() => {
@@ -390,7 +385,7 @@ export function ImageCropperModal({
     </div>
   );
 
-  if (!mounted || typeof document === "undefined") {
+  if (typeof document === "undefined") {
     return null;
   }
 

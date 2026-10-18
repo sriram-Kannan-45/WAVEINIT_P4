@@ -85,12 +85,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .order("display_order");
     if (subcategories) {
       entries.push(
-        ...subcategories.map((sub: any) => ({
-          url: `${siteUrl}/category/${sub.categories.slug}/${sub.slug}`,
-          lastModified: sub.updated_at,
-          changeFrequency: "weekly" as const,
-          priority: 0.7,
-        })),
+        ...subcategories.map(
+          (sub: {
+            slug: string;
+            updated_at?: string;
+            categories: { slug: string }[] | { slug: string } | unknown;
+          }) => {
+            const cat = sub.categories;
+            const categorySlug = Array.isArray(cat)
+              ? (cat[0] as { slug: string })?.slug
+              : (cat as { slug: string })?.slug;
+            return {
+              url: `${siteUrl}/category/${categorySlug || "all"}/${sub.slug}`,
+              lastModified: sub.updated_at,
+              changeFrequency: "weekly" as const,
+              priority: 0.7,
+            };
+          },
+        ),
       );
     }
 

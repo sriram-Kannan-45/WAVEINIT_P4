@@ -125,9 +125,13 @@ export function AdminShell({
   }, []);
 
   // Close drawer immediately on route change
-  useEffect(() => {
-    setDrawerOpen(false);
-  }, [pathname]);
+  const [prevPathname, setPrevPathname] = useState(pathname);
+  if (prevPathname !== pathname) {
+    setPrevPathname(pathname);
+    if (drawerOpen) {
+      setDrawerOpen(false);
+    }
+  }
 
   return (
     <div className="admin-shell">

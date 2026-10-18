@@ -2,7 +2,6 @@ import { test, expect } from "@playwright/test";
 import path from "node:path";
 
 const TEST_PNG_PATH = path.resolve(__dirname, "../fix/Elegant Emerald Green Saree Portrait.png");
-const TEST_WEBP_PATH = path.resolve(__dirname, "../fix/Elegant Emerald Green Saree Portrait.webp");
 
 test.describe("Full Admin Action Verification", () => {
   test.beforeEach(async ({ page }) => {

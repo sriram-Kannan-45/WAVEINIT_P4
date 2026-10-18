@@ -1,86 +1,98 @@
-﻿"use client";
+"use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ComponentPropsWithoutRef } from "react";
 
-interface CategoryRevealProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-/**
- * Wraps a category grid and applies a staggered luxury page-turn entrance
- * to each direct child card as they scroll into the viewport.
- *
- * The initial `.reveal-card` class hides each card with a subtle 3-D tilt.
- * When the card intersects the viewport, `.is-visible` is added with a
- * staggered delay — creating the cinematic "pages turning" catalogue feel.
- */
-export function CategoryReveal({ children, className }: CategoryRevealProps) {
+/** One viewport-driven queue owns card entrances, including after skipping the
+ * intro. Unseen rows keep their entrance until they actually enter the view. */
+export function CategoryReveal({
+  children,
+  ...props
+}: ComponentPropsWithoutRef<"div">) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const grid = ref.current;
     if (!grid) return;
-
-    const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (motion.matches) {
-      grid
-        .querySelectorAll<HTMLElement>(".reveal-card")
-        .forEach((el) => el.classList.add("is-visible"));
-      return;
-    }
-
-    const cards = Array.from(grid.querySelectorAll<HTMLElement>(".reveal-card"));
-    if (cards.length === 0) return;
-
-    const html = document.documentElement;
-    const alreadyAnimated =
-      html.getAttribute("data-store-animate") === "in" ||
-      html.getAttribute("data-store-animate") === "done";
-    if (alreadyAnimated) {
-      cards.forEach((el) => el.classList.remove("reveal-card"));
-      return;
-    }
-
-    const STAGGER_MS = 110;
-
+    const cards = Array.from(
+      grid.querySelectorAll<HTMLElement>(".reveal-card"),
+    );
+    const motion = matchMedia("(prefers-reduced-motion: reduce)");
+    const intro = document.querySelector<HTMLElement>(".intro-scroll");
+    const visible = new Set<HTMLElement>();
+    const revealed = new Set<HTMLElement>();
+    let timer = 0;
+    const storeReady = () =>
+      motion.matches || !intro || intro.dataset.active === "false";
+    const reveal = (card: HTMLElement) => {
+      revealed.add(card);
+      card.classList.add("is-visible");
+      card.removeAttribute("data-reveal-pending");
+    };
+    const drain = () => {
+      timer = 0;
+      if (!storeReady()) return;
+      const next = cards.find(
+        (card) => visible.has(card) && !revealed.has(card),
+      );
+      if (!next) return;
+      reveal(next);
+      timer = window.setTimeout(drain, 160);
+    };
+    const wake = () => {
+      if (!timer) drain();
+    };
+    const preference = () => {
+      if (!motion.matches) return;
+      clearTimeout(timer);
+      timer = 0;
+      cards.forEach(reveal);
+    };
+    cards.forEach((card) => {
+      if (motion.matches) reveal(card);
+      else card.setAttribute("data-reveal-pending", "");
+    });
     const observer = new IntersectionObserver(
       (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
+        for (const entry of entries) {
           const card = entry.target as HTMLElement;
-          const index = cards.indexOf(card);
-          setTimeout(() => {
-            card.classList.add("is-visible");
-          }, index * STAGGER_MS);
-          observer.unobserve(card);
-        });
+          if (entry.isIntersecting) visible.add(card);
+          else visible.delete(card);
+        }
+        wake();
       },
-      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
+      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" },
     );
-
     cards.forEach((card) => observer.observe(card));
-
-    const mutObs = new MutationObserver(() => {
-      if (
-        html.getAttribute("data-store-animate") === "in" ||
-        html.getAttribute("data-store-animate") === "done"
-      ) {
-        cards.forEach((el) => el.classList.remove("reveal-card"));
-        observer.disconnect();
-        mutObs.disconnect();
-      }
-    });
-    mutObs.observe(html, { attributes: true, attributeFilter: ["data-store-animate"] });
-
+    // The store can intersect underneath the opaque pinned intro. Wait for
+    // release instead of consuming card entrances while they are covered.
+    const introObserver = new MutationObserver(wake);
+    if (intro)
+      introObserver.observe(intro, {
+        attributes: true,
+        attributeFilter: ["data-active"],
+      });
+    const focus = (event: FocusEvent) => {
+      if (!(event.target instanceof Element)) return;
+      const card = event.target.closest<HTMLElement>(".reveal-card");
+      if (card) reveal(card);
+    };
+    grid.addEventListener("focusin", focus);
+    motion.addEventListener("change", preference);
     return () => {
+      clearTimeout(timer);
       observer.disconnect();
-      mutObs.disconnect();
+      introObserver.disconnect();
+      grid.removeEventListener("focusin", focus);
+      motion.removeEventListener("change", preference);
+      cards.forEach((card) => {
+        card.removeAttribute("data-reveal-pending");
+        card.classList.remove("is-visible");
+      });
     };
   }, []);
 
   return (
-    <div ref={ref} className={className}>
+    <div ref={ref} {...props}>
       {children}
     </div>
   );

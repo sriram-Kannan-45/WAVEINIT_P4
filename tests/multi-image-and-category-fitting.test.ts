@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { productSchema } from "../src/lib/validations/index";
-import { VIEW_LABEL_OPTIONS, STANDARD_VIEW_LABELS } from "../src/components/admin/image-uploader";
+import { STANDARD_VIEW_LABELS } from "../src/components/admin/image-uploader";
 import { createClient } from "@supabase/supabase-js";
 import fs from "fs";
 

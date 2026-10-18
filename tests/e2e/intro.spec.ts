@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect as baseExpect, type Page } from "@playwright/test";
 import metadata from "../../public/intro/frames.json";
 import {
   drawBounds,
@@ -9,6 +9,11 @@ import {
   scrollFrame,
   frameUrl,
 } from "../../src/components/intro/canvas-utils";
+
+// Large instantaneous scrubs now traverse decoded source frames instead of
+// accelerating to hundreds of frames per second to satisfy a short timeout.
+const expect = baseExpect.configure({ timeout: 20000 });
+test.setTimeout(120000);
 
 test("actual source canvas covers the viewport uniformly without synthetic filler", async ({
   page,
@@ -46,6 +51,9 @@ test("actual source canvas covers the viewport uniformly without synthetic fille
       const index = Math.round(scrollFrame(progress, metadata));
       const mode = introMode(size.width, size.height);
       await scrub(page, progress);
+      // This matrix verifies drawing geometry at restored positions. The
+      // scroll-control suite separately checks every intermediate frame.
+      await page.evaluate(() => window.dispatchEvent(new Event("pageshow")));
       await expect(page.locator(".intro-scroll")).toHaveAttribute(
         "data-mode",
         mode,
@@ -378,7 +386,13 @@ test("slow frame delivery keeps a server-rendered poster and permits entering th
     "data-ready",
     "true",
   );
-  await scrub(page, 1.01);
+  // Leaving the entire pinned viewport must stay possible even when frames
+  // are slow. Small end-of-range scrubs deliberately wait for frame traversal.
+  await scrub(page, 1.3);
+  await expect(page.locator(".intro-scroll")).toHaveAttribute(
+    "data-active",
+    "false",
+  );
   await expect(page.locator(".site-header")).toBeInViewport();
   await page.getByRole("link", { name: "Shopping bag, 0 items" }).click();
   await expect(page).toHaveURL(/\/cart/);
@@ -400,10 +414,11 @@ test("native keyboard and touch scrolling move the animation", async ({
       type: "touchStart",
       touchPoints: [{ x: width / 2, y: height * 0.85 }],
     });
+    // Cross the welcome transition and first-frame hold in the longer range.
     for (let i = 1; i <= 8; i++) {
       await cdp.send("Input.dispatchTouchEvent", {
         type: "touchMove",
-        touchPoints: [{ x: width / 2, y: height * (0.85 - i * 0.08) }],
+        touchPoints: [{ x: width / 2, y: height * (0.85 - i * 0.1) }],
       });
       await page.waitForTimeout(16);
     }
@@ -460,6 +475,10 @@ test("an unavailable frame does not block the store or create a canvas error", a
     )
     .toBeGreaterThan(Math.round(scrollFrame(0.5, metadata)) - 5);
   await scrub(page, 1.01);
+  await expect(page.locator(".intro-scroll")).toHaveAttribute(
+    "data-active",
+    "false",
+  );
   await page.getByRole("button", { name: "Search collection" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   expect(errors).toEqual([]);

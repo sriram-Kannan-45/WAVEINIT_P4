@@ -2,7 +2,7 @@ import { frameUrl, type IntroMetadata, type IntroMode } from "./canvas-utils";
 
 type Decoded = ImageBitmap | HTMLImageElement;
 
-/** Retain compressed blobs, and maintain a generous sliding window of decoded frames for smooth continuous playback. */
+/** Retain compressed blobs with a bounded, directional decoded-frame window. */
 export class IntroFrameCache {
   readonly mode: IntroMode;
   private blobs = new Map<number, Blob>();
@@ -34,18 +34,22 @@ export class IntroFrameCache {
   }
 
   setTarget(index: number, reduced = false, direction?: number) {
-    this.reduced = reduced;
     const next = reduced
       ? this.metadata.frameCount - 1
-      : Math.max(
-          0,
-          Math.min(this.metadata.frameCount - 1, Math.round(index)),
-        );
-    if (direction !== undefined && direction !== 0) {
-      this.direction = direction >= 0 ? 1 : -1;
-    } else if (next !== this.target) {
-      this.direction = next >= this.target ? 1 : -1;
-    }
+      : Math.max(0, Math.min(this.metadata.frameCount - 1, Math.round(index)));
+    const nextDirection = direction
+      ? Math.sign(direction)
+      : next !== this.target
+        ? Math.sign(next - this.target)
+        : this.direction;
+    if (
+      next === this.target &&
+      reduced === this.reduced &&
+      nextDirection === this.direction
+    )
+      return;
+    this.reduced = reduced;
+    this.direction = nextDirection;
     this.target = next;
     this.trim();
     this.pump();
@@ -77,14 +81,27 @@ export class IntroFrameCache {
     return found;
   }
 
+  get(index: number) {
+    const image = this.images.get(index);
+    return image ? { image, index } : undefined;
+  }
+
+  unavailable(index: number) {
+    return this.failed.has(index);
+  }
+
+  private get capacity() {
+    return this.mode === "mobile" ? 12 : 16;
+  }
+
   private priority() {
     if (this.reduced) {
       return [this.metadata.frameCount - 1];
     }
     const order: number[] = [this.target];
     // Decode a wide window ahead in the direction of scrolling
-    const ahead = this.mode === "mobile" ? 40 : 45;
-    const behind = this.mode === "mobile" ? 20 : 25;
+    const ahead = this.capacity - 4;
+    const behind = 3;
     for (let d = 1; d <= ahead; d++) {
       order.push(this.target + d * this.direction);
     }
@@ -92,7 +109,22 @@ export class IntroFrameCache {
       order.push(this.target - d * this.direction);
     }
     // Critical anchors: first 12 frames and final frame (completed logo)
-    order.push(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, this.metadata.frameCount - 1);
+    order.push(
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      this.metadata.frameCount - 1,
+    );
     // All remaining frames in sequence so the entire animation preloads
     for (let i = 0; i < this.metadata.frameCount; i++) {
       order.push(i);
@@ -103,17 +135,12 @@ export class IntroFrameCache {
   }
 
   private trim() {
-    // Keep a generous window of decoded frames:
-    // Mobile: 80 frames (~90MB RGBA texture memory, fully safe on modern mobile devices).
-    // Desktop: 120 frames.
-    const capacity = this.mode === "mobile" ? 80 : 120;
-    if (this.images.size <= capacity) return;
-
-    // Evict the frames that are furthest from current target
-    const sorted = [...this.images.keys()].sort(
-      (a, b) => Math.abs(b - this.target) - Math.abs(a - this.target),
+    const wanted = new Set(
+      this.priority().slice(0, this.reduced ? 1 : this.capacity),
     );
-    const toRemove = sorted.slice(0, this.images.size - capacity);
+    const toRemove = [...this.images.keys()].filter(
+      (index) => !wanted.has(index),
+    );
     for (const index of toRemove) {
       const image = this.images.get(index);
       if (image) {
@@ -133,9 +160,9 @@ export class IntroFrameCache {
   private pump() {
     if (this.stopped) return;
     const order = this.priority();
-    const decodeCapacity = this.mode === "mobile" ? 80 : 120;
-    const decodeLimit = 4;
-    const fetchLimit = this.mode === "mobile" ? 6 : 8;
+    const decodeCapacity = this.capacity;
+    const decodeLimit = 2;
+    const fetchLimit = this.mode === "mobile" ? 3 : 4;
 
     // Decode priority frames within decodeCapacity
     for (const index of order.slice(0, this.reduced ? 1 : decodeCapacity)) {
@@ -182,6 +209,7 @@ export class IntroFrameCache {
     } finally {
       this.controllers.delete(controller);
       this.fetching.delete(index);
+      if (!this.stopped && this.failed.has(index)) this.ready();
       this.pump();
     }
   }
@@ -232,6 +260,7 @@ export class IntroFrameCache {
       }
     } finally {
       this.decoding.delete(index);
+      if (!this.stopped && this.failed.has(index)) this.ready();
       this.pump();
     }
   }

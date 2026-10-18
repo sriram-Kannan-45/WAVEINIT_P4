@@ -196,6 +196,7 @@ export function ProductDetail({
               <button
                 key={item.i}
                 type="button"
+                role="tab"
                 className={`gallery-view-pill ${index === item.i ? "active" : ""}`}
                 onClick={() => setIndex(item.i)}
                 aria-selected={index === item.i}

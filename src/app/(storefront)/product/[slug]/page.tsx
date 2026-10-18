@@ -114,8 +114,10 @@ export default async function ProductPage({
           "@type": "Offer",
           url: `${siteUrl}/product/${p.slug}`,
           priceCurrency: "INR",
-          price: p.selling_price,
-          priceValidUntil: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)
+          priceValidUntil: new Date(
+            new Date(p.updated_at || p.created_at || "2026-10-01").getTime() +
+              60 * 24 * 60 * 60 * 1000,
+          )
             .toISOString()
             .split("T")[0],
           itemCondition: "https://schema.org/NewCondition",

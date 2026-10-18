@@ -18,18 +18,20 @@ export function IntroExperience({ frames }: IntroExperienceProps) {
         onClick={() => {
           const store = document.getElementById("boutique");
           if (store) store.inert = false;
-          if (typeof document !== "undefined") {
-            document.documentElement.setAttribute("data-store-animate", "in");
-          }
           const introEl = document.querySelector<HTMLElement>(".intro-scroll");
           if (introEl) {
             introEl.dataset.active = "false";
             introEl.dataset.phase = "store";
-            const top = introEl.getBoundingClientRect().top + window.scrollY;
             window.scrollTo({
-              top: top + introEl.clientHeight + 50,
+              top: store
+                ? Math.ceil(store.getBoundingClientRect().top + window.scrollY)
+                : introEl.getBoundingClientRect().top +
+                  window.scrollY +
+                  introEl.clientHeight,
               behavior: "instant",
             });
+            introEl.dispatchEvent(new Event("intro:skip"));
+            store?.focus({ preventScroll: true });
           }
         }}
       >
@@ -38,4 +40,3 @@ export function IntroExperience({ frames }: IntroExperienceProps) {
     </>
   );
 }
-

@@ -4,6 +4,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import sharp from "sharp";
 import metadata from "../public/intro/frames.json";
+import { scrubFrame } from "../src/components/intro/scrub-timeline";
 import {
   drawBounds,
   cropPosition,
@@ -14,6 +15,44 @@ import {
   portraitFit,
   scrollFrame,
 } from "../src/components/intro/canvas-utils";
+
+test("large scroll targets cannot accelerate past individual frames, including slow callbacks", () => {
+  for (const elapsed of [8.33, 16.67, 33.33, 2000]) {
+    for (const target of [0, 25, 239]) {
+      const next = scrubFrame(100, target, elapsed);
+      assert.ok(Math.abs(next - 100) <= 1);
+      assert.ok(next >= Math.min(100, target) && next <= Math.max(100, target));
+    }
+  }
+});
+
+test("scrubbing converges to the latest scroll target and stops there", () => {
+  let current = 0;
+  for (let tick = 0; tick < 600; tick++)
+    current = scrubFrame(current, 130.5, 16.67);
+  assert.equal(current, 130.5);
+  assert.equal(scrubFrame(current, current, 1000), current);
+  assert.ok(scrubFrame(current, 30, 16.67) < current);
+  for (let tick = 0; tick < 600; tick++)
+    current = scrubFrame(current, 30, 16.67);
+  assert.equal(current, 30);
+});
+
+test("configured long scroll distances map proportionally on desktop and mobile", () => {
+  for (const screens of [
+    metadata.scroll.desktopScreens,
+    metadata.scroll.mobileScreens,
+  ]) {
+    const distance = (screens - 1) * 800;
+    const front = 0.45 * 800;
+    assert.equal(
+      introProgress(front + distance / 2, front, distance).video,
+      0.5,
+    );
+    assert.equal(introProgress(front + distance, front, distance).video, 1);
+    assert.ok(introProgress(front + 100, front, distance).video < 0.05);
+  }
+});
 
 test("welcome reveal holds the first frame and preserves the original video timeline", () => {
   for (const height of [568, 700, 812, 844, 932, 1080]) {

@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { Plus, ArrowUpRight, AlertCircle, RefreshCw } from "lucide-react";
+import { Plus, ArrowUpRight } from "lucide-react";
 import { requireAdmin } from "@/lib/supabase/server";
 import { money } from "@/lib/utils";
 

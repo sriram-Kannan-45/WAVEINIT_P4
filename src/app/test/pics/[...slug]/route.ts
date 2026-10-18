@@ -48,7 +48,7 @@ export async function GET(
     const cacheKey = `${filePath}_w${requestedWidth}_q${requestedQuality}`;
     if (imageCache.has(cacheKey)) {
       const cached = imageCache.get(cacheKey)!;
-      return new NextResponse(cached.buffer as any, {
+      return new NextResponse(new Uint8Array(cached.buffer), {
         status: 200,
         headers: {
           "Content-Type": cached.contentType,
@@ -101,7 +101,7 @@ export async function GET(
     }
     imageCache.set(cacheKey, { buffer: processedBuffer, contentType });
 
-    return new NextResponse(processedBuffer as any, {
+    return new NextResponse(new Uint8Array(processedBuffer), {
       status: 200,
       headers: {
         "Content-Type": contentType,
@@ -109,7 +109,7 @@ export async function GET(
         "Cache-Control": "public, max-age=31536000, immutable",
       },
     });
-  } catch (error) {
+  } catch {
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
