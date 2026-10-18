@@ -308,6 +308,13 @@ html[data-store-animate="in"] .intro-skip {
     height: 100dvh;
     min-height: 100vh;
   }
+  .intro-store {
+    margin-top: 0 !important;
+  }
+  html[data-mobile-intro="active"] .intro-store {
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
 }
 
 .mobile-intro-container {

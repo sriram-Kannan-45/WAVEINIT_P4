@@ -22,7 +22,9 @@ export function CategoryReveal({
     const revealed = new Set<HTMLElement>();
     let timer = 0;
     const storeReady = () =>
-      motion.matches || !intro || intro.dataset.active === "false";
+      motion.matches ||
+      (!intro && !document.documentElement.hasAttribute("data-mobile-intro")) ||
+      (intro ? intro.dataset.active === "false" : true);
     const reveal = (card: HTMLElement) => {
       revealed.add(card);
       card.classList.add("is-visible");
@@ -66,11 +68,16 @@ export function CategoryReveal({
     // The store can intersect underneath the opaque pinned intro. Wait for
     // release instead of consuming card entrances while they are covered.
     const introObserver = new MutationObserver(wake);
-    if (intro)
+    if (intro) {
       introObserver.observe(intro, {
         attributes: true,
         attributeFilter: ["data-active"],
       });
+    }
+    introObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-mobile-intro", "data-store-animate"],
+    });
     const focus = (event: FocusEvent) => {
       if (!(event.target instanceof Element)) return;
       const card = event.target.closest<HTMLElement>(".reveal-card");
