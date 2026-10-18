@@ -33,7 +33,7 @@ export class IntroFrameCache {
     this.pump();
   }
 
-  setTarget(index: number, reduced = false) {
+  setTarget(index: number, reduced = false, direction?: number) {
     this.reduced = reduced;
     const next = reduced
       ? this.metadata.frameCount - 1
@@ -41,7 +41,11 @@ export class IntroFrameCache {
           0,
           Math.min(this.metadata.frameCount - 1, Math.round(index)),
         );
-    if (next !== this.target) this.direction = next >= this.target ? 1 : -1;
+    if (direction !== undefined && direction !== 0) {
+      this.direction = direction >= 0 ? 1 : -1;
+    } else if (next !== this.target) {
+      this.direction = next >= this.target ? 1 : -1;
+    }
     this.target = next;
     this.trim();
     this.pump();
@@ -87,8 +91,8 @@ export class IntroFrameCache {
     for (let d = 1; d <= behind; d++) {
       order.push(this.target - d * this.direction);
     }
-    // Critical anchors: frame 0 (entrance) and final frame (completed logo)
-    order.push(0, this.metadata.frameCount - 1);
+    // Critical anchors: first 12 frames and final frame (completed logo)
+    order.push(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, this.metadata.frameCount - 1);
     // All remaining frames in sequence so the entire animation preloads
     for (let i = 0; i < this.metadata.frameCount; i++) {
       order.push(i);

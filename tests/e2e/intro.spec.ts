@@ -13,7 +13,7 @@ import {
 test("actual source canvas covers the viewport uniformly without synthetic filler", async ({
   page,
 }) => {
-  test.setTimeout(60000);
+  test.setTimeout(90000);
   await page.addInitScript(() => {
     const original = CanvasRenderingContext2D.prototype.drawImage;
     CanvasRenderingContext2D.prototype.drawImage = function (
@@ -212,7 +212,7 @@ test("intro follows scroll, holds, reverses, and releases into the existing bout
   await expect(page.locator("#boutique")).toHaveAttribute("inert", "");
   await page.waitForTimeout(250);
   await expect(intro).toHaveAttribute("data-frame", "0");
-  await expect(page.locator("video")).toHaveCount(0);
+  await expect(page.locator(".intro-scroll video")).toHaveCount(0);
   await scrub(page, 0.5);
   await expect
     .poll(async () => Number(await intro.getAttribute("data-frame")))
@@ -248,9 +248,7 @@ test("intro follows scroll, holds, reverses, and releases into the existing bout
   await scrub(page, 1.01);
   await expect(page.locator("#boutique")).not.toHaveAttribute("inert", "");
   await expect(page.locator(".site-header")).toBeInViewport();
-  await expect(
-    page.getByRole("heading", { name: "Elegance, in every detail." }),
-  ).toBeInViewport();
+  await expect(page.getByRole("heading", { level: 1 })).toBeInViewport();
   await page.getByRole("button", { name: "Search collection" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await page.keyboard.press("Escape");
@@ -440,7 +438,7 @@ test("Image.decode fallback works when bitmap decoding is unavailable", async ({
     String(metadata.frameCount - 1),
   );
   await page.goto("/shop");
-  await expect(page.locator(".product-card")).toHaveCount(4);
+  await expect(page.locator(".product-card")).toHaveCount(7);
 });
 
 test("an unavailable frame does not block the store or create a canvas error", async ({

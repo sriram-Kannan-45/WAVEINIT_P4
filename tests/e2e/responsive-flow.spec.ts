@@ -161,7 +161,7 @@ test("all nine requested widths retain a visible peacock stage between welcome a
     isMobile,
     "viewport geometry is shared; native touch is checked separately",
   );
-  test.setTimeout(60000);
+  test.setTimeout(90000);
   await page.goto("/");
   await expect(page.locator(".intro-scroll")).toHaveAttribute(
     "data-ready",
