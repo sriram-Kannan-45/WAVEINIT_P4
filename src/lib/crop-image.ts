@@ -118,39 +118,63 @@ export async function getCroppedImg(
   );
 
   return new Promise((resolve, reject) => {
-    // Try WebP first with quality 0.92
-    canvas.toBlob(
-      (blob) => {
-        if (blob) {
-          const cleanName = fileName.replace(/\.[^.]+$/, "") + ".webp";
-          const file = new File([blob], cleanName, { type: "image/webp" });
-          const blobUrl = URL.createObjectURL(blob);
-          resolve({ file, blobUrl });
-          return;
-        }
-
-        // Fallback to JPEG if WebP export is not supported or returns null
-        canvas.toBlob(
-          (jpegBlob) => {
-            if (!jpegBlob) {
-              reject(
-                new Error(
-                  "Canvas crop failed to produce an image blob in WebP or JPEG formats.",
-                ),
-              );
-              return;
+    try {
+      // Export with optimized quality 0.86 for fast upload and boutique fabric clarity
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            // Adaptive compression if file size nears the 3 MB upload ceiling
+            if (blob.size > 2600000) {
+              try {
+                canvas.toBlob(
+                  (compressedBlob) => {
+                    const finalBlob = compressedBlob || blob;
+                    const cleanName = fileName.replace(/\.[^.]+$/, "") + ".webp";
+                    const file = new File([finalBlob], cleanName, { type: "image/webp" });
+                    const blobUrl = URL.createObjectURL(finalBlob);
+                    resolve({ file, blobUrl });
+                  },
+                  "image/webp",
+                  0.78,
+                );
+                return;
+              } catch {
+                // If secondary compression fails, proceed with initial blob
+              }
             }
-            const cleanName = fileName.replace(/\.[^.]+$/, "") + ".jpg";
-            const file = new File([jpegBlob], cleanName, { type: "image/jpeg" });
-            const blobUrl = URL.createObjectURL(jpegBlob);
+
+            const cleanName = fileName.replace(/\.[^.]+$/, "") + ".webp";
+            const file = new File([blob], cleanName, { type: "image/webp" });
+            const blobUrl = URL.createObjectURL(blob);
             resolve({ file, blobUrl });
-          },
-          "image/jpeg",
-          0.92,
-        );
-      },
-      "image/webp",
-      0.92,
-    );
+            return;
+          }
+
+          // Fallback to JPEG if WebP export is not supported or returns null
+          canvas.toBlob(
+            (jpegBlob) => {
+              if (!jpegBlob) {
+                reject(
+                  new Error(
+                    "Canvas crop failed to produce an image blob in WebP or JPEG formats.",
+                  ),
+                );
+                return;
+              }
+              const cleanName = fileName.replace(/\.[^.]+$/, "") + ".jpg";
+              const file = new File([jpegBlob], cleanName, { type: "image/jpeg" });
+              const blobUrl = URL.createObjectURL(jpegBlob);
+              resolve({ file, blobUrl });
+            },
+            "image/jpeg",
+            0.88,
+          );
+        },
+        "image/webp",
+        0.86,
+      );
+    } catch (err) {
+      reject(err instanceof Error ? err : new Error(String(err)));
+    }
   });
 }

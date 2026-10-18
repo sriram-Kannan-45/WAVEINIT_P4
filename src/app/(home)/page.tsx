@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Instagram } from "@/components/ui/instagram";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,9 +12,18 @@ import {
 } from "lucide-react";
 import { getHomepage, getStore, getTaxonomies, getNewArrivals } from "@/lib/data";
 import { ProductCard } from "@/components/product/card";
-import { imageUrl } from "@/lib/utils";
+import { imageUrl, safeJson, siteUrl } from "@/lib/utils";
 import { LuxuryHero3DBackground } from "@/components/home/LuxuryHero3DBackground";
 import { OptimizedImage } from "@/components/ui/optimized-image";
+
+export const metadata: Metadata = {
+  title: "Achu Designer Boutique | Buy Sarees, Kurtis & Designer Ethnic Wear Online",
+  description:
+    "Explore Achu Designer Boutique for luxury Indian wear. Shop handcrafted sarees, designer kurtis, anarkalis, and festive ethnic wear with effortless WhatsApp enquiries.",
+  alternates: {
+    canonical: "/",
+  },
+};
 
 const CATEGORY_DEFAULT_IMAGES: Record<string, string> = {
   sarees: "/pic/Elegant Emerald Green Saree Portrait.webp",
@@ -30,17 +40,96 @@ export default async function Home() {
     getTaxonomies("categories"),
     getNewArrivals(4),
   ]);
+
+  const homeSchema = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": ["ClothingStore", "Organization"],
+        "@id": `${siteUrl}/#organization`,
+        name: store.business_name || "Achu Designer Boutique",
+        alternateName: [
+          "Achu Boutique",
+          "Achu Designer Boutique",
+          "Achu Designer Wear",
+          "Achu Sarees",
+        ],
+        url: siteUrl,
+        logo: {
+          "@type": "ImageObject",
+          url: `${siteUrl}/brand/achu-designer-boutique-logo.png`,
+          width: 1209,
+          height: 1287,
+          caption: "Achu Designer Boutique Logo",
+        },
+        image: `${siteUrl}/brand/achu-designer-boutique-logo.png`,
+        description:
+          "Achu Designer Boutique offers luxury Indian ethnic wear, handcrafted designer sarees, festive kurtis, and bespoke bridal ensembles in Thindal, Erode.",
+        telephone: store.phone_number || store.whatsapp_number,
+        priceRange: "₹₹",
+        currenciesAccepted: "INR",
+        paymentAccepted: "Cash, UPI, Credit Card, Net Banking",
+        address: {
+          "@type": "PostalAddress",
+          streetAddress:
+            store.address ||
+            "PMS Complex, Diamond Nagar, Near MDS Bakery, Thindal",
+          addressLocality: "Erode",
+          addressRegion: "Tamil Nadu",
+          postalCode: "638012",
+          addressCountry: "IN",
+        },
+        geo: {
+          "@type": "GeoCoordinates",
+          latitude: "11.3175",
+          longitude: "77.6833",
+        },
+        sameAs: [store.instagram_url, store.maps_url].filter(Boolean),
+      },
+      {
+        "@type": "WebSite",
+        "@id": `${siteUrl}/#website`,
+        url: siteUrl,
+        name: "Achu Designer Boutique",
+        alternateName: "Achu Boutique Online",
+        description:
+          "Buy Sarees, Kurtis & Designer Ethnic Wear Online from Achu Designer Boutique.",
+        publisher: {
+          "@id": `${siteUrl}/#organization`,
+        },
+        potentialAction: {
+          "@type": "SearchAction",
+          target: {
+            "@type": "EntryPoint",
+            urlTemplate: `${siteUrl}/shop?q={search_term_string}`,
+          },
+          "query-input": "required name=search_term_string",
+        },
+        inLanguage: "en-IN",
+      },
+    ],
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJson(homeSchema) }}
+      />
+      {(!h.show_categories || categories.length === 0) && (
+        <h1 className="sr-only">
+          Achu Designer Boutique — Luxury Sarees, Kurtis & Ethnic Wear
+        </h1>
+      )}
       {h.show_categories && categories.length > 0 && (
         <section className="section categories-section">
           <div className="container">
             <div className="section-heading">
               <div>
                 <p className="eyebrow">CURATED COLLECTIONS</p>
-                <h2>
-                  The Boutique <em>Categories.</em>
-                </h2>
+                <h1 className="home-hero-h1">
+                  Achu Designer Boutique — <em>Luxury Sarees & Ethnic Wear.</em>
+                </h1>
               </div>
               <Link className="text-link" href="/collections">
                 Explore all collections <ArrowUpRight size={16} />

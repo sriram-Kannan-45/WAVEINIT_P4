@@ -1,9 +1,16 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Manrope } from "next/font/google";
 import Script from "next/script";
 import { Providers } from "@/components/layout/providers";
 import { siteUrl } from "@/lib/utils";
 import "./globals.css";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: "#05130b",
+};
 const heading = Cormorant_Garamond({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
@@ -19,23 +26,50 @@ const body = Manrope({
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Achu Designer Boutique | Elegance in every detail",
+    default: "Achu Designer Boutique | Buy Sarees, Kurtis & Designer Ethnic Wear Online",
     template: "%s | Achu Designer Boutique",
   },
   description:
-    "Explore the Achu Designer Boutique collection of Indian wear. Browse pieces, choose your size, and enquire through WhatsApp.",
+    "Explore Achu Designer Boutique for luxury Indian wear. Shop handpicked designer sarees, stylish kurtis, bridal attire, and custom ethnic ensembles. Quick WhatsApp enquiry.",
+  keywords: [
+    "Achu Boutique",
+    "Achu Designer Boutique",
+    "Achu boutique online",
+    "Achu sarees",
+    "Achu designer wear",
+    "Buy sarees online",
+    "Designer sarees online",
+    "Kurtis and ethnic wear",
+    "Indian ethnic wear boutique",
+    "Bridal sarees Erode",
+    "Designer blouses Thindal",
+  ],
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     type: "website",
     siteName: "Achu Designer Boutique",
+    locale: "en_IN",
+    title: "Achu Designer Boutique | Buy Sarees, Kurtis & Designer Ethnic Wear Online",
+    description:
+      "Explore Achu Designer Boutique for luxury Indian wear. Handcrafted sarees, designer kurtis, bridal ensembles, and customized stitching.",
     images: [
       {
         url: "/brand/achu-designer-boutique-logo.png",
         width: 1209,
         height: 1287,
+        alt: "Achu Designer Boutique official logo",
       },
     ],
   },
-  twitter: { card: "summary_large_image" },
+  twitter: {
+    card: "summary_large_image",
+    title: "Achu Designer Boutique | Buy Sarees, Kurtis & Designer Ethnic Wear Online",
+    description:
+      "Luxury Indian ethnic wear, handpicked designer sarees, festive kurtis, and bridal collections at Achu Designer Boutique.",
+    images: ["/brand/achu-designer-boutique-logo.png"],
+  },
   icons: { icon: "/brand/achu-designer-boutique-logo.png" },
 };
 export default function RootLayout({

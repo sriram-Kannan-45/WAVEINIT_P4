@@ -26,6 +26,7 @@ export function AdminModal({
   return (
     <Dialog.Root
       open={open}
+      modal={false}
       onOpenChange={(nextOpen) => {
         if (!nextOpen) {
           handleClose();
@@ -39,10 +40,23 @@ export function AdminModal({
         <Dialog.Content
           className="dialog-content admin-modal-content"
           style={{ "--modal-max-width": maxWidth } as React.CSSProperties}
-          onPointerDownOutside={() => {
+          onPointerDownOutside={(e) => {
+            // If image cropper modal or another dialog overlay is present, prevent closing
+            if (
+              document.querySelector(".cropper-backdrop") ||
+              document.querySelector(".dialog-content:not(.admin-modal-content)")
+            ) {
+              e.preventDefault();
+              return;
+            }
             handleClose();
           }}
-          onEscapeKeyDown={() => {
+          onEscapeKeyDown={(e) => {
+            // Let the active cropper or nested dialog handle escape first
+            if (document.querySelector(".cropper-backdrop")) {
+              e.preventDefault();
+              return;
+            }
             handleClose();
           }}
         >

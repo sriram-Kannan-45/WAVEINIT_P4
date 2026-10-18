@@ -11,12 +11,39 @@ export async function generateMetadata({
 }) {
   const { slug } = await params;
   const p = await getProduct(slug);
+  const title = p?.meta_title || (p ? `${p.name} | Achu Designer Boutique` : "Product unavailable");
+  const description =
+    p?.meta_description ||
+    p?.short_description ||
+    (p ? `Discover ${p.name} at Achu Designer Boutique. Handcrafted luxury Indian wear.` : "Product details.");
+  const images = p?.product_images?.length
+    ? p.product_images.map((i) => ({
+        url: imageUrl(i.storage_path),
+        alt: i.alt_text || p.name,
+      }))
+    : [{ url: `${siteUrl}/brand/achu-designer-boutique-logo.png`, alt: "Achu Designer Boutique" }];
+
   return {
-    title: p?.meta_title || p?.name || "Product unavailable",
-    description: p?.meta_description || p?.short_description,
+    title,
+    description,
     alternates: { canonical: `/product/${slug}` },
     openGraph: p
-      ? { images: p.product_images.map((i) => imageUrl(i.storage_path)) }
+      ? {
+          title,
+          description,
+          url: `${siteUrl}/product/${slug}`,
+          siteName: "Achu Designer Boutique",
+          type: "website",
+          images,
+        }
+      : undefined,
+    twitter: p
+      ? {
+          card: "summary_large_image",
+          title,
+          description,
+          images: images.map((img) => img.url),
+        }
       : undefined,
     robots: p?.sample ? { index: false, follow: false } : undefined,
   };
@@ -33,24 +60,80 @@ export default async function ProductPage({
     getStore(),
     getProducts({ category: p.categories?.slug }, 5),
   ]);
+
+  const breadcrumbItems = [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Home",
+      item: siteUrl,
+    },
+  ];
+  if (p.categories?.slug) {
+    breadcrumbItems.push({
+      "@type": "ListItem",
+      position: breadcrumbItems.length + 1,
+      name: p.categories.name,
+      item: `${siteUrl}/category/${p.categories.slug}`,
+    });
+  }
+  if (p.categories?.slug && p.subcategories?.slug) {
+    breadcrumbItems.push({
+      "@type": "ListItem",
+      position: breadcrumbItems.length + 1,
+      name: p.subcategories.name,
+      item: `${siteUrl}/category/${p.categories.slug}/${p.subcategories.slug}`,
+    });
+  }
+  breadcrumbItems.push({
+    "@type": "ListItem",
+    position: breadcrumbItems.length + 1,
+    name: p.name,
+    item: `${siteUrl}/product/${p.slug}`,
+  });
+
   const schema = {
     "@context": "https://schema.org",
-    "@type": "Product",
-    name: p.name,
-    description: p.short_description,
-    image: p.product_images.map((i) => imageUrl(i.storage_path)),
-    sku: p.sku,
-    brand: { "@type": "Brand", name: "Achu Designer Boutique" },
-    offers: {
-      "@type": "Offer",
-      url: `${siteUrl}/product/${p.slug}`,
-      priceCurrency: "INR",
-      price: p.selling_price,
-      availability:
-        stockTotal(p.product_variants) > 0
-          ? "https://schema.org/InStock"
-          : "https://schema.org/OutOfStock",
-    },
+    "@graph": [
+      {
+        "@type": "Product",
+        "@id": `${siteUrl}/product/${p.slug}#product`,
+        name: p.name,
+        description: p.short_description || p.description,
+        image: p.product_images.map((i) => imageUrl(i.storage_path)),
+        sku: p.sku || `ACHU-${p.id}`,
+        mpn: p.sku || `ACHU-${p.id}`,
+        brand: {
+          "@type": "Brand",
+          name: "Achu Designer Boutique",
+        },
+        category: p.categories?.name,
+        material: p.fabric || undefined,
+        color: p.colour || undefined,
+        offers: {
+          "@type": "Offer",
+          url: `${siteUrl}/product/${p.slug}`,
+          priceCurrency: "INR",
+          price: p.selling_price,
+          priceValidUntil: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split("T")[0],
+          itemCondition: "https://schema.org/NewCondition",
+          availability:
+            stockTotal(p.product_variants) > 0
+              ? "https://schema.org/InStock"
+              : "https://schema.org/OutOfStock",
+          seller: {
+            "@type": "Organization",
+            name: "Achu Designer Boutique",
+          },
+        },
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: breadcrumbItems,
+      },
+    ],
   };
   return (
     <div className="container product-page">

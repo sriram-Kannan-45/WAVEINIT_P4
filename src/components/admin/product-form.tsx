@@ -655,7 +655,7 @@ export function ProductForm({
         </p>
       )}
       <div className="form-actions">
-        <button className="button" disabled={busy}>
+        <button type="submit" className="button" disabled={busy}>
           <Save size={15} />
           {busy ? "Saving…" : "Save product"}
         </button>

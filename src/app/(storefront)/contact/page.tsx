@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { getStore } from "@/lib/data";
 import { whatsappUrl } from "@/lib/whatsapp";
 import { Instagram } from "@/components/ui/instagram";
+import { safeJson, siteUrl } from "@/lib/utils";
 import {
   Phone,
   MessageCircle,
@@ -114,6 +115,37 @@ export default async function ContactPage() {
   const mapEmbedUrl = store.map_embed_url || MAPS_EMBED_URL;
   const instagramUrl = store.instagram_url?.trim() || "";
 
+  const contactSchema = {
+    "@context": "https://schema.org",
+    "@type": ["ClothingStore", "LocalBusiness"],
+    "@id": `${siteUrl}/contact#store`,
+    name: "Achu Designer Boutique",
+    alternateName: ["Achu Boutique", "Achu Designer Wear"],
+    image: `${siteUrl}/brand/achu-designer-boutique-logo.png`,
+    logo: `${siteUrl}/brand/achu-designer-boutique-logo.png`,
+    telephone: store.phone_number || store.whatsapp_number || `+${OFFICIAL_PHONE}`,
+    email: store.email || undefined,
+    url: `${siteUrl}/contact`,
+    hasMap: MAPS_SEARCH_URL,
+    priceRange: "₹₹",
+    currenciesAccepted: "INR",
+    paymentAccepted: "Cash, UPI, Credit Card, Net Banking",
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: address,
+      addressLocality: "Erode",
+      addressRegion: "Tamil Nadu",
+      postalCode: "638012",
+      addressCountry: "IN",
+    },
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: "11.3175",
+      longitude: "77.6833",
+    },
+    sameAs: [store.instagram_url, MAPS_SEARCH_URL].filter(Boolean),
+  };
+
   const generalWhatsappLink =
     whatsappUrl(
       whatsappNumber,
@@ -122,6 +154,10 @@ export default async function ContactPage() {
 
   return (
     <div className="contact-page">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJson(contactSchema) }}
+      />
       {/* 1. Hero Header */}
       <section className="contact-hero container">
         <p className="eyebrow">Achu Designer Boutique • Thindal</p>

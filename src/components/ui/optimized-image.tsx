@@ -43,10 +43,15 @@ export function OptimizedImage({
     }
   }, [resolvedSrc]);
 
+  const isLocalBlob =
+    typeof resolvedSrc === "string" &&
+    (resolvedSrc.startsWith("blob:") || resolvedSrc.startsWith("data:"));
+
   return (
     <Image
       ref={imgRef}
       decoding="async"
+      unoptimized={isLocalBlob || rest.unoptimized}
       {...rest}
       src={resolvedSrc}
       alt={alt || "Achu Designer Boutique piece"}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Cropper, { type Point, type Area } from "react-easy-crop";
 import {
   ZoomIn,
@@ -11,7 +12,9 @@ import {
   Maximize2,
   Crop as CropIcon,
   Sparkles,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { getCroppedImg } from "@/lib/crop-image";
 
 export type AspectRatioPreset = {
@@ -55,8 +58,8 @@ interface ImageCropperModalProps {
   cropShape?: "rect" | "round";
   defaultAspect?: number;
   title?: string;
-  onConfirm: (croppedFile: File, croppedBlobUrl: string) => void;
-  onSkip?: () => void;
+  onConfirm: (croppedFile: File, croppedBlobUrl: string) => Promise<void> | void;
+  onSkip?: () => Promise<void> | void;
   onCancel: () => void;
 }
 
@@ -73,49 +76,127 @@ export function ImageCropperModal({
 }: ImageCropperModalProps) {
   const presets = CROP_PRESETS[folder] || CROP_PRESETS.products;
   const initialAspect = defaultAspect ?? presets[0]?.value ?? 3 / 4;
+  const initialShape = cropShape === "round" || folder === "categories" ? "round" : "rect";
 
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [aspect, setAspect] = useState<number | undefined>(initialAspect);
-  const [shape, setShape] = useState<"rect" | "round">(
-    cropShape === "round" || folder === "categories" ? "round" : "rect",
-  );
+  const [shape, setShape] = useState<"rect" | "round">(initialShape);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
+  const [mediaSize, setMediaSize] = useState<{ width: number; height: number } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
-    setCroppedAreaPixels(croppedAreaPixels);
+  useEffect(() => {
+    setMounted(true);
   }, []);
+
+  // Handle escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !isProcessing) {
+        e.stopPropagation();
+        onCancel();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
+  }, [onCancel, isProcessing]);
+
+  const onCropComplete = useCallback((_croppedArea: Area, pixels: Area) => {
+    setCroppedAreaPixels(pixels);
+  }, []);
+
+  const onMediaLoaded = useCallback((mediaSize: { width: number; height: number }) => {
+    setMediaSize(mediaSize);
+    // If croppedAreaPixels not set yet, initialize default center crop area
+    if (!croppedAreaPixels) {
+      const minDimension = Math.min(mediaSize.width, mediaSize.height);
+      const w = initialAspect ? Math.min(mediaSize.width, minDimension * initialAspect) : minDimension;
+      const h = initialAspect ? w / initialAspect : minDimension;
+      setCroppedAreaPixels({
+        x: Math.max(0, Math.round((mediaSize.width - w) / 2)),
+        y: Math.max(0, Math.round((mediaSize.height - h) / 2)),
+        width: Math.round(w),
+        height: Math.round(h),
+      });
+    }
+  }, [croppedAreaPixels, initialAspect]);
 
   const handleReset = () => {
     setCrop({ x: 0, y: 0 });
     setZoom(1);
     setAspect(initialAspect);
+    setShape(initialShape);
   };
 
   const handleConfirm = async () => {
-    if (!croppedAreaPixels) return;
+    if (isProcessing) return;
+
+    // Use current cropped area or calculate fallback from media
+    let areaToUse = croppedAreaPixels;
+    if (!areaToUse && mediaSize) {
+      const minDim = Math.min(mediaSize.width, mediaSize.height);
+      const w = aspect ? Math.min(mediaSize.width, minDim * aspect) : minDim;
+      const h = aspect ? w / aspect : minDim;
+      areaToUse = {
+        x: Math.max(0, Math.round((mediaSize.width - w) / 2)),
+        y: Math.max(0, Math.round((mediaSize.height - h) / 2)),
+        width: Math.round(w),
+        height: Math.round(h),
+      };
+    }
+
+    if (!areaToUse) {
+      toast.error("Photograph is still loading. Please wait a moment.");
+      return;
+    }
+
     setIsProcessing(true);
     try {
       const { file, blobUrl } = await getCroppedImg(
         imageSrc,
-        croppedAreaPixels,
+        areaToUse,
         fileName,
       );
-      onConfirm(file, blobUrl);
+      await onConfirm(file, blobUrl);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error("Failed to crop image:", message, err);
-      // Fallback: if crop fails, skip
-      onSkip?.();
+      toast.error(`Unable to apply crop: ${message}`);
     } finally {
       setIsProcessing(false);
     }
   };
 
-  return (
-    <div className="cropper-backdrop" role="dialog" aria-modal="true" aria-label={title}>
-      <div className="cropper-modal-container">
+  const handleSkipClick = async () => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    try {
+      await onSkip?.();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast.error(`Skip failed: ${message}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const modalContent = (
+    <div
+      className="cropper-backdrop"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+      onPointerDown={(e) => {
+        // Prevent outside-pointer-down bubbling to background AdminModal
+        e.stopPropagation();
+      }}
+    >
+      <div
+        className="cropper-modal-container"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="cropper-header">
           <div className="cropper-title-group">
@@ -132,6 +213,7 @@ export function ImageCropperModal({
             type="button"
             className="cropper-close-btn"
             onClick={onCancel}
+            disabled={isProcessing}
             aria-label="Cancel crop"
           >
             <X size={18} />
@@ -151,6 +233,7 @@ export function ImageCropperModal({
               onCropChange={setCrop}
               onZoomChange={setZoom}
               onCropComplete={onCropComplete}
+              onMediaLoaded={onMediaLoaded}
             />
           </div>
 
@@ -268,10 +351,10 @@ export function ImageCropperModal({
               <button
                 type="button"
                 className="button secondary cropper-skip-btn"
-                onClick={onSkip}
+                onClick={handleSkipClick}
                 disabled={isProcessing}
               >
-                Use original uncropped
+                {isProcessing ? "Processing…" : "Use original uncropped"}
               </button>
             )}
             <button
@@ -290,11 +373,26 @@ export function ImageCropperModal({
             onClick={handleConfirm}
             disabled={isProcessing}
           >
-            <Check size={16} />
-            <span>{isProcessing ? "Applying Crop…" : "Confirm & Save Crop"}</span>
+            {isProcessing ? (
+              <>
+                <Loader2 size={16} className="spinner" />
+                <span>Applying Crop…</span>
+              </>
+            ) : (
+              <>
+                <Check size={16} />
+                <span>Confirm & Save Crop</span>
+              </>
+            )}
           </button>
         </div>
       </div>
     </div>
   );
+
+  if (!mounted || typeof document === "undefined") {
+    return null;
+  }
+
+  return createPortal(modalContent, document.body);
 }

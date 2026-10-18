@@ -36,7 +36,12 @@ export function imageUrl(
   if (isImageKitUrl(path)) {
     return buildImageKitUrl(path, options);
   }
-  if (path.startsWith("http://") || path.startsWith("https://")) {
+  if (
+    path.startsWith("http://") ||
+    path.startsWith("https://") ||
+    path.startsWith("blob:") ||
+    path.startsWith("data:")
+  ) {
     return path;
   }
   if (path.startsWith("/")) {

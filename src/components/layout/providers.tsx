@@ -10,7 +10,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <>
       {children}
       <Toaster
-        position="bottom-center"
+        position="top-right"
         richColors
         toastOptions={{ style: { fontFamily: "var(--font-body)" } }}
       />

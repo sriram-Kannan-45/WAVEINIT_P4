@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -44,13 +44,14 @@ function Sidebar({ drawer = false }: { drawer?: boolean }) {
   const pathname = usePathname();
 
   const brandLink = (
-    <Link href="/admin/dashboard" className="brand">
+    <Link href="/admin/dashboard" className="brand" prefetch={drawer ? false : undefined}>
       <Image
         src="/brand/achu-designer-boutique-logo.png"
-        style={{ height: "auto" }}
+        style={{ width: "auto", height: "auto" }}
         width={56}
         height={60}
         alt="Achu official logo"
+        priority
       />
       <span>
         <strong>Achu</strong>
@@ -72,6 +73,7 @@ function Sidebar({ drawer = false }: { drawer?: boolean }) {
             <Link
               key={path}
               href={`/admin/${path}`}
+              prefetch={drawer ? false : undefined}
               className={pathname.includes(`/admin/${path}`) ? "active" : ""}
             >
               <Icon size={16} />
@@ -88,7 +90,7 @@ function Sidebar({ drawer = false }: { drawer?: boolean }) {
         })}
       </nav>
       <div className="admin-sidebar-footer">
-        <Link href="/" target="_blank">
+        <Link href="/" target="_blank" prefetch={false}>
           View your boutique <ArrowUpRight size={15} />
         </Link>
         <form
@@ -97,7 +99,7 @@ function Sidebar({ drawer = false }: { drawer?: boolean }) {
             clearAccessToken();
           }}
         >
-          <button>
+          <button type="submit">
             <LogOut size={15} />
             Sign out
           </button>
@@ -113,11 +115,19 @@ export function AdminShell({
   children: React.ReactNode;
   initialNotifications?: AdminNotification[];
 }) {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const pathname = usePathname();
+
   useEffect(() => {
     if (!getAccessToken()) {
       restoreSession();
     }
   }, []);
+
+  // Close drawer immediately on route change
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [pathname]);
 
   return (
     <div className="admin-shell">
@@ -130,18 +140,20 @@ export function AdminShell({
           <div className="admin-topbar-right">
             <NotificationsDropdown initialNotifications={initialNotifications} />
             <div className="admin-mobile-trigger">
+              <button
+                type="button"
+                className="icon-button admin-menu-trigger"
+                aria-label="Open owner navigation"
+                aria-expanded={drawerOpen}
+                onClick={() => setDrawerOpen(true)}
+              >
+                <MoreVertical size={20} />
+              </button>
               <Modal
                 side
                 title="Manage your boutique"
-                trigger={
-                  <button
-                    type="button"
-                    className="icon-button admin-menu-trigger"
-                    aria-label="Open owner navigation"
-                  >
-                    <MoreVertical size={20} />
-                  </button>
-                }
+                open={drawerOpen}
+                onOpenChange={setDrawerOpen}
               >
                 <Sidebar drawer />
               </Modal>

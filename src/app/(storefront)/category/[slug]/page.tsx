@@ -4,22 +4,7 @@ import { ArrowUpRight } from "lucide-react";
 import { getTaxonomies, getSubcategories } from "@/lib/data";
 import { Catalog } from "@/components/product/catalog";
 import { OptimizedImage } from "@/components/ui/optimized-image";
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await params;
-  const c = (await getTaxonomies("categories")).find((c) => c.slug === slug);
-  return {
-    title: c ? `${c.name} | Achu Designer Boutique` : "Category",
-    description:
-      c?.description ||
-      `Explore luxury handcrafted ${c?.name || "designs"} at Achu Designer Boutique.`,
-    alternates: { canonical: `/category/${slug}` },
-  };
-}
+import { imageUrl, safeJson, siteUrl } from "@/lib/utils";
 
 const CATEGORY_DEFAULT_IMAGES: Record<string, string> = {
   sarees: "/pic/Elegant Emerald Green Saree Portrait.webp",
@@ -28,6 +13,52 @@ const CATEGORY_DEFAULT_IMAGES: Record<string, string> = {
   "occasion-wear": "/pic/Maroon Embroidered Anarkali Portrait.webp",
   "demo-2": "/pic/Elegant Ivory Embroidered Anarkali Portrait.webp",
 };
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const c = (await getTaxonomies("categories")).find((c) => c.slug === slug);
+  const title = c
+    ? `${c.name} — Luxury Sarees & Designer Ethnic Wear | Achu Boutique`
+    : "Category | Achu Designer Boutique";
+  const description = c?.description
+    ? `${c.description} Browse our exclusive ${c.name.toLowerCase()} edit at Achu Designer Boutique. Enquire effortlessly on WhatsApp.`
+    : `Explore luxury handcrafted ${c?.name || "designs"} at Achu Designer Boutique. Buy designer sarees, kurtis, and ethnic wear online.`;
+  const fallbackCatImg =
+    CATEGORY_DEFAULT_IMAGES[slug] ||
+    "/pic/Elegant Emerald Green Saree Portrait.webp";
+  const heroImgSrc = c?.image ? imageUrl(c.image) : `${siteUrl}${fallbackCatImg}`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: `/category/${slug}` },
+    openGraph: {
+      title,
+      description,
+      url: `${siteUrl}/category/${slug}`,
+      siteName: "Achu Designer Boutique",
+      type: "website",
+      images: [
+        {
+          url: heroImgSrc,
+          width: 1024,
+          height: 1536,
+          alt: `${c?.name || "Category"} Collection`,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [heroImgSrc],
+    },
+  };
+}
 
 export default async function CategoryPage({
   params,
@@ -50,8 +81,59 @@ export default async function CategoryPage({
     "/pic/Elegant Emerald Green Saree Portrait.webp";
   const heroImgSrc = c.image || fallbackCatImg;
 
+  const categorySchema = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Home",
+            item: siteUrl,
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: c.name,
+            item: `${siteUrl}/category/${slug}`,
+          },
+        ],
+      },
+      {
+        "@type": "CollectionPage",
+        "@id": `${siteUrl}/category/${slug}`,
+        name: `${c.name} | Achu Designer Boutique`,
+        description:
+          c.description ||
+          `Explore our collection of ${c.name.toLowerCase()} at Achu Designer Boutique.`,
+        url: `${siteUrl}/category/${slug}`,
+        isPartOf: {
+          "@type": "WebSite",
+          "@id": `${siteUrl}/#website`,
+          name: "Achu Designer Boutique",
+        },
+        mainEntity: {
+          "@type": "ItemList",
+          numberOfItems: subcategories.length,
+          itemListElement: subcategories.map((sub, i) => ({
+            "@type": "ListItem",
+            position: i + 1,
+            name: sub.name,
+            url: `${siteUrl}/category/${slug}/${sub.slug}`,
+          })),
+        },
+      },
+    ],
+  };
+
   return (
     <div className="category-detail-page">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: safeJson(categorySchema) }}
+      />
       <div className="container">
         <nav className="breadcrumbs" aria-label="Breadcrumb">
           <Link href="/">Home</Link>
@@ -129,6 +211,7 @@ export default async function CategoryPage({
 
       <Catalog
         filters={{ ...filters, category: slug }}
+        headingLevel="h2"
         title={`All ${c.name} Designs`}
         subtitle={`Discover handcrafted ${c.name.toLowerCase()} tailored for timeless elegance.`}
       />

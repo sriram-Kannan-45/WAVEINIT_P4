@@ -11,10 +11,12 @@ export async function Catalog({
   filters,
   title = "The Achu collection",
   subtitle = "Find pieces that feel like you. Explore our edit of Indian wear, one beautiful detail at a time.",
+  headingLevel = "h1",
 }: {
   filters: CatalogFilter;
   title?: string;
   subtitle?: string;
+  headingLevel?: "h1" | "h2";
 }) {
   const limit = Math.min(100, Math.max(1, Number(filters.limit) || 24));
   const [result, categories, collections, store] = await Promise.all([
@@ -45,7 +47,7 @@ export async function Catalog({
       <div className="page-heading">
         <div className="container">
           <p className="eyebrow">THOUGHTFULLY CURATED</p>
-          <h1>{title}</h1>
+          {headingLevel === "h2" ? <h2>{title}</h2> : <h1>{title}</h1>}
           <p>{subtitle}</p>
         </div>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -62,10 +62,16 @@ async function prepare(file: File): Promise<File> {
   canvas.height = Math.round(bitmap.height * scale);
   canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   bitmap.close();
-  const blob = await new Promise<Blob | null>((resolve) =>
-    canvas.toBlob(resolve, "image/webp", 0.92),
+  let blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, "image/webp", 0.86),
   );
   if (!blob) throw new Error("Unable to optimize this image.");
+  if (blob.size > 2600000) {
+    blob =
+      (await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/webp", 0.78),
+      )) || blob;
+  }
   return new File([blob], file.name.replace(/\.[^.]+$/, ".webp"), {
     type: "image/webp",
   });
@@ -90,6 +96,17 @@ export function ImageUploader({
 }) {
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState("");
+  const [localPreviews, setLocalPreviews] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    return () => {
+      Object.values(localPreviews).forEach((url) => {
+        if (typeof url === "string" && url.startsWith("blob:")) {
+          URL.revokeObjectURL(url);
+        }
+      });
+    };
+  }, [localPreviews]);
 
   // Cropper queue state
   const [pendingQueue, setPendingQueue] = useState<File[]>([]);
@@ -104,7 +121,11 @@ export function ImageUploader({
   /**
    * Directly upload a prepared or cropped File object to storage
    */
-  async function performUpload(fileToUpload: File, recropIndex?: number) {
+  async function performUpload(
+    fileToUpload: File,
+    recropIndex?: number,
+    localPreviewUrl?: string,
+  ) {
     setBusy(true);
     try {
       setProgress("Uploading optimized & cropped image…");
@@ -115,6 +136,10 @@ export function ImageUploader({
       const r = await uploadImage(form);
       if (!r.ok || !r.path) {
         throw new Error(r.error || "Upload failed.");
+      }
+
+      if (localPreviewUrl) {
+        setLocalPreviews((prev) => ({ ...prev, [r.path!]: localPreviewUrl }));
       }
 
       if (typeof recropIndex === "number" && recropIndex >= 0) {
@@ -208,14 +233,17 @@ export function ImageUploader({
     const isRecrop = cropTarget?.isRecrop;
     const recropIndex = cropTarget?.recropIndex;
 
-    // Clean up current object URL if created locally
+    // Clean up current target imageSrc if created locally
     if (cropTarget?.imageSrc && cropTarget.imageSrc.startsWith("blob:")) {
       URL.revokeObjectURL(cropTarget.imageSrc);
     }
-    URL.revokeObjectURL(croppedBlobUrl);
 
-    // Upload cropped file
-    await performUpload(croppedFile, isRecrop ? recropIndex : undefined);
+    // Upload cropped file with instant local preview
+    await performUpload(
+      croppedFile,
+      isRecrop ? recropIndex : undefined,
+      croppedBlobUrl,
+    );
 
     // If not recropping, proceed through any remaining files in batch
     if (!isRecrop) {
@@ -241,7 +269,12 @@ export function ImageUploader({
     }
     try {
       const preparedFile = await prepare(rawFile);
-      await performUpload(preparedFile, isRecrop ? recropIndex : undefined);
+      const localBlobUrl = URL.createObjectURL(preparedFile);
+      await performUpload(
+        preparedFile,
+        isRecrop ? recropIndex : undefined,
+        localBlobUrl,
+      );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Upload failed.");
     }
@@ -401,7 +434,7 @@ export function ImageUploader({
 
                 <div className="upload-thumb-image-container">
                   <OptimizedImage
-                    src={img.storage_path}
+                    src={localPreviews[img.storage_path] || img.storage_path}
                     fill
                     alt={img.alt_text || `Product view ${i + 1}`}
                     sizes="200px"
@@ -468,6 +501,14 @@ export function ImageUploader({
                     className="upload-tool-btn danger"
                     title="Remove photograph"
                     onClick={() => {
+                      if (localPreviews[img.storage_path]) {
+                        URL.revokeObjectURL(localPreviews[img.storage_path]);
+                        setLocalPreviews((prev) => {
+                          const copy = { ...prev };
+                          delete copy[img.storage_path];
+                          return copy;
+                        });
+                      }
                       const next = images.filter((_, j) => i !== j);
                       onChange(
                         next.map((v, j) => ({
