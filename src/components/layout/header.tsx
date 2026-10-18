@@ -64,10 +64,10 @@ export function Header({ store }: { store: StoreSettings }) {
           <Image
             src="/brand/achu-designer-boutique-logo.png"
             alt="Achu Designer Boutique official logo"
-            width={72}
-            height={76}
-            style={{ width: "auto", height: "auto" }}
+            width={56}
+            height={56}
             priority
+            className="brand-logo"
           />
           <span>
             <strong>Achu</strong>

@@ -810,10 +810,17 @@ textarea:focus-visible {
   gap: 12px;
   flex-shrink: 0;
 }
-.brand img {
-  object-fit: contain;
-  width: 65px;
-  height: 70px;
+.brand img,
+.brand-logo {
+  object-fit: cover;
+  width: 56px;
+  height: 56px;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  border: 1.5px solid rgba(197, 160, 89, 0.45);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  flex-shrink: 0;
+  display: block;
 }
 .brand strong {
   font: 400 35px var(--font-heading);
@@ -2841,9 +2848,12 @@ html[data-store-animate="in"] .category-grid > .category-card .round-arrow {
   padding-bottom: 48px;
 }
 .footer-brand img {
-  width: 77px;
-  height: 83px;
-  object-fit: contain;
+  width: 76px;
+  height: 76px;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 1.5px solid rgba(197, 160, 89, 0.35);
   margin-bottom: 13px;
 }
 .footer-brand h3 {
@@ -4888,9 +4898,12 @@ label.field textarea {
   .brand small {
     font-size: 6px;
   }
-  .brand img {
-    width: 55px;
-    height: 60px;
+  .brand img,
+  .brand-logo {
+    width: 48px;
+    height: 48px;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
   }
   .brand {
     gap: 8px;
