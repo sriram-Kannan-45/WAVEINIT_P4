@@ -4,7 +4,7 @@
   "description": "Achu Designer Boutique catalog, WhatsApp checkout and secure owner panel",
   "scripts": {
     "intro:extract": "node scripts/extract-intro-frames.mjs",
-    "test": "tsx --test tests/unit.test.ts tests/intro.test.ts tests/admin-jwt.test.ts tests/admin-security-hardening.test.ts",
+    "test": "tsx --test tests/unit.test.ts tests/intro.test.ts tests/admin-jwt.test.ts tests/admin-security-hardening.test.ts tests/undo-redo.test.ts",
     "dev": "next dev --hostname 0.0.0.0",
     "build": "next build",
     "start": "next start --hostname 0.0.0.0",

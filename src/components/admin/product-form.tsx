@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { saveProduct } from "@/lib/admin-client";
 import { productSchema } from "@/lib/validations";
 import { slugify } from "@/lib/utils";
+import { useFormHistory } from "@/lib/use-form-history";
+import { UndoRedoButtons } from "./undo-redo-buttons";
 import { ImageUploader } from "./image-uploader";
 import type { Product, Subcategory, Taxonomy } from "@/types";
 type Input = z.input<typeof productSchema>;
@@ -45,6 +47,8 @@ export function ProductForm({
     control,
     getValues,
     setValue,
+    reset,
+    watch,
     formState: { errors },
   } = useForm<Input, unknown, Output>({
     resolver: zodResolver(productSchema),
@@ -111,6 +115,31 @@ export function ProductForm({
           collection_ids: [],
         },
   });
+  const {
+    canUndo,
+    canRedo,
+    undoCount,
+    redoCount,
+    undo,
+    redo,
+    takeSnapshot,
+  } = useFormHistory<Input>({
+    getValues,
+    reset,
+    watch,
+    debounceMs: 300,
+  });
+
+  const handleUndo = () => {
+    undo();
+    toast.info("Undone last change");
+  };
+
+  const handleRedo = () => {
+    redo();
+    toast.info("Redone change");
+  };
+
   const variants = useWatch({ control, name: "variants" });
   const images = useWatch({ control, name: "images" });
   const chosen = useWatch({ control, name: "collection_ids" });
@@ -158,7 +187,18 @@ export function ProductForm({
           gap: "0.75rem",
         }}
       >
-        <h2 style={{ margin: 0 }}>The essentials</h2>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.85rem", flexWrap: "wrap" }}>
+          <h2 style={{ margin: 0 }}>The essentials</h2>
+          <UndoRedoButtons
+            canUndo={canUndo}
+            canRedo={canRedo}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            undoCount={undoCount}
+            redoCount={redoCount}
+            size="sm"
+          />
+        </div>
         {product && (
           <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
             {product.slug && (
@@ -222,7 +262,10 @@ export function ProductForm({
             type="button"
             className="button"
             style={{ fontSize: "0.82rem", padding: "0.4rem 0.85rem", whiteSpace: "nowrap" }}
-            onClick={() => setValue("status", "active")}
+            onClick={() => {
+              takeSnapshot();
+              setValue("status", "active");
+            }}
           >
             Switch to Published
           </button>
@@ -424,9 +467,10 @@ export function ProductForm({
           storage_path: i.storage_path || "",
           alt_text: i.alt_text || "",
         }))}
-        onChange={(images) =>
-          setValue("images", images, { shouldValidate: true })
-        }
+        onChange={(images) => {
+          takeSnapshot();
+          setValue("images", images, { shouldValidate: true });
+        }}
       />
       {errors.images && (
         <p className="field-error">
@@ -589,12 +633,13 @@ export function ProductForm({
                     aria-label={`Remove ${v.size || `size ${i + 1}`}`}
                     disabled={variants.length === 1}
                     style={{ opacity: variants.length === 1 ? 0.3 : 1 }}
-                    onClick={() =>
+                    onClick={() => {
+                      takeSnapshot();
                       setValue(
                         "variants",
                         variants.filter((_, j) => j !== i),
-                      )
-                    }
+                      );
+                    }}
                   >
                     <Trash2 size={15} />
                   </button>
@@ -609,12 +654,13 @@ export function ProductForm({
         <button
           className="button outline"
           type="button"
-          onClick={() =>
+          onClick={() => {
+            takeSnapshot();
             setValue("variants", [
               ...variants,
               { size: "", stock_quantity: 0, active: true, sku: "", price: null },
-            ])
-          }
+            ]);
+          }}
         >
           <Plus size={15} />
           Add size
@@ -624,6 +670,7 @@ export function ProductForm({
           className="button outline"
           type="button"
           onClick={() => {
+            takeSnapshot();
             const defaults = [
               { size: "S", stock_quantity: 5, active: true, sku: "", price: null },
               { size: "M", stock_quantity: 10, active: true, sku: "", price: null },
@@ -654,14 +701,24 @@ export function ProductForm({
           {serverError}
         </p>
       )}
-      <div className="form-actions">
-        <button type="submit" className="button" disabled={busy}>
-          <Save size={15} />
-          {busy ? "Saving…" : "Save product"}
-        </button>
-        <Link className="button outline" href="/admin/products">
-          Cancel
-        </Link>
+      <div className="form-actions" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+          <button type="submit" className="button" disabled={busy}>
+            <Save size={15} />
+            {busy ? "Saving…" : "Save product"}
+          </button>
+          <Link className="button outline" href="/admin/products">
+            Cancel
+          </Link>
+        </div>
+        <UndoRedoButtons
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          undoCount={undoCount}
+          redoCount={redoCount}
+        />
       </div>
     </form>
   );

@@ -4,6 +4,8 @@ import { useForm, useWatch } from "react-hook-form";
 import { Save, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { saveHomepage, saveSettings, savePolicies } from "@/lib/admin-client";
+import { useFormHistory } from "@/lib/use-form-history";
+import { UndoRedoButtons } from "./undo-redo-buttons";
 import { ImageUploader } from "./image-uploader";
 import type { Homepage, StoreSettings, Taxonomy, Policy } from "@/types";
 type Field = {
@@ -127,8 +129,37 @@ export function ContentForm({
     handleSubmit,
     control,
     setValue,
+    getValues,
+    reset,
+    watch,
     formState: { errors },
   } = useForm<Record<string, unknown>>({ defaultValues: { ...values } });
+
+  const {
+    canUndo,
+    canRedo,
+    undoCount,
+    redoCount,
+    undo,
+    redo,
+    takeSnapshot,
+  } = useFormHistory<Record<string, unknown>>({
+    getValues,
+    reset,
+    watch,
+    debounceMs: 300,
+  });
+
+  const handleUndo = () => {
+    undo();
+    toast.info("Undone last change");
+  };
+
+  const handleRedo = () => {
+    redo();
+    toast.info("Redone change");
+  };
+
   const formValues = useWatch({ control });
   const guide = (formValues.size_guide || []) as StoreSettings["size_guide"];
   return (
@@ -150,9 +181,29 @@ export function ContentForm({
       })}
       noValidate
     >
-      <h2>
-        {kind === "settings" ? "Your boutique details" : "Create your homepage"}
-      </h2>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "0.5rem",
+          flexWrap: "wrap",
+          gap: "0.75rem",
+        }}
+      >
+        <h2 style={{ margin: 0 }}>
+          {kind === "settings" ? "Your boutique details" : "Create your homepage"}
+        </h2>
+        <UndoRedoButtons
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          undoCount={undoCount}
+          redoCount={redoCount}
+          size="sm"
+        />
+      </div>
       <p className="summary-note">
         {kind === "settings"
           ? "Leave unavailable contact details blank. Add genuine store information before enabling live enquiries."
@@ -279,12 +330,13 @@ export function ContentForm({
                         type="button"
                         className="icon-button"
                         aria-label={`Remove size guide row ${i + 1}`}
-                        onClick={() =>
+                        onClick={() => {
+                          takeSnapshot();
                           setValue(
                             "size_guide",
                             guide.filter((_, j) => j !== i),
-                          )
-                        }
+                          );
+                        }}
                       >
                         <Trash2 size={14} />
                       </button>
@@ -298,12 +350,13 @@ export function ContentForm({
             type="button"
             className="button outline"
             style={{ marginTop: 15 }}
-            onClick={() =>
+            onClick={() => {
+              takeSnapshot();
               setValue("size_guide", [
                 ...guide,
                 { size: "", bust: "", waist: "", hip: "", length: "" },
-              ])
-            }
+              ]);
+            }}
           >
             <Plus size={14} />
             Add size
@@ -315,11 +368,19 @@ export function ContentForm({
           {error}
         </p>
       )}
-      <div className="form-actions">
+      <div className="form-actions" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
         <button className="button" disabled={busy}>
           <Save size={15} />
           {busy ? "Saving…" : "Save settings"}
         </button>
+        <UndoRedoButtons
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          undoCount={undoCount}
+          redoCount={redoCount}
+        />
       </div>
     </form>
   );
@@ -333,7 +394,7 @@ const policyDefaults = [
 export function PolicyForm({ policies }: { policies: Policy[] }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const { register, handleSubmit } = useForm<{
+  const { register, handleSubmit, getValues, reset, watch } = useForm<{
     policies: { slug: string; title: string; content: string }[];
   }>({
     defaultValues: {
@@ -342,6 +403,31 @@ export function PolicyForm({ policies }: { policies: Policy[] }) {
       ),
     },
   });
+
+  const {
+    canUndo,
+    canRedo,
+    undoCount,
+    redoCount,
+    undo,
+    redo,
+  } = useFormHistory<{ policies: { slug: string; title: string; content: string }[] }>({
+    getValues,
+    reset,
+    watch,
+    debounceMs: 300,
+  });
+
+  const handleUndo = () => {
+    undo();
+    toast.info("Undone policy edit");
+  };
+
+  const handleRedo = () => {
+    redo();
+    toast.info("Redone policy edit");
+  };
+
   return (
     <form
       className="admin-form"
@@ -353,7 +439,27 @@ export function PolicyForm({ policies }: { policies: Policy[] }) {
         else setError(result.error || "Unable to save policies.");
       })}
     >
-      <h2>Your published policies</h2>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "0.5rem",
+          flexWrap: "wrap",
+          gap: "0.75rem",
+        }}
+      >
+        <h2 style={{ margin: 0 }}>Your published policies</h2>
+        <UndoRedoButtons
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          undoCount={undoCount}
+          redoCount={redoCount}
+          size="sm"
+        />
+      </div>
       <p className="setup-note">
         Replace initial notices with your actual policies before accepting
         enquiries. Text is displayed safely as plain text with line breaks.
@@ -386,11 +492,19 @@ export function PolicyForm({ policies }: { policies: Policy[] }) {
           {error}
         </p>
       )}
-      <div className="form-actions">
+      <div className="form-actions" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "12px" }}>
         <button className="button" disabled={busy}>
           <Save size={15} />
           {busy ? "Saving…" : "Publish policies"}
         </button>
+        <UndoRedoButtons
+          canUndo={canUndo}
+          canRedo={canRedo}
+          onUndo={handleUndo}
+          onRedo={handleRedo}
+          undoCount={undoCount}
+          redoCount={redoCount}
+        />
       </div>
     </form>
   );

@@ -4185,6 +4185,136 @@ label.field textarea {
 .admin-form .form-actions .button {
   min-width: 130px;
 }
+
+/* ==========================================================================
+   Admin Form Undo / Redo Control Bar & Floating Controls
+   ========================================================================== */
+.admin-undo-redo-group {
+  display: inline-flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid rgba(214, 175, 92, 0.4);
+  border-radius: 9999px;
+  padding: 3px 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.admin-undo-redo-group:hover {
+  border-color: rgba(214, 175, 92, 0.7);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.admin-undo-btn,
+.admin-redo-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  border-radius: 9999px;
+  color: var(--ink, #202820);
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.admin-undo-btn.is-active:hover,
+.admin-redo-btn.is-active:hover {
+  background: rgba(0, 118, 83, 0.08);
+  color: #007653;
+}
+
+.admin-undo-btn:active,
+.admin-redo-btn:active {
+  transform: scale(0.96);
+}
+
+.admin-undo-btn.is-disabled,
+.admin-redo-btn.is-disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.undo-redo-divider {
+  display: inline-block;
+  width: 1px;
+  height: 16px;
+  background: rgba(221, 220, 210, 0.9);
+  margin: 0 2px;
+}
+
+.undo-badge,
+.redo-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 9999px;
+  background: #f0ece3;
+  color: #007653;
+  line-height: 1;
+}
+
+.admin-undo-btn.is-active .undo-badge,
+.admin-redo-btn.is-active .redo-badge {
+  background: rgba(0, 118, 83, 0.12);
+  color: #007653;
+}
+
+/* Floating variant for sticky mobile / bottom corner */
+.admin-undo-redo-group.variant-floating {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(214, 175, 92, 0.5);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: 5px 8px;
+}
+
+/* Size modifiers */
+.admin-undo-redo-group.size-sm .admin-undo-btn,
+.admin-undo-redo-group.size-sm .admin-redo-btn {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+}
+
+.admin-undo-redo-group.size-lg .admin-undo-btn,
+.admin-undo-redo-group.size-lg .admin-redo-btn {
+  padding: 8px 16px;
+  font-size: 0.88rem;
+}
+
+/* Mobile & Laptop responsiveness */
+@media (max-width: 767px) {
+  .admin-undo-redo-group {
+    padding: 2px 4px;
+  }
+  .admin-undo-btn,
+  .admin-redo-btn {
+    padding: 8px 10px;
+    min-height: 38px;
+    font-size: 0.78rem;
+  }
+  .admin-undo-redo-group.variant-floating {
+    bottom: max(16px, env(safe-area-inset-bottom, 16px));
+    right: 16px;
+  }
+}
 /* ==========================================================================
    Admin Modal Popup System (Category & Subcategory)
    ========================================================================== */
