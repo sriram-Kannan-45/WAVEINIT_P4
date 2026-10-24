@@ -4315,6 +4315,147 @@ label.field textarea {
     right: 16px;
   }
 }
+
+/* ==========================================================================
+   Storefront Cart & Checkout Undo / Redo Responsive Toolbar & Floating Dock
+   ========================================================================== */
+.cart-header-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--line, #dddcd2);
+  gap: 12px;
+}
+
+.cart-header-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.cart-count-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background: var(--paper, #f0ece3);
+  color: var(--ink, #202820);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: 9999px;
+}
+
+.cart-history-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.cart-bottom-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 25px;
+  flex-wrap: wrap;
+}
+
+.cart-bottom-undo-redo {
+  display: flex;
+  align-items: center;
+}
+
+.cart-empty-undo-banner {
+  display: flex;
+  justify-content: center;
+}
+
+.cart-mobile-floating-history {
+  display: none;
+}
+
+.checkout-heading-toolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.checkout-heading-toolbar h2 {
+  margin-bottom: 6px;
+}
+
+.checkout-undo-redo-wrap {
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.checkout-action-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+  margin-bottom: 12px;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@media (max-width: 767px) {
+  .cart-header-toolbar {
+    padding-bottom: 12px;
+    margin-bottom: 4px;
+  }
+
+  .cart-bottom-undo-redo {
+    display: none;
+  }
+
+  .cart-mobile-floating-history {
+    display: block;
+    position: fixed;
+    bottom: max(20px, env(safe-area-inset-bottom, 20px));
+    right: 18px;
+    z-index: 90;
+    pointer-events: auto;
+  }
+
+  .checkout-heading-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .checkout-undo-redo-wrap {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  .checkout-action-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .checkout-action-row .button {
+    width: 100%;
+    justify-content: center;
+  }
+}
 /* ==========================================================================
    Admin Modal Popup System (Category & Subcategory)
    ========================================================================== */

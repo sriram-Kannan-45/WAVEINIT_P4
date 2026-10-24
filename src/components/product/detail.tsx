@@ -55,6 +55,7 @@ export function ProductDetail({
   const [quantity, setQuantity] = useState(1);
   const touchX = useRef(0);
   const add = useCart((s) => s.add);
+  const undo = useCart((s) => s.undo);
   const variant = p.product_variants.find((v) => v.id === selected);
   const stock = stockTotal(p.product_variants);
   const currentPrice = variant?.price ?? p.selling_price;
@@ -124,7 +125,17 @@ export function ProductDetail({
       vendor_name: vendorName,
       vendor_whatsapp_number: vendorWhatsApp,
     });
-    if (ok) toast.success("Added to your bag");
+    if (ok) {
+      toast.success("Added to your bag", {
+        action: {
+          label: "Undo",
+          onClick: () => {
+            undo();
+            toast.info("Removed from your bag");
+          },
+        },
+      });
+    }
     else
       toast.error(
         "Your bag already contains the available quantity for this size.",

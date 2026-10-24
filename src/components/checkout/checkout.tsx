@@ -1,10 +1,13 @@
 "use client";
 import Link from "next/link";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { MessageCircle, ArrowUpRight, Check } from "lucide-react";
+import { toast } from "sonner";
 import { useCart } from "@/store/cart-store";
+import { useFormHistory } from "@/lib/use-form-history";
+import { UndoRedoButtons } from "@/components/admin/undo-redo-buttons";
 import {
   customerSchema,
   type CustomerInput,
@@ -60,6 +63,9 @@ export function Checkout({ enabled }: { enabled: boolean }) {
   const {
     register,
     handleSubmit,
+    getValues,
+    reset,
+    watch,
     formState: { errors },
   } = useForm<CustomerInput, unknown, Customer>({
     resolver: zodResolver(customerSchema),
@@ -76,6 +82,31 @@ export function Checkout({ enabled }: { enabled: boolean }) {
       note: "",
     },
   });
+
+  const {
+    canUndo: canUndoForm,
+    canRedo: canRedoForm,
+    undoCount: undoFormCount,
+    redoCount: redoFormCount,
+    undo: undoForm,
+    redo: redoForm,
+  } = useFormHistory<CustomerInput>({
+    getValues,
+    reset,
+    watch,
+    enableShortcuts: true,
+    debounceMs: 350,
+  });
+
+  const handleUndoForm = useCallback(() => {
+    undoForm();
+    toast.success("Delivery details undone", { duration: 2000 });
+  }, [undoForm]);
+
+  const handleRedoForm = useCallback(() => {
+    redoForm();
+    toast.success("Delivery details redone", { duration: 2000 });
+  }, [redoForm]);
   async function submit(customer: Customer) {
     if (!items.length) return;
     if (!enabled && !demo) return;
@@ -314,11 +345,27 @@ export function Checkout({ enabled }: { enabled: boolean }) {
         }}
         noValidate
       >
-        <h2>A few details, then a conversation.</h2>
-        <p className="checkout-intro">
-          Tell us where you’d like your pieces delivered. We’ll prepare your
-          enquiry, and you’ll confirm it with us on WhatsApp.
-        </p>
+        <div className="checkout-heading-toolbar">
+          <div>
+            <h2>A few details, then a conversation.</h2>
+            <p className="checkout-intro">
+              Tell us where you’d like your pieces delivered. We’ll prepare your
+              enquiry, and you’ll confirm it with us on WhatsApp.
+            </p>
+          </div>
+          <div className="checkout-undo-redo-wrap">
+            <UndoRedoButtons
+              canUndo={canUndoForm}
+              canRedo={canRedoForm}
+              onUndo={handleUndoForm}
+              onRedo={handleRedoForm}
+              undoCount={undoFormCount}
+              redoCount={redoFormCount}
+              size="sm"
+              variant="inline"
+            />
+          </div>
+        </div>
         {(!enabled || demo) && (
           <p className="setup-note">
             {demo
@@ -392,19 +439,47 @@ export function Checkout({ enabled }: { enabled: boolean }) {
             </Link>
           </p>
         )}
-        <button
-          className="button"
-          type="submit"
-          disabled={pending || !enabled || demo}
-        >
-          <MessageCircle size={17} />
-          {pending ? "Checking & preparing…" : "Place order via WhatsApp"}
-          <ArrowUpRight size={15} />
-        </button>
+        <div className="checkout-action-row">
+          <button
+            className="button"
+            type="submit"
+            disabled={pending || !enabled || demo}
+          >
+            <MessageCircle size={17} />
+            {pending ? "Checking & preparing…" : "Place order via WhatsApp"}
+            <ArrowUpRight size={15} />
+          </button>
+          {(canUndoForm || canRedoForm) && (
+            <UndoRedoButtons
+              canUndo={canUndoForm}
+              canRedo={canRedoForm}
+              onUndo={handleUndoForm}
+              onRedo={handleRedoForm}
+              undoCount={undoFormCount}
+              redoCount={redoFormCount}
+              size="sm"
+              variant="inline"
+            />
+          )}
+        </div>
         <p className="summary-note">
           No payment is collected here. Your enquiry is saved securely before
           you continue to WhatsApp.
         </p>
+        {(canUndoForm || canRedoForm) && (
+          <div className="cart-mobile-floating-history">
+            <UndoRedoButtons
+              canUndo={canUndoForm}
+              canRedo={canRedoForm}
+              onUndo={handleUndoForm}
+              onRedo={handleRedoForm}
+              undoCount={undoFormCount}
+              redoCount={redoFormCount}
+              size="sm"
+              variant="floating"
+            />
+          </div>
+        )}
       </form>
       <aside className="cart-summary">
         <h2>Your chosen pieces.</h2>

@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { useCart, type CartItem } from "../src/store/cart-store";
 
 type TestFormState = {
   name: string;
@@ -150,4 +151,112 @@ test("Undo/Redo: enforces maxDepth boundary and avoids redundant snapshots", () 
   // Redundant snapshot with identical value is ignored
   history.takeSnapshot({ step: 4 });
   assert.equal(history.state.undoCount, 3);
+});
+
+test("Cart Store Undo/Redo: tracks user operations and correctly rolls back/forward", () => {
+  // Reset store to known state
+  useCart.setState({
+    items: [],
+    past: [],
+    future: [],
+    canUndo: false,
+    canRedo: false,
+    undoCount: 0,
+    redoCount: 0,
+  });
+
+  const item1: CartItem = {
+    product_id: "prod-1",
+    variant_id: "var-1",
+    slug: "banarasi-saree",
+    name: "Banarasi Silk Saree",
+    size: "Free Size",
+    image: "https://example.com/saree.jpg",
+    price: 3499,
+    quantity: 1,
+    stock: 10,
+  };
+
+  const item2: CartItem = {
+    product_id: "prod-2",
+    variant_id: "var-2",
+    slug: "chanderi-kurta",
+    name: "Chanderi Kurta Set",
+    size: "M",
+    image: "https://example.com/kurta.jpg",
+    price: 2199,
+    quantity: 1,
+    stock: 5,
+  };
+
+  // 1. Add item1
+  const ok1 = useCart.getState().add(item1);
+  assert.equal(ok1, true);
+  assert.equal(useCart.getState().items.length, 1);
+  assert.equal(useCart.getState().canUndo, true);
+  assert.equal(useCart.getState().undoCount, 1);
+  assert.equal(useCart.getState().canRedo, false);
+
+  // 2. Add item2
+  const ok2 = useCart.getState().add(item2);
+  assert.equal(ok2, true);
+  assert.equal(useCart.getState().items.length, 2);
+  assert.equal(useCart.getState().undoCount, 2);
+
+  // 3. Set quantity of item1 to 2
+  useCart.getState().setQuantity("var-1", 2);
+  assert.equal(
+    useCart.getState().items.find((i) => i.variant_id === "var-1")?.quantity,
+    2,
+  );
+  assert.equal(useCart.getState().undoCount, 3);
+
+  // 4. Undo quantity change
+  const undoRes1 = useCart.getState().undo();
+  assert.equal(undoRes1, true);
+  assert.equal(
+    useCart.getState().items.find((i) => i.variant_id === "var-1")?.quantity,
+    1,
+  );
+  assert.equal(useCart.getState().canRedo, true);
+  assert.equal(useCart.getState().redoCount, 1);
+
+  // 5. Redo quantity change
+  const redoRes1 = useCart.getState().redo();
+  assert.equal(redoRes1, true);
+  assert.equal(
+    useCart.getState().items.find((i) => i.variant_id === "var-1")?.quantity,
+    2,
+  );
+
+  // 6. Remove item2
+  useCart.getState().remove("var-2");
+  assert.equal(useCart.getState().items.length, 1);
+  assert.equal(useCart.getState().items[0].variant_id, "var-1");
+
+  // 7. Undo removal -> item2 is restored
+  const undoRes2 = useCart.getState().undo();
+  assert.equal(undoRes2, true);
+  assert.equal(useCart.getState().items.length, 2);
+  assert.ok(useCart.getState().items.some((i) => i.variant_id === "var-2"));
+
+  // 8. Reconcile from backend (price/stock refresh) does NOT alter history stacks
+  const pastBefore = useCart.getState().past.length;
+  useCart.getState().reconcile([
+    { variant_id: "var-1", price: 3999, stock: 8, available: true },
+  ]);
+  assert.equal(
+    useCart.getState().items.find((i) => i.variant_id === "var-1")?.price,
+    3999,
+  );
+  assert.equal(useCart.getState().past.length, pastBefore);
+
+  // 9. Clear cart
+  useCart.getState().clear();
+  assert.equal(useCart.getState().items.length, 0);
+
+  // 10. Undo clear cart -> bag restored
+  const undoRes3 = useCart.getState().undo();
+  assert.equal(undoRes3, true);
+  assert.equal(useCart.getState().items.length, 2);
 });
