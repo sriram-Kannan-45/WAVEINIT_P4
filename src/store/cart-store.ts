@@ -1,6 +1,6 @@
 "use client";
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 import { savedCartSchema } from "@/lib/cart-validation";
 
 export type CartItem = {
@@ -226,6 +226,16 @@ export const useCart = create<CartState>()(
     {
       name: "achu-cart-v1",
       version: 1,
+      storage: createJSONStorage(() => {
+        if (typeof window !== "undefined" && window.localStorage) {
+          return window.localStorage;
+        }
+        return {
+          getItem: () => null,
+          setItem: () => {},
+          removeItem: () => {},
+        };
+      }),
       partialize: (s) => ({ items: s.items }),
       merge: (persisted, current) => {
         const result = savedCartSchema.safeParse(persisted);

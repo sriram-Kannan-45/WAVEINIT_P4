@@ -260,3 +260,198 @@ test("Cart Store Undo/Redo: tracks user operations and correctly rolls back/forw
   assert.equal(undoRes3, true);
   assert.equal(useCart.getState().items.length, 2);
 });
+
+test("Cart Store: handles maximum history depth boundary (25 items) and keeps rolling snapshot", () => {
+  useCart.setState({
+    items: [],
+    past: [],
+    future: [],
+    canUndo: false,
+    canRedo: false,
+    undoCount: 0,
+    redoCount: 0,
+  });
+
+  const baseItem: CartItem = {
+    product_id: "prod-batch",
+    variant_id: "var-batch-0",
+    slug: "batch-item",
+    name: "Batch Item",
+    size: "S",
+    image: "https://example.com/item.jpg",
+    price: 1000,
+    quantity: 1,
+    stock: 50,
+  };
+
+  useCart.getState().add(baseItem);
+
+  // Perform 30 quantity modifications
+  for (let i = 2; i <= 31; i++) {
+    useCart.getState().setQuantity("var-batch-0", (i % 20) + 1);
+  }
+
+  // Verify history is capped at maxDepth 25
+  assert.equal(useCart.getState().undoCount, 25);
+  assert.equal(useCart.getState().past.length, 25);
+  assert.equal(useCart.getState().canUndo, true);
+
+  // Undo 25 times until stack is exhausted
+  let undos = 0;
+  while (useCart.getState().canUndo) {
+    const ok = useCart.getState().undo();
+    assert.equal(ok, true);
+    undos++;
+  }
+  assert.equal(undos, 25);
+  assert.equal(useCart.getState().canUndo, false);
+  assert.equal(useCart.getState().canRedo, true);
+  assert.equal(useCart.getState().redoCount, 25);
+});
+
+test("Cart Store: boundary testing on empty history and future", () => {
+  useCart.setState({
+    items: [],
+    past: [],
+    future: [],
+    canUndo: false,
+    canRedo: false,
+    undoCount: 0,
+    redoCount: 0,
+  });
+
+  // Calling undo on empty cart returns false and does not throw
+  assert.equal(useCart.getState().undo(), false);
+  assert.equal(useCart.getState().canUndo, false);
+
+  // Calling redo on empty future returns false and does not throw
+  assert.equal(useCart.getState().redo(), false);
+  assert.equal(useCart.getState().canRedo, false);
+
+  // Calling clear on empty cart does not add snapshot
+  useCart.getState().clear();
+  assert.equal(useCart.getState().undoCount, 0);
+
+  // Calling setQuantity on non-existent item does not add snapshot
+  useCart.getState().setQuantity("non-existent-id", 5);
+  assert.equal(useCart.getState().undoCount, 0);
+
+  // Calling remove on non-existent item does not add snapshot
+  useCart.getState().remove("non-existent-id");
+  assert.equal(useCart.getState().undoCount, 0);
+});
+
+test("Cart Store: branching new edits after undo invalidates redo future", () => {
+  useCart.setState({
+    items: [],
+    past: [],
+    future: [],
+    canUndo: false,
+    canRedo: false,
+    undoCount: 0,
+    redoCount: 0,
+  });
+
+  const itA: CartItem = {
+    product_id: "pA",
+    variant_id: "vA",
+    slug: "item-a",
+    name: "Item A",
+    size: "S",
+    image: "https://example.com/a.jpg",
+    price: 1500,
+    quantity: 1,
+    stock: 10,
+  };
+
+  const itB: CartItem = {
+    product_id: "pB",
+    variant_id: "vB",
+    slug: "item-b",
+    name: "Item B",
+    size: "M",
+    image: "https://example.com/b.jpg",
+    price: 2500,
+    quantity: 1,
+    stock: 10,
+  };
+
+  const itC: CartItem = {
+    product_id: "pC",
+    variant_id: "vC",
+    slug: "item-c",
+    name: "Item C",
+    size: "L",
+    image: "https://example.com/c.jpg",
+    price: 3500,
+    quantity: 1,
+    stock: 10,
+  };
+
+  useCart.getState().add(itA);
+  useCart.getState().add(itB);
+  assert.equal(useCart.getState().items.length, 2);
+
+  // Undo addition of itB
+  useCart.getState().undo();
+  assert.equal(useCart.getState().items.length, 1);
+  assert.equal(useCart.getState().canRedo, true);
+  assert.equal(useCart.getState().redoCount, 1);
+
+  // Adding itC branches history and clears future redo
+  useCart.getState().add(itC);
+  assert.equal(useCart.getState().items.length, 2);
+  assert.equal(useCart.getState().canRedo, false);
+  assert.equal(useCart.getState().redoCount, 0);
+  assert.ok(useCart.getState().items.some((i) => i.variant_id === "vC"));
+  assert.ok(!useCart.getState().items.some((i) => i.variant_id === "vB"));
+});
+
+test("Cart Store: quantity clamping and stock overflow rejection preserves state", () => {
+  useCart.setState({
+    items: [],
+    past: [],
+    future: [],
+    canUndo: false,
+    canRedo: false,
+    undoCount: 0,
+    redoCount: 0,
+  });
+
+  const item: CartItem = {
+    product_id: "p-clamp",
+    variant_id: "v-clamp",
+    slug: "clamp-item",
+    name: "Clamped Item",
+    size: "Free",
+    image: "https://example.com/clamp.jpg",
+    price: 999,
+    quantity: 1,
+    stock: 5,
+  };
+
+  useCart.getState().add(item);
+  assert.equal(useCart.getState().undoCount, 1);
+
+  // Quantity cannot exceed stock (5)
+  useCart.getState().setQuantity("v-clamp", 999);
+  assert.equal(useCart.getState().items[0].quantity, 5);
+  assert.equal(useCart.getState().undoCount, 2);
+
+  // Redundant setQuantity does not push duplicate snapshot
+  useCart.getState().setQuantity("v-clamp", 5);
+  assert.equal(useCart.getState().undoCount, 2);
+
+  // Negative or 0 quantity clamps to minimum 1
+  useCart.getState().setQuantity("v-clamp", -10);
+  assert.equal(useCart.getState().items[0].quantity, 1);
+  assert.equal(useCart.getState().undoCount, 3);
+
+  // Adding quantity beyond stock returns false and does not push snapshot
+  const overStockResult = useCart.getState().add({
+    ...item,
+    quantity: 10,
+  });
+  assert.equal(overStockResult, false);
+  assert.equal(useCart.getState().undoCount, 3);
+});
